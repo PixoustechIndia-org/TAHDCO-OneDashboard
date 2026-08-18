@@ -1,0 +1,203 @@
+<p-toast></p-toast>
+<div class="page-wrap">
+  <!-- Header -->
+  <div class="mod-header">
+    <div class="mod-title-wrap">
+      <div class="mod-icon"><i class="pi pi-briefcase"></i></div>
+      <div>
+        <h1 class="mod-title">Welfare Scheme Report</h1>
+        <p class="mod-sub">{{ selectedFY }} · {{ selectedProject }} · {{ tableData.length }} schemes</p>
+      </div>
+    </div>
+    <div class="mod-actions">
+      <p-button icon="pi pi-download" label="Export" styleClass="btn-gold" (onClick)="export()"></p-button>
+    </div>
+  </div>
+
+  <!-- KPI strip -->
+  <div class="kpi-strip">
+    <div class="kpi-tile" *ngFor="let k of kpis" [style.--kpi-accent]="k.accent" [style.--kpi-soft]="k.soft">
+      <div class="kpi-ico"><i class="pi {{ k.icon }}"></i></div>
+      <div class="kpi-val">{{ k.value | number }}</div>
+      <div class="kpi-lbl">{{ k.label }}</div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filter-bar">
+    <div class="fgrp">
+      <label>Financial year</label>
+      <p-dropdown [options]="fyOptions" [(ngModel)]="selectedFY" (onChange)="load()" styleClass="flt-drop" appendTo="body"></p-dropdown>
+    </div>
+    <div class="fgrp">
+      <label>Project</label>
+      <p-dropdown [options]="projectOptions" [(ngModel)]="selectedProject" (onChange)="load()" styleClass="flt-drop" appendTo="body"></p-dropdown>
+    </div>
+    <div class="fgrp">
+      <label>Division</label>
+      <p-dropdown [options]="divisionOptions" [(ngModel)]="selectedDivision" (onChange)="load()" styleClass="flt-drop" appendTo="body"></p-dropdown>
+    </div>
+    <div class="fgrp search-grp">
+      <label>Search</label>
+      <span class="p-input-icon-left">
+        <i class="pi pi-search"></i>
+        <input pInputText [(ngModel)]="searchTerm" (ngModelChange)="load()" placeholder="Search scheme, course, district…" class="search-inp">
+      </span>
+    </div>
+    <div class="filter-spacer"></div>
+    <div class="view-toggle">
+      <button class="vbtn" [class.active]="viewMode==='table'" (click)="viewMode='table'" aria-label="Table view"><i class="pi pi-table"></i></button>
+      <button class="vbtn" [class.active]="viewMode==='chart'" (click)="viewMode='chart'" aria-label="Chart view"><i class="pi pi-chart-bar"></i></button>
+    </div>
+    <p-button icon="pi pi-refresh" styleClass="btn-outline" (onClick)="load()"></p-button>
+  </div>
+
+  <!-- TELP Loan Screen 3 Master Database Table View -->
+  <div class="sec-card" *ngIf="viewMode==='table' && (selectedProject==='TELP' || isTelpMode)">
+    <div class="sec-hdr">
+      <i class="pi pi-book text-amber-600"></i>
+      <span class="sec-title">TELP Loan Master Application Database</span>
+      <span class="row-count">{{ telpTableRows.length }} records</span>
+    </div>
+    <p-table [value]="telpTableRows" [loading]="loading" [paginator]="true" [rows]="rows" [(first)]="first"
+      [totalRecords]="telpTableRows.length" [rowsPerPageOptions]="[15,25,50,100]"
+      [rowHover]="true" responsiveLayout="scroll" styleClass="p-datatable-sm mod-table p-datatable-gridlines">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Financial Year</th>
+          <th>Division</th>
+          <th>District</th>
+          <th>Scheme</th>
+          <th>schemename</th>
+          <th>Course Name</th>
+          <th>placd of study</th>
+          <th class="text-center">No_of_scheme_apply</th>
+          <th class="text-center">Payment pending</th>
+          <th class="text-center">Payment completed</th>
+          <th>sanctioned month</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-row>
+        <tr>
+          <td><span class="font-bold text-slate-800">{{ row.financialYear }}</span></td>
+          <td><span class="font-bold text-blue-700">{{ row.division }}</span></td>
+          <td>{{ row.district }}</td>
+          <td><code>{{ row.scheme }}</code></td>
+          <td class="fw-600">{{ row.schemeName }}</td>
+          <td><span class="text-slate-700 font-semibold">{{ row.courseName }}</span></td>
+          <td><span class="pill pill-navy">{{ row.placeOfStudy }}</span></td>
+          <td class="text-center font-extrabold text-slate-900">{{ row.noOfSchemeApply | number }}</td>
+          <td class="text-center text-amber-600 font-bold">{{ row.paymentPending | number }}</td>
+          <td class="text-center text-emerald-600 font-bold">{{ row.paymentCompleted | number }}</td>
+          <td><span class="time-tag">{{ row.sanctionedMonth }}</span></td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="11" class="text-center p-6 text-slate-500 font-bold">
+            No TELP Loan records found for the selected Division and Search query.
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+
+  <!-- General Schemes Table view -->
+  <div class="sec-card" *ngIf="viewMode==='table' && selectedProject!=='TELP' && !isTelpMode">
+    <div class="sec-hdr">
+      <i class="pi pi-list"></i>
+      <span class="sec-title">Scheme-wise application status</span>
+      <span class="row-count">{{ tableData.length }} records</span>
+    </div>
+    <p-table [value]="tableData" [loading]="loading" [paginator]="true" [rows]="rows" [(first)]="first"
+      [totalRecords]="tableData.length" [rowsPerPageOptions]="[15,25,50]"
+      [rowHover]="true" responsiveLayout="scroll" styleClass="p-datatable-sm mod-table">
+      <ng-template pTemplate="header">
+        <tr>
+          <th style="width:44px">#</th>
+          <th>Project</th>
+          <th>Scheme</th>
+          <th class="text-center">Applications</th>
+          <th class="text-center">DM pending</th>
+          <th class="text-center">HQ pending</th>
+          <th class="text-center">Payment pending</th>
+          <th style="width:150px">Approval</th>
+          <th style="width:60px" class="text-center">Details</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-row let-i="rowIndex">
+        <tr>
+          <td class="text-center text-muted">{{ first + i + 1 }}</td>
+          <td><span class="pill {{ projectPill(row.project) }}">{{ row.project }}</span></td>
+          <td class="fw-600">{{ row.scheme }}</td>
+          <td class="text-center"><span class="pill pill-navy">{{ row.apply | number }}</span></td>
+          <td class="text-center">{{ row.dmPending | number }}</td>
+          <td class="text-center">{{ row.hqPending | number }}</td>
+          <td class="text-center">{{ row.paymentPending | number }}</td>
+          <td>
+            <div class="mini-bar-wrap">
+              <div class="mini-bar"><span [style.width.%]="approvalPct(row)" [style.--bar-color]="barColor(approvalPct(row))"></span></div>
+              <span class="mini-bar-pct">{{ approvalPct(row) }}%</span>
+            </div>
+          </td>
+          <td class="text-center">
+            <p-button icon="pi pi-info-circle" styleClass="p-button-text p-button-sm info-btn"
+              pTooltip="View breakdown" (onClick)="openRowDetail(row)"></p-button>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="footer" *ngIf="tableData.length">
+        <tr>
+          <td colspan="3" class="fw-600">Total ({{ selectedProject }})</td>
+          <td class="text-center">{{ totals.apply | number }}</td>
+          <td class="text-center">{{ totals.dmPending | number }}</td>
+          <td class="text-center">{{ totals.hqPending | number }}</td>
+          <td class="text-center">{{ totals.paymentPending | number }}</td>
+          <td colspan="2"></td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr><td colspan="9" class="empty-state">
+          <i class="pi pi-inbox"></i>
+          <p>No schemes match the selected filters</p>
+        </td></tr>
+      </ng-template>
+    </p-table>
+  </div>
+
+  <!-- Chart view -->
+  <div class="sec-card" *ngIf="viewMode==='chart'">
+    <div class="sec-hdr">
+      <i class="pi pi-chart-bar"></i>
+      <span class="sec-title">Application pipeline by scheme</span>
+      <span class="sec-sub">stacked · applications</span>
+    </div>
+    <div class="chart-wrap" style="height:360px">
+      <p-chart type="bar" [data]="chartData" [options]="chartOpts" height="360"
+        *ngIf="chartData?.datasets?.length; else noChart"></p-chart>
+      <ng-template #noChart><div class="no-chart"><i class="pi pi-chart-bar"></i><p>Load data to view chart</p></div></ng-template>
+    </div>
+  </div>
+</div>
+
+<!-- Detail dialog -->
+<p-dialog [(visible)]="dialogVisible" [modal]="true" [draggable]="false" [resizable]="false"
+  [style]="{width:'460px'}" [header]="dialogTitle" (onHide)="closeDialog()">
+  <div class="dlg-body" *ngIf="activeRow">
+    <div style="height:190px;position:relative"><p-chart type="doughnut" [data]="dialogChartData" [options]="dialogChartOpts" height="190"></p-chart></div>
+    <div class="dlg-info">
+      <div class="di-row"><span class="di-label">Project</span><span class="di-val">{{ activeRow.project }}</span></div>
+      <div class="di-row"><span class="di-label">Sub-scheme</span><span class="di-val">{{ activeRow.subScheme }}</span></div>
+      <div class="di-row"><span class="di-label">Applications</span><span class="di-val">{{ activeRow.apply | number }}</span></div>
+      <div class="di-row"><span class="di-label">Approved</span><span class="di-val">{{ approved(activeRow) | number }}</span></div>
+      <div class="di-row"><span class="di-label">DM pending</span><span class="di-val">{{ activeRow.dmPending | number }}</span></div>
+      <div class="di-row"><span class="di-label">HQ pending</span><span class="di-val">{{ activeRow.hqPending | number }}</span></div>
+      <div class="di-row"><span class="di-label">Payment pending</span><span class="di-val">{{ activeRow.paymentPending | number }}</span></div>
+      <div class="di-row"><span class="di-label">Approval rate</span><span class="di-val">{{ approvalPct(activeRow) }}%</span></div>
+    </div>
+  </div>
+  <ng-template pTemplate="footer">
+    <p-button label="Close" styleClass="btn-outline" (onClick)="closeDialog()"></p-button>
+    <p-button label="Export" icon="pi pi-download" styleClass="btn-navy" (onClick)="export()"></p-button>
+  </ng-template>
+</p-dialog>

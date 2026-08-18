@@ -1,0 +1,339 @@
+<p-toast></p-toast>
+<div class="page-wrap">
+
+  <!-- Header with Navigation Tabs & Action Buttons -->
+  <div class="mod-header" style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 24px;">
+    <div class="mod-title-wrap" style="display: flex; align-items: center; gap: 14px;">
+      <div class="mod-icon" style="width: 44px; height: 44px; background: #1e293b; color: #38bdf8; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+        <i class="pi pi-clock"></i>
+      </div>
+      <div>
+        <h1 class="mod-title" style="margin: 0; font-size: 20px; font-weight: 800; color: #0f172a;">Scheduler Control & Nightly Automation</h1>
+        <p class="mod-sub" style="margin: 2px 0 0; font-size: 13px; color: #64748b;">
+          {{ jobs.length }} configured jobs · Real-time background sync · Admin only
+        </p>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs & Top Actions -->
+    <div class="mod-actions" style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+      <!-- Tab Selector Pill Group -->
+      <div style="display: flex; background: #e2e8f0; padding: 4px; border-radius: 10px; gap: 4px;">
+        <button type="button" (click)="setTab('jobs')" 
+                [style.background]="activeTab === 'jobs' ? '#0f172a' : 'transparent'"
+                [style.color]="activeTab === 'jobs' ? '#ffffff' : '#475569'"
+                style="border: none; padding: 6px 14px; border-radius: 8px; font-weight: 700; font-size: 12.5px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s;">
+          <i class="pi pi-th-large"></i> Configured Jobs ({{ jobs.length }})
+        </button>
+        <button type="button" (click)="setTab('history')" 
+                [style.background]="activeTab === 'history' ? '#0f172a' : 'transparent'"
+                [style.color]="activeTab === 'history' ? '#ffffff' : '#475569'"
+                style="border: none; padding: 6px 14px; border-radius: 8px; font-weight: 700; font-size: 12.5px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s;">
+          <i class="pi pi-history"></i> Execution History
+        </button>
+      </div>
+
+      <p-button icon="pi pi-plus" label="New Job" styleClass="btn-navy" (onClick)="openCreate()"></p-button>
+      <p-button icon="pi pi-refresh" styleClass="btn-outline" pTooltip="Refresh Data" (onClick)="activeTab === 'jobs' ? load() : loadAllLogs()"></p-button>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════════════ -->
+  <!-- TAB 1: CONFIGURED JOBS VIEW                                            -->
+  <!-- ════════════════════════════════════════════════════════════════════════ -->
+  <div *ngIf="activeTab === 'jobs'">
+    <!-- Job Cards Grid -->
+    <div class="job-grid" *ngIf="!loading; else loadingTpl">
+      <div class="job-card" *ngFor="let job of jobs" [style.--acc]="projectAccent(job.project)">
+
+        <!-- Top strip -->
+        <div class="jc-top">
+          <div class="jc-project" [style.background]="projectAccent(job.project)">{{ job.project }}</div>
+          <span class="jc-name">{{ job.jobName }}</span>
+          <span class="pill {{ job.isActive ? 'pill-ok' : 'pill-bad' }}" style="margin-left:auto">
+            {{ job.isActive ? 'Active' : 'Inactive' }}
+          </span>
+        </div>
+
+        <!-- URL row -->
+        <div class="jc-url">
+          <span class="jc-method" [class.get]="job.httpMethod==='GET'">{{ job.httpMethod }}</span>
+          <span class="jc-endpoint" title="{{ job.apiUrl }}">{{ job.apiUrl }}</span>
+        </div>
+
+        <!-- Schedule -->
+        <div class="jc-schedule">
+          <i class="pi pi-calendar"></i>
+          <span>{{ cronHuman(job.cronExpression) }}</span>
+          <code>{{ job.cronExpression }}</code>
+        </div>
+
+        <!-- Last run -->
+        <div class="jc-last" *ngIf="job.lastRunStatus">
+          <span class="pill {{ statusCls(job.lastRunStatus) }}">{{ job.lastRunStatus }}</span>
+          <span class="jc-time">{{ job.lastRunTime | date:'dd/MM/yy HH:mm' }}</span>
+          <span class="jc-msg" *ngIf="job.lastRunMessage" [title]="job.lastRunMessage">{{ job.lastRunMessage | slice:0:80 }}</span>
+        </div>
+        <div class="jc-last-none" *ngIf="!job.lastRunStatus">
+          <i class="pi pi-minus-circle"></i> Never run
+        </div>
+
+        <!-- Actions -->
+        <div class="jc-actions">
+          <button class="jca-run" (click)="runNow(job)" [disabled]="running[job.id]" pTooltip="Run now">
+            <i class="pi" [class.pi-play]="!running[job.id]" [class.pi-spin]="running[job.id]" [class.pi-spinner]="running[job.id]"></i>
+            {{ running[job.id] ? 'Running…' : 'Run now' }}
+          </button>
+          <button class="jca-hist" (click)="viewHistory(job)" pTooltip="View History" style="background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 6px; cursor: pointer; padding: 0.45rem 0.75rem; color: #334155; display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700;">
+            <i class="pi pi-history"></i> History
+          </button>
+          <button class="jca-edit" (click)="openEdit(job)" pTooltip="Edit"><i class="pi pi-pencil"></i></button>
+          <button class="jca-del" (click)="delete(job)" pTooltip="Delete"><i class="pi pi-trash"></i></button>
+        </div>
+      </div>
+
+      <!-- Empty state -->
+      <div class="sch-empty" *ngIf="jobs.length === 0">
+        <i class="pi pi-calendar-times"></i>
+        <p>No scheduled jobs configured yet.</p>
+        <p-button label="Create First Job" icon="pi pi-plus" styleClass="btn-navy" (onClick)="openCreate()"></p-button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════════════════════ -->
+  <!-- TAB 2: ALL EXECUTION HISTORY VIEW (WITH FILTERS)                       -->
+  <!-- ════════════════════════════════════════════════════════════════════════ -->
+  <div *ngIf="activeTab === 'history'" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
+    
+    <!-- Filter Toolbar -->
+    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 14px; margin-bottom: 18px; padding-bottom: 16px; border-bottom: 1px solid #f1f5f9;">
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px;">
+        
+        <!-- Search filter -->
+        <div style="position: relative;">
+          <i class="pi pi-search" style="position: absolute; left: 10px; top: 10px; color: #94a3b8; font-size: 12px;"></i>
+          <input type="text" pInputText placeholder="Search job, url, message..." 
+                 [(ngModel)]="filterSearch" (input)="applyLogFilters()" 
+                 style="padding-left: 30px; height: 36px; font-size: 12.5px; width: 240px; border-radius: 8px;" />
+        </div>
+
+        <!-- Project dropdown filter -->
+        <p-dropdown [options]="filterProjectOptions" [(ngModel)]="filterProject" 
+                    (onChange)="applyLogFilters()" placeholder="All Projects" 
+                    styleClass="p-dropdown-sm" [style]="{minWidth: '160px', height: '36px'}" appendTo="body"></p-dropdown>
+
+        <!-- Status dropdown filter -->
+        <p-dropdown [options]="filterStatusOptions" [(ngModel)]="filterStatus" 
+                    (onChange)="applyLogFilters()" placeholder="All Statuses" 
+                    styleClass="p-dropdown-sm" [style]="{minWidth: '150px', height: '36px'}" appendTo="body"></p-dropdown>
+
+        <!-- Date filter -->
+        <p-calendar [(ngModel)]="filterDate" selectionMode="range" [readonlyInput]="true" 
+                    placeholder="Filter Date / Range" [showIcon]="true" [showButtonBar]="true"
+                    (onSelect)="applyLogFilters()" (onClearClick)="applyLogFilters()"
+                    dateFormat="dd/mm/yy" styleClass="p-calendar-sm" [style]="{minWidth: '220px', height: '36px'}" appendTo="body"></p-calendar>
+
+        <button type="button" pButton icon="pi pi-filter-slash" label="Clear Filters" 
+                class="p-button-outlined p-button-secondary p-button-sm" 
+                style="height: 36px; border-radius: 8px;" (click)="clearLogFilters()"></button>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 12.5px; font-weight: 700; color: #64748b; background: #f8fafc; padding: 6px 12px; border-radius: 8px; border: 1px solid #e2e8f0;">
+          Showing {{ filteredLogs.length }} of {{ allLogs.length }} Runs
+        </span>
+        <button type="button" pButton icon="pi pi-sync" class="p-button-rounded p-button-text p-button-sm" 
+                pTooltip="Refresh History" (click)="loadAllLogs()"></button>
+      </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div *ngIf="historyTabLoading" style="padding: 3rem; text-align: center; color: #64748b;">
+      <i class="pi pi-spin pi-spinner" style="font-size: 2rem; color: #3b82f6; margin-bottom: 0.75rem;"></i><br>
+      <span style="font-weight: 700; font-size: 14px;">Loading Execution History Logs...</span>
+    </div>
+
+    <!-- History Datatable -->
+    <p-table *ngIf="!historyTabLoading" [value]="filteredLogs" [paginator]="true" [rows]="15" 
+             [rowsPerPageOptions]="[15, 30, 50, 100]" [showCurrentPageReport]="true"
+             currentPageReportTemplate="Showing {first} to {last} of {totalRecords} execution logs" [showFirstLastIcon]="true"
+             styleClass="p-datatable-striped p-datatable-gridlines p-datatable-sm" responsiveLayout="scroll">
+      
+      <ng-template pTemplate="header">
+        <tr>
+          <th style="width: 170px;" pSortableColumn="runTime">Run Time <p-sortIcon field="runTime"></p-sortIcon></th>
+          <th style="width: 140px;" pSortableColumn="project">Project <p-sortIcon field="project"></p-sortIcon></th>
+          <th style="width: 220px;" pSortableColumn="jobName">Job Name <p-sortIcon field="jobName"></p-sortIcon></th>
+          <th style="width: 110px;" pSortableColumn="status">Status <p-sortIcon field="status"></p-sortIcon></th>
+          <th>Execution Message / Response</th>
+          <th style="width: 80px; text-align: center;">Action</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-log>
+        <tr>
+          <td style="font-size: 12px; font-weight: 600; color: #1e293b;">
+            <i class="pi pi-clock" style="font-size: 11px; margin-right: 4px; color: #64748b;"></i>
+            {{ log.runTime | date:'dd/MM/yyyy HH:mm:ss' }}
+          </td>
+          <td>
+            <span style="display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; color: #ffffff;"
+                  [style.background]="projectAccent(log.project)">
+              {{ log.project }}
+            </span>
+          </td>
+          <td>
+            <div style="font-weight: 700; font-size: 12.5px; color: #0f172a;">{{ log.jobName }}</div>
+            <div style="font-size: 11px; color: #64748b; font-family: monospace;" [title]="log.apiUrl">
+              <span style="color: #2563eb; font-weight: 700;">{{ log.httpMethod }}</span> {{ log.apiUrl | slice:0:45 }}...
+            </div>
+          </td>
+          <td>
+            <span class="pill {{ statusCls(log.status) }}">{{ log.status }}</span>
+          </td>
+          <td style="font-family: monospace; font-size: 11px; color: #334155; word-break: break-all; max-width: 450px;">
+            <span [title]="log.message">{{ log.message | slice:0:150 }}{{ log.message?.length > 150 ? '…' : '' }}</span>
+          </td>
+          <td style="text-align: center;">
+            <button type="button" pButton icon="pi pi-copy" class="p-button-text p-button-sm p-button-secondary p-0" 
+                    style="width: 28px; height: 28px;" pTooltip="Copy Message" (click)="copyLogMessage(log.message)"></button>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="6" style="text-align: center; padding: 3rem; color: #64748b;">
+            <i class="pi pi-inbox" style="font-size: 2rem; color: #cbd5e1; margin-bottom: 0.5rem;"></i>
+            <p style="margin: 0; font-weight: 600;">No execution logs found matching the selected filters.</p>
+          </td>
+        </tr>
+      </ng-template>
+
+    </p-table>
+
+  </div>
+
+  <ng-template #loadingTpl>
+    <div class="sch-loading">
+      <i class="pi pi-spin pi-spinner"></i>
+      <span>Loading scheduler jobs…</span>
+    </div>
+  </ng-template>
+
+</div>
+
+<!-- Create / Edit Dialog -->
+<p-dialog [(visible)]="dialogVisible" [modal]="true" [draggable]="false" [resizable]="false"
+  [style]="{width:'600px'}" [header]="isEditMode ? 'Edit Job' : 'New Scheduler Job'" (onHide)="dialogVisible=false">
+  <div class="dlg-form" *ngIf="dialogVisible">
+
+    <!-- Quick Preset Selection -->
+    <div class="df-field" *ngIf="!isEditMode">
+      <label class="text-blue-600 font-bold"><i class="pi pi-sparkles"></i> Load Project API Preset Template</label>
+      <p-dropdown [options]="presetTemplates" optionLabel="label" optionValue="label" [(ngModel)]="selectedPreset" 
+                  (onChange)="onPresetChange($event.value)" placeholder="Select pre-configured API endpoint..." 
+                  styleClass="w-full" appendTo="body"></p-dropdown>
+    </div>
+
+    <div class="df-row">
+      <div class="df-field">
+        <label>Job Name <span class="req">*</span></label>
+        <input pInputText [(ngModel)]="form.jobName" placeholder="e.g. TELP Application Summary (COUNT)" class="w-full">
+      </div>
+      <div class="df-field">
+        <label>Project</label>
+        <p-dropdown [options]="projectOptions" [(ngModel)]="form.project" styleClass="w-full" appendTo="body"></p-dropdown>
+      </div>
+    </div>
+
+    <div class="df-row">
+      <div class="df-field flex-3">
+        <label>API URL <span class="req">*</span></label>
+        <input pInputText [(ngModel)]="form.apiUrl" placeholder="http://…/api/endpoint" class="w-full">
+      </div>
+      <div class="df-field">
+        <label>Method</label>
+        <p-dropdown [options]="methodOptions" [(ngModel)]="form.httpMethod" styleClass="w-full" appendTo="body"></p-dropdown>
+      </div>
+    </div>
+
+    <div class="df-field">
+      <label>Cron Expression</label>
+      <input pInputText [(ngModel)]="form.cronExpression" placeholder="11 23 * * *" class="w-full">
+      <small class="df-hint"><i class="pi pi-info-circle"></i> {{ cronHuman(form.cronExpression || '') }}  · Format: min hour day month weekday</small>
+    </div>
+
+    <div class="df-field">
+      <label>Payload (JSON)</label>
+      <textarea pInputTextarea [(ngModel)]="form.payload" rows="5" placeholder='{"key": "value"}'
+        class="w-full mono-ta"></textarea>
+      <small class="df-hint">Leave blank for GET or empty body. Accepts standard JSON.</small>
+    </div>
+
+    <div class="df-toggle">
+      <p-inputSwitch [(ngModel)]="form.isActive" inputId="activeSwitch"></p-inputSwitch>
+      <label for="activeSwitch">{{ form.isActive ? 'Active — will run on schedule' : 'Inactive — disabled' }}</label>
+    </div>
+
+  </div>
+  <ng-template pTemplate="footer">
+    <p-button label="Cancel" styleClass="btn-outline" (onClick)="dialogVisible=false"></p-button>
+    <p-button [label]="isEditMode ? 'Save Changes' : 'Create Job'" icon="pi pi-check" styleClass="btn-navy"
+      [loading]="saving" (onClick)="save()"></p-button>
+  </ng-template>
+</p-dialog>
+
+<!-- Single Job History Dialog -->
+<p-dialog [(visible)]="historyVisible" [modal]="true" [draggable]="false" [resizable]="false"
+  [style]="{width:'850px', 'max-height':'85vh'}" header="Job Run History: {{ historyJobName }}" (onHide)="historyVisible=false">
+  
+  <!-- Filter bar for modal -->
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 10px; flex-wrap: wrap;" *ngIf="!historyLoading && historyLogs.length > 0">
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <input type="text" pInputText placeholder="Search log messages..." [(ngModel)]="modalSearch" (input)="applyModalFilter()" 
+             style="height: 32px; font-size: 12px; width: 200px; border-radius: 6px;" />
+      <p-dropdown [options]="filterStatusOptions" [(ngModel)]="modalStatus" (onChange)="applyModalFilter()" 
+                  placeholder="All Statuses" styleClass="p-dropdown-sm" [style]="{minWidth: '130px', height: '32px'}" appendTo="body"></p-dropdown>
+    </div>
+    <span style="font-size: 12px; color: #64748b; font-weight: 600;">
+      {{ filteredModalLogs.length }} recorded executions
+    </span>
+  </div>
+
+  <div *ngIf="historyLoading" class="sch-loading" style="padding: 2rem; text-align: center; color: #64748b;">
+    <i class="pi pi-spin pi-spinner" style="font-size: 2rem; margin-bottom: 1rem; color: #3b82f6;"></i><br>
+    <span>Loading history...</span>
+  </div>
+
+  <p-table *ngIf="!historyLoading" [value]="filteredModalLogs" [scrollable]="true" scrollHeight="420px" 
+           styleClass="p-datatable-sm p-datatable-striped">
+    <ng-template pTemplate="header">
+      <tr>
+        <th style="width:170px">Run Time</th>
+        <th style="width:110px">Status</th>
+        <th>Execution Message</th>
+        <th style="width:60px; text-align: center;">Copy</th>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-log>
+      <tr>
+        <td style="font-size: 12px; font-weight: 600;">{{ log.runTime | date:'dd/MM/yyyy HH:mm:ss' }}</td>
+        <td><span class="pill {{ statusCls(log.status) }}">{{ log.status }}</span></td>
+        <td style="word-break: break-all; font-family: monospace; font-size: 11px;">{{ log.message }}</td>
+        <td style="text-align: center;">
+          <button type="button" pButton icon="pi pi-copy" class="p-button-text p-button-sm p-button-secondary p-0" 
+                  style="width: 24px; height: 24px;" pTooltip="Copy Message" (click)="copyLogMessage(log.message)"></button>
+        </td>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td colspan="4" style="text-align: center; padding: 2rem; color: #64748b;">No logs found for this job.</td>
+      </tr>
+    </ng-template>
+  </p-table>
+
+</p-dialog>
+

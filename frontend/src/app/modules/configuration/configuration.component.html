@@ -1,0 +1,197 @@
+<p-toast></p-toast>
+<p-confirmDialog></p-confirmDialog>
+
+<div class="page-wrap">
+  <!-- Header -->
+  <div class="mod-header shadow-sm">
+    <div class="mod-title-wrap">
+      <div class="mod-icon"><i class="pi pi-map"></i></div>
+      <div>
+        <h1 class="mod-title">Local Body Configuration</h1>
+        <p class="mod-sub">Master Directory of Tamil Nadu Administrative Divisions, Districts &amp; Local Bodies</p>
+      </div>
+    </div>
+    <div class="mod-actions">
+      <input type="file" (change)="onFileChange($event)" accept=".xlsx, .xls" style="display:none" #fileInput>
+      
+      <button class="btn btn-outline-navy mr-2" (click)="confirmClear()" [disabled]="uploading || loading" *ngIf="records.length > 0" pTooltip="Clear All Records" tooltipPosition="bottom">
+        <i class="pi pi-trash mr-1 text-red-500"></i><span>Clear</span>
+      </button>
+
+      <button class="btn btn-outline-navy mr-2" (click)="exportExcel()" [disabled]="records.length === 0" pTooltip="Export Filtered Data to Excel" tooltipPosition="bottom">
+        <i class="pi pi-file-excel mr-1 text-emerald-600"></i><span>Export Excel</span>
+      </button>
+
+      <button class="btn btn-outline-navy mr-2" (click)="fileInput.click()" [disabled]="uploading" pTooltip="Import Spreadsheet (.xlsx, .xls)" tooltipPosition="bottom">
+        <i class="pi" [class.pi-spin]="uploading" [class.pi-spinner]="uploading" [class.pi-upload]="!uploading"></i>
+        <span>{{ uploading ? 'Importing...' : 'Import Excel' }}</span>
+      </button>
+
+      <button class="btn btn-solid-navy" (click)="openNewModal()">
+        <i class="pi pi-plus mr-1"></i><span>Add Record</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Filters Toolbar -->
+  <div class="filter-bar shadow-sm">
+    <div class="fgrp search-grp">
+      <label class="flabel"><i class="pi pi-search mr-1"></i> Search</label>
+      <span class="p-input-icon-left w-full">
+        <i class="pi pi-search"></i>
+        <input pInputText [(ngModel)]="searchTerm" (ngModelChange)="onFilterChange()" placeholder="Search State, District, Local body, Block..." class="search-inp w-full">
+      </span>
+    </div>
+
+    <div class="fgrp">
+      <label class="flabel"><i class="pi pi-compass mr-1"></i> Division</label>
+      <p-dropdown [options]="divisions" [(ngModel)]="selectedDivision" (onChange)="onFilterChange()" placeholder="All Divisions" styleClass="filter-dropdown" appendTo="body"></p-dropdown>
+    </div>
+
+    <div class="fgrp">
+      <label class="flabel"><i class="pi pi-map-marker mr-1"></i> District</label>
+      <p-dropdown [options]="districts" [(ngModel)]="selectedDistrict" (onChange)="onFilterChange()" placeholder="All Districts" styleClass="filter-dropdown" appendTo="body"></p-dropdown>
+    </div>
+
+    <div class="fgrp">
+      <label class="flabel"><i class="pi pi-building mr-1"></i> Local Body Type</label>
+      <p-dropdown [options]="localBodyTypes" [(ngModel)]="selectedType" (onChange)="onFilterChange()" placeholder="All Types" styleClass="filter-dropdown" appendTo="body"></p-dropdown>
+    </div>
+
+    <div class="filter-spacer"></div>
+    <button class="btn-icon-outline" (click)="loadRecords()" pTooltip="Reload Data" tooltipPosition="bottom" aria-label="Reload"><i class="pi pi-refresh" [class.pi-spin]="loading"></i></button>
+  </div>
+
+  <!-- Table -->
+  <div class="sec-card shadow-sm">
+    <div class="sec-hdr">
+      <div class="flex items-center gap-2">
+        <i class="pi pi-list text-primary"></i>
+        <span class="sec-title">Local Body Mapping Data</span>
+      </div>
+      <span class="row-count">{{ filteredRecords.length }} of {{ records.length }} Records</span>
+    </div>
+    
+    <p-table [value]="filteredRecords" [loading]="loading" [paginator]="true" [rows]="rows" [(first)]="first"
+      [totalRecords]="filteredRecords.length" [rowsPerPageOptions]="[10,15,25,50,100]"
+      [rowHover]="true" responsiveLayout="scroll" styleClass="p-datatable-sm p-datatable-striped config-table">
+      <ng-template pTemplate="header">
+        <tr>
+          <th style="width:60px" class="text-center">S.No</th>
+          <th>State</th>
+          <th>Division</th>
+          <th>District</th>
+          <th>Local Body Type</th>
+          <th>Name of Local Body</th>
+          <th>Block</th>
+          <th>Village Panchayat</th>
+          <th>Corporation</th>
+          <th>Town Panchayat</th>
+          <th>Municipality</th>
+          <th>GCC</th>
+          <th>CMWSSB</th>
+          <th style="width:100px" class="text-center">Actions</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-r let-i="rowIndex">
+        <tr>
+          <td class="text-center text-muted font-monospace">{{ r.sno || (first + i + 1) }}</td>
+          <td>{{ r.state }}</td>
+          <td><span class="badge-pill bg-slate-100 text-slate-700">{{ r.division }}</span></td>
+          <td class="fw-600 text-slate-900">{{ r.district }}</td>
+          <td><span class="lb-type-badge">{{ r.localBody }}</span></td>
+          <td class="font-medium text-slate-800">{{ r.localBodyName }}</td>
+          <td>{{ r.block }}</td>
+          <td>{{ r.villagePanchayat }}</td>
+          <td>{{ r.corporation }}</td>
+          <td>{{ r.townPanchayat }}</td>
+          <td>{{ r.municipality }}</td>
+          <td>{{ r.gcc }}</td>
+          <td>{{ r.cmwssb }}</td>
+          <td class="text-center">
+            <button class="action-btn edit-btn" (click)="openEditModal(r)" pTooltip="Edit Record" tooltipPosition="top">
+              <i class="pi pi-pencil"></i>
+            </button>
+            <button class="action-btn del-btn" (click)="deleteRecord(r)" pTooltip="Delete Record" tooltipPosition="top">
+              <i class="pi pi-trash"></i>
+            </button>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="14" class="empty-state">
+            <i class="pi pi-file-excel text-4xl text-slate-400 mb-2"></i>
+            <p class="font-semibold text-slate-700">No matching mapping records found.</p>
+            <p class="text-xs text-slate-500">Click <strong>Import Excel</strong> to upload mapping data or <strong>Add Record</strong> to create manually.</p>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>
+
+<!-- ══ ADD / EDIT MODAL DIALOG ══════════════════════════════════════════ -->
+<p-dialog [(visible)]="displayModal" [modal]="true" [header]="isEditing ? 'Edit Local Body Record' : 'Add New Local Body Record'" [style]="{width: '90vw', maxWidth: '650px'}" appendTo="body" styleClass="p-fluid config-modal">
+  <div class="grid p-fluid form-grid p-2">
+    <div class="col-12 md:col-6 field mb-3">
+      <label class="form-lbl">State *</label>
+      <input type="text" pInputText [(ngModel)]="currentRecord.state" placeholder="e.g. Tamil Nadu" class="p-inputtext-sm">
+    </div>
+
+    <div class="col-12 md:col-6 field mb-3">
+      <label class="form-lbl">Division *</label>
+      <p-dropdown [options]="divisions.slice(1)" [(ngModel)]="currentRecord.division" placeholder="Select Division" appendTo="body"></p-dropdown>
+    </div>
+
+    <div class="col-12 md:col-6 field mb-3">
+      <label class="form-lbl">District *</label>
+      <p-dropdown [options]="districts.slice(1)" [(ngModel)]="currentRecord.district" (onChange)="onDistrictSelectedInModal($event.value)" placeholder="Select District" appendTo="body"></p-dropdown>
+    </div>
+
+    <div class="col-12 md:col-6 field mb-3">
+      <label class="form-lbl">Local Body Type *</label>
+      <p-dropdown [options]="localBodyTypes.slice(1)" [(ngModel)]="currentRecord.localBody" placeholder="Select Type" appendTo="body"></p-dropdown>
+    </div>
+
+    <div class="col-12 field mb-3">
+      <label class="form-lbl">Name of Local Body *</label>
+      <input type="text" pInputText [(ngModel)]="currentRecord.localBodyName" placeholder="e.g. Greater Chennai Corporation" class="p-inputtext-sm font-semibold">
+    </div>
+
+    <div class="col-12 md:col-6 field mb-3">
+      <label class="form-lbl">Block / Taluk</label>
+      <input type="text" pInputText [(ngModel)]="currentRecord.block" placeholder="e.g. Poonamallee" class="p-inputtext-sm">
+    </div>
+
+    <div class="col-12 md:col-6 field mb-3">
+      <label class="form-lbl">Village Panchayat</label>
+      <input type="text" pInputText [(ngModel)]="currentRecord.villagePanchayat" placeholder="e.g. -" class="p-inputtext-sm">
+    </div>
+
+    <div class="col-12 md:col-6 field mb-3">
+      <label class="form-lbl">Corporation</label>
+      <input type="text" pInputText [(ngModel)]="currentRecord.corporation" placeholder="e.g. GCC / -" class="p-inputtext-sm">
+    </div>
+
+    <div class="col-12 md:col-6 field mb-3">
+      <label class="form-lbl">Municipality</label>
+      <input type="text" pInputText [(ngModel)]="currentRecord.municipality" placeholder="e.g. Avadi / -" class="p-inputtext-sm">
+    </div>
+
+    <div class="col-12 md:col-6 field mb-3">
+      <label class="form-lbl">GCC Applicable</label>
+      <input type="text" pInputText [(ngModel)]="currentRecord.gcc" placeholder="e.g. Yes / -" class="p-inputtext-sm">
+    </div>
+
+    <div class="col-12 md:col-6 field mb-3">
+      <label class="form-lbl">CMWSSB Applicable</label>
+      <input type="text" pInputText [(ngModel)]="currentRecord.cmwssb" placeholder="e.g. Yes / -" class="p-inputtext-sm">
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <button class="btn btn-outline-navy" (click)="displayModal = false">Cancel</button>
+    <button class="btn btn-solid-navy" (click)="saveRecord()"><i class="pi pi-check mr-1"></i>Save Record</button>
+  </ng-template>
+</p-dialog>

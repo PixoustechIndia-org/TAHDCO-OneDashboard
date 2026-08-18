@@ -1,0 +1,71 @@
+// Tender Management (TIPS + TIME) styles
+.page-wrap { padding: 18px; }
+
+.mod-header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  margin-bottom: 14px; flex-wrap: wrap; gap: 12px;
+}
+.mod-title-wrap { display: flex; align-items: center; gap: 12px; }
+.mod-icon {
+  width: 44px; height: 44px; background: var(--navy); border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  i { color: var(--gold); font-size: 20px; }
+}
+.mod-title { font-size: 17px; font-weight: 700; color: var(--navy); margin: 0 0 3px; }
+.mod-sub   { font-size: 11px; color: var(--gray-400); margin: 0; }
+.mod-actions { display: flex; gap: 8px; }
+
+.filter-bar {
+  background: #fff; border: 0.5px solid var(--gray-200); border-radius: 10px;
+  padding: 12px 14px; margin-bottom: 14px;
+  display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap;
+}
+.fgrp {
+  display: flex; flex-direction: column; gap: 4px;
+  label { font-size: 10px; font-weight: 700; color: var(--gray-600); }
+  .flt-drop { font-size: 12px; }
+}
+.search-grp .search-inp { font-size: 12px; width: 180px; padding-left: 28px; }
+.filter-spacer { flex: 1; }
+
+::ng-deep .mod-table {
+  .info-btn { color: var(--navy) !important; &:hover { color: var(--gold) !important; } }
+}
+
+.row-count {
+  margin-left: auto; padding: 2px 9px; background: var(--navy-soft);
+  color: var(--navy); border-radius: 10px; font-size: 10px; font-weight: 700;
+}
+
+.empty-state {
+  text-align: center; padding: 40px !important; color: var(--gray-400);
+  i { font-size: 32px; display: block; margin-bottom: 8px; }
+  p { margin: 0; font-weight: 500; }
+}
+
+.no-chart {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  height: 100%; color: var(--gray-300);
+  i { font-size: 40px; margin-bottom: 8px; }
+  p { font-size: 12px; }
+}
+
+.dlg-body { padding: 0 4px; }
+.dlg-info {
+  margin-top: 14px;
+  .di-row { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 0.5px solid var(--gray-100); font-size: 12px; &:last-child { border-bottom: none; } }
+  .di-label { color: var(--gray-500); text-transform: capitalize; }
+  .di-val   { font-weight: 600; color: var(--gray-800); }
+}
+
+// THMS analytics grid
+.chart-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.lm-strip {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 14px 12px; flex-wrap: wrap;
+}

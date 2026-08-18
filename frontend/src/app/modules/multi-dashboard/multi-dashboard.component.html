@@ -1,0 +1,143 @@
+<div class="page-wrap">
+
+  <div class="mod-header">
+    <div class="mod-title-wrap">
+      <div class="mod-icon"><i class="pi pi-th-large"></i></div>
+      <div>
+        <p class="mod-title">Multi-Module Dashboard</p>
+        <p class="mod-sub">Live COUNT / DETAIL drill-down across all 7 integrated project APIs</p>
+      </div>
+    </div>
+    <div class="mod-actions">
+      <button pButton type="button" icon="pi pi-refresh" label="Refresh counts" class="p-button-outlined p-button-sm" (click)="refreshCounts()"></button>
+    </div>
+  </div>
+
+  <!-- Module tabs -->
+  <div class="module-tabs">
+    <button *ngFor="let m of visibleModules"
+            class="module-tab" [class.active]="m.key === selected.key"
+            (click)="selectModule(m)">
+      <i class="pi" [ngClass]="m.icon"></i>
+      <span>{{ m.code }}</span>
+    </button>
+  </div>
+
+  <!-- Filter bar -->
+  <div class="filter-bar">
+    <div class="fgrp">
+      <label>District</label>
+      <input pInputText class="flt-inp" [(ngModel)]="filters.district" placeholder="e.g. Chennai" (keyup.enter)="loadCounts()" />
+    </div>
+    <div class="fgrp">
+      <label>Division</label>
+      <input pInputText class="flt-inp" [(ngModel)]="filters.division" placeholder="e.g. Chennai Division" (keyup.enter)="loadCounts()" />
+    </div>
+    <div class="fgrp">
+      <label>Year</label>
+      <input pInputText class="flt-inp" style="width:90px" [(ngModel)]="filters.year" (keyup.enter)="loadCounts()" />
+    </div>
+    <button pButton type="button" label="Apply" icon="pi pi-search" class="p-button-sm" (click)="loadCounts()"></button>
+    <div class="filter-spacer"></div>
+    <p-tag *ngIf="countResult" [severity]="statusSeverity(countResult.cacheStatus)"
+           [value]="countResult.cacheStatus + (countResult.source ? ' · ' + countResult.source : '')"></p-tag>
+  </div>
+
+  <!-- Count-not-fresh banner — never hidden silently -->
+  <div class="status-banner" *ngIf="countResult?.message" [class.warn]="countResult?.stale" [class.bad]="countResult?.unavailable">
+    <i class="pi" [ngClass]="countResult?.unavailable ? 'pi-exclamation-triangle' : 'pi-info-circle'"></i>
+    <span>{{ countResult?.message }}</span>
+    <span class="ts" *ngIf="countResult?.lastSuccessfulFetch">Last confirmed: {{ fmtDate(countResult?.lastSuccessfulFetch) }}</span>
+  </div>
+
+  <!-- COUNT table -->
+  <div class="sec-card">
+    <div class="sec-hdr">
+      <span>{{ selected.label }} — Counts</span>
+      <span class="row-count" *ngIf="countResult?.data as rows">{{ rows.length }} row(s)</span>
+    </div>
+
+    <p-table [value]="countResult?.data || []" [loading]="countLoading" styleClass="mod-table" responsiveLayout="scroll">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>District</th>
+          <th>Division</th>
+          <th>Metric</th>
+          <th class="text-right">Value</th>
+          <th>Source</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-row>
+        <tr class="row-clickable" (click)="toggleRowDetail(row)" [class.row-active]="rowKey(row) === expandedRowKey">
+          <td>{{ row.district || '—' }}</td>
+          <td>{{ row.division || '—' }}</td>
+          <td>{{ row.metric }}</td>
+          <td class="text-right"><span class="val-link">{{ row.value | number }}</span></td>
+          <td><p-tag [severity]="row.source === 'API' ? 'success' : 'info'" [value]="row.source"></p-tag></td>
+        </tr>
+        <tr *ngIf="rowKey(row) === expandedRowKey" class="expanded-detail-row">
+          <td colspan="5">
+            <div class="inline-detail-card">
+
+              <div class="detail-hdr">
+                <span class="detail-title">
+                  <i class="pi pi-list"></i>
+                  Detail — {{ row.district || 'All districts' }} / {{ row.metric }}
+                </span>
+                <div class="detail-actions">
+                  <p-tag *ngIf="detailResult" [severity]="statusSeverity(detailResult.cacheStatus)"
+                         [value]="detailResult.cacheStatus + (detailResult.source ? ' · ' + detailResult.source : '')"></p-tag>
+                  <button pButton type="button" icon="pi pi-refresh" class="p-button-text p-button-sm" pTooltip="Refresh from live API" (click)="refreshActiveDetail()"></button>
+                </div>
+              </div>
+
+              <div class="status-banner" *ngIf="detailResult?.message" [class.warn]="detailResult?.stale" [class.bad]="detailResult?.unavailable">
+                <i class="pi" [ngClass]="detailResult?.unavailable ? 'pi-exclamation-triangle' : 'pi-info-circle'"></i>
+                <span>{{ detailResult?.message }}</span>
+                <span class="ts" *ngIf="detailResult?.lastSuccessfulFetch">Last confirmed: {{ fmtDate(detailResult?.lastSuccessfulFetch) }}</span>
+              </div>
+
+              <div class="detail-loading" *ngIf="detailLoading">
+                <p-progressSpinner strokeWidth="4" [style]="{width:'24px', height:'24px'}"></p-progressSpinner>
+                <span>Loading detail…</span>
+              </div>
+
+              <p-table *ngIf="!detailLoading && detailResult?.data?.length" [value]="detailResult?.data || []" styleClass="detail-table" responsiveLayout="scroll">
+                <ng-template pTemplate="header">
+                  <tr>
+                    <th *ngFor="let c of detailColumns">{{ c }}</th>
+                    <th>Status</th>
+                  </tr>
+                </ng-template>
+                <ng-template pTemplate="body" let-rec>
+                  <tr>
+                    <td *ngFor="let c of detailColumns">{{ rec.data?.[c] ?? '—' }}</td>
+                    <td>
+                      <p-tag *ngIf="rec.stale" severity="warning" value="STALE"></p-tag>
+                      <p-tag *ngIf="!rec.stale" severity="success" value="live"></p-tag>
+                    </td>
+                  </tr>
+                </ng-template>
+              </p-table>
+
+              <div class="empty-state" *ngIf="!detailLoading && detailResult && !detailResult.data?.length">
+                <i class="pi pi-inbox"></i>
+                <p>{{ detailResult.unavailable ? 'No data available for this selection right now.' : 'No records found.' }}</p>
+              </div>
+
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="5" class="empty-state">
+            <i class="pi pi-inbox"></i>
+            <p>{{ countResult?.unavailable ? 'Counts are currently unavailable for this module.' : 'No count data for the current filters.' }}</p>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+
+</div>

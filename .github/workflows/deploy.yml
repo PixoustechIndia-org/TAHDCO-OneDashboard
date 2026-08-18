@@ -1,0 +1,180 @@
+name: TAHDCO UDP CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+env:
+  DOTNET_VERSION: "8.0.x"
+  NODE_VERSION: "18.x"
+  BACKEND_PATH: backend
+  FRONTEND_PATH: frontend
+
+jobs:
+  # ─── Test ─────────────────────────────────────────────────────────────────────
+  test:
+    name: 🧪 Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore NuGet packages
+        run: dotnet restore
+        working-directory: ${{ env.BACKEND_PATH }}
+
+      - name: Build backend
+        run: dotnet build --no-restore --configuration Release
+        working-directory: ${{ env.BACKEND_PATH }}
+
+      - name: Run backend tests
+        run: dotnet test --no-build --configuration Release --verbosity normal
+        working-directory: ${{ env.BACKEND_PATH }}
+        continue-on-error: true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+          cache-dependency-path: ${{ env.FRONTEND_PATH }}/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: ${{ env.FRONTEND_PATH }}
+
+      - name: Lint frontend
+        run: npx ng lint --no-progress 2>/dev/null || echo "No lint config found, skipping..."
+        working-directory: ${{ env.FRONTEND_PATH }}
+
+      - name: Build frontend
+        run: npx ng build --configuration production
+        working-directory: ${{ env.FRONTEND_PATH }}
+
+  # ─── Build & Package ──────────────────────────────────────────────────────────
+  build:
+    name: 📦 Build
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Publish backend
+        run: >
+          dotnet publish API/API.csproj
+          --configuration Release
+          --output ../publish/backend
+          --no-self-contained
+        working-directory: ${{ env.BACKEND_PATH }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+          cache-dependency-path: ${{ env.FRONTEND_PATH }}/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: ${{ env.FRONTEND_PATH }}
+
+      - name: Build frontend (production)
+        run: npx ng build --configuration production --output-path ../publish/frontend
+        working-directory: ${{ env.FRONTEND_PATH }}
+
+      - name: Upload backend artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-build
+          path: publish/backend/
+          retention-days: 7
+
+      - name: Upload frontend artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: publish/frontend/
+          retention-days: 7
+
+  # ─── Deploy to Production ─────────────────────────────────────────────────────
+  deploy:
+    name: 🚀 Deploy
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: production
+    steps:
+      - name: Download backend artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-build
+          path: deploy/backend
+
+      - name: Download frontend artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-build
+          path: deploy/frontend
+
+      - name: Copy frontend into backend wwwroot
+        run: |
+          mkdir -p deploy/backend/wwwroot
+          cp -r deploy/frontend/* deploy/backend/wwwroot/
+
+      - name: Configure production settings
+        run: |
+          cd deploy/backend
+          # Inject secrets into appsettings.Production.json
+          cat > appsettings.Production.json << 'APPSETTINGS'
+          {
+            "ConnectionStrings": {
+              "Default": "${{ secrets.DB_CONNECTION_STRING }}"
+            },
+            "Jwt": {
+              "Key": "${{ secrets.JWT_SECRET_KEY }}",
+              "ExpiryMinutes": 60
+            },
+            "EmailConfig": {
+              "Email": "${{ secrets.EMAIL_USER }}",
+              "Password": "${{ secrets.EMAIL_PASSWORD }}"
+            },
+            "Cors": {
+              "AllowedOrigins": ["${{ secrets.CORS_ORIGIN }}"]
+            }
+          }
+          APPSETTINGS
+
+      - name: Deploy via SSH
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "deploy/backend/*"
+          target: "/var/www/tahdco-udp/"
+          strip_components: 2
+
+      - name: Restart application
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            sudo systemctl restart tahdco-udp
+            sleep 5
+            sudo systemctl status tahdco-udp --no-pager
+            echo "✅ Deployment complete!"

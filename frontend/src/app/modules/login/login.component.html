@@ -1,0 +1,78 @@
+<p-toast></p-toast>
+<div class="login">
+  <video #bgVideo autoplay loop muted [muted]="true" playsinline class="bg-video">
+    <source src="assets/videos/Tudp.mp4" type="video/mp4">
+  </video>
+  <div class="video-overlay"></div>
+
+  <!-- ── Brand / story panel ────────────────────────────────────── -->
+  <section class="brand-panel">
+    <div class="bp-grid" aria-hidden="true"></div>
+    <div class="bp-glow" aria-hidden="true"></div>
+
+    <div class="bp-top">
+      <div class="bp-logo"><i class="pi pi-building"></i></div>
+      <div>
+        <h1>TAHDCO</h1>
+        <p>Tamil Nadu Adi Dravidar Housing &amp; Development Corporation</p>
+      </div>
+    </div>
+
+    <div class="bp-mid">
+      <span class="bp-eyebrow">Unified Dashboard Portal</span>
+      <h2>One sign-in for<br>every application.</h2>
+      <p class="bp-lede">Monitor tenders, housing, schemes, enrollment, diaries and CCTV — role-based, real-time, in one place.</p>
+
+      <div class="bp-modules">
+        <span class="mod" *ngFor="let a of ['TIPS','THMS','TAMS','Scheme','TELP','One Portal','TOD','TIME','Patrol 360']">{{ a }}</span>
+      </div>
+    </div>
+
+    <div class="bp-foot">
+      <span class="dotline"><i class="pi pi-lock"></i> Secure government access</span>
+      <span>© 2026 TAHDCO · Pixous Technologies</span>
+    </div>
+  </section>
+
+  <!-- ── Sign-in form ───────────────────────────────────────────── -->
+  <section class="form-panel">
+    <div class="card">
+      <div class="card-head">
+        <div class="ch-logo"><i class="pi pi-building"></i></div>
+        <h2>Sign in</h2>
+        <p>Welcome back. Use your TAHDCO portal credentials.</p>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <div class="field">
+          <label for="email">Email address</label>
+          <div class="input-wrap" [class.invalid]="f['email'].invalid && f['email'].touched">
+            <i class="pi pi-envelope"></i>
+            <input id="email" formControlName="email" type="email" placeholder="you@tahdco.in" autocomplete="username">
+          </div>
+          <small class="err" *ngIf="f['email'].invalid && f['email'].touched">
+            {{ f['email'].errors?.['required'] ? 'Enter your email address' : 'Enter a valid email address' }}
+          </small>
+        </div>
+
+        <div class="field">
+          <label for="pwd">Password</label>
+          <div class="input-wrap" [class.invalid]="f['password'].invalid && f['password'].touched">
+            <i class="pi pi-lock"></i>
+            <input id="pwd" formControlName="password" [type]="showPwd ? 'text' : 'password'" placeholder="Enter password" autocomplete="current-password">
+            <button type="button" class="eye" (click)="showPwd=!showPwd" [attr.aria-label]="showPwd ? 'Hide password' : 'Show password'">
+              <i class="pi" [class.pi-eye]="!showPwd" [class.pi-eye-slash]="showPwd"></i>
+            </button>
+          </div>
+          <small class="err" *ngIf="f['password'].invalid && f['password'].touched">Password must be at least 6 characters</small>
+        </div>
+
+        <button type="submit" class="btn btn-solid-navy btn-lg btn-block" [class.is-loading]="loading" [disabled]="loading">
+          <span>Sign in</span><i class="pi pi-sign-in"></i>
+        </button>
+      </form>
+
+
+    </div>
+  </section>
+</div>

@@ -1,0 +1,11 @@
+## Visual Studio / .NET
+.vs/
+bin/
+obj/
+*.user
+*.suo
+[Dd]ebug/
+[Rr]elease/
+publish/
+appsettings.Development.json
+*.log

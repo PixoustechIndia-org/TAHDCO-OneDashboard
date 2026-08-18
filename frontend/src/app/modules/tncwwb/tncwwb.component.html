@@ -1,0 +1,247 @@
+<p-toast></p-toast>
+
+<div class="tncwwb-page">
+  <!-- ── HEADER BAR ────────────────────────────────────────────────────────── -->
+  <header class="tncwwb-header">
+    <div class="header-brand">
+      <div class="tncwwb-badge">TNCWWB</div>
+      <div>
+        <h1 class="header-title">TNCWWB — Construction Workers Welfare Board</h1>
+        <p class="header-sub">Official Member Registration & Welfare Scheme Assistance Dashboard</p>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <button class="export-btn" (click)="exportReport()">
+        <i class="pi pi-download"></i> Export TNCWWB Data
+      </button>
+    </div>
+  </header>
+
+  <!-- ── PRIMARY CONTROL FILTER BAR ────────────────────────────────────────── -->
+  <div class="filter-card">
+    <!-- Category Selector (Member / Scheme) -->
+    <div class="category-toggle">
+      <button class="cat-btn" [class.active]="activeCategory === 'member'" (click)="setCategory('member')">
+        <i class="pi pi-id-card"></i> Member Registration
+      </button>
+      <button class="cat-btn" [class.active]="activeCategory === 'scheme'" (click)="setCategory('scheme')">
+        <i class="pi pi-wallet"></i> Welfare Schemes
+      </button>
+    </div>
+
+    <!-- View Mode Selector (COUNT / LIST) -->
+    <div class="mode-toggle">
+      <button class="mode-btn" [class.active]="viewMode === 'count'" (click)="setViewMode('count')" pTooltip="Summary Count Mode" tooltipPosition="bottom">
+        <i class="pi pi-chart-pie"></i> COUNT
+      </button>
+      <button class="mode-btn" [class.active]="viewMode === 'list'" (click)="setViewMode('list')" pTooltip="Detailed List Mode" tooltipPosition="bottom">
+        <i class="pi pi-list"></i> LIST
+      </button>
+    </div>
+
+    <!-- Filters -->
+    <div class="filter-controls">
+      <div class="filter-item">
+        <label>Year</label>
+        <p-dropdown [options]="fyOptions" [(ngModel)]="selectedFY" (onChange)="onFilterChange()"></p-dropdown>
+      </div>
+
+      <div class="filter-item">
+        <label>Division</label>
+        <p-dropdown [options]="divisionOptions" [(ngModel)]="selectedDivision" (onChange)="onFilterChange()"></p-dropdown>
+      </div>
+
+      <div class="filter-item">
+        <label>District</label>
+        <p-dropdown [options]="districtOptions" [(ngModel)]="selectedDistrict" (onChange)="onFilterChange()"></p-dropdown>
+      </div>
+
+      <div class="filter-item">
+        <label>Status</label>
+        <p-dropdown [options]="statusOptions" [(ngModel)]="selectedStatus" (onChange)="onFilterChange()"></p-dropdown>
+      </div>
+
+      <div class="filter-item search-item">
+        <label>Search</label>
+        <div class="search-wrap">
+          <i class="pi pi-search"></i>
+          <input type="text" [(ngModel)]="searchTerm" (input)="onFilterChange()" placeholder="Search name, ID, trade…">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── COUNT MODE DASHBOARD ──────────────────────────────────────────────── -->
+  <div class="tncwwb-body" *ngIf="viewMode === 'count'">
+    <!-- MEMBER COUNT VIEW -->
+    <div class="kpi-grid" *ngIf="activeCategory === 'member'">
+      <div class="kpi-card navy">
+        <div class="kpi-ico"><i class="pi pi-users"></i></div>
+        <div class="kpi-meta">
+          <span class="kpi-val">{{ fmt(memberStats.totalMembers) }}</span>
+          <span class="kpi-lbl">Total Registered Members</span>
+        </div>
+      </div>
+
+      <div class="kpi-card success">
+        <div class="kpi-ico"><i class="pi pi-id-card"></i></div>
+        <div class="kpi-meta">
+          <span class="kpi-val">{{ fmt(memberStats.cardIssued) }}</span>
+          <span class="kpi-lbl">Identity Cards Issued</span>
+        </div>
+      </div>
+
+      <div class="kpi-card warning">
+        <div class="kpi-ico"><i class="pi pi-hourglass"></i></div>
+        <div class="kpi-meta">
+          <span class="kpi-val">{{ fmt(memberStats.dmPending) }}</span>
+          <span class="kpi-lbl">DM Verification Pending</span>
+        </div>
+      </div>
+
+      <div class="kpi-card info">
+        <div class="kpi-ico"><i class="pi pi-clock"></i></div>
+        <div class="kpi-meta">
+          <span class="kpi-val">{{ fmt(memberStats.hqPending) }}</span>
+          <span class="kpi-lbl">HQ Approval Pending</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCHEME COUNT VIEW -->
+    <div class="kpi-grid" *ngIf="activeCategory === 'scheme'">
+      <div class="kpi-card navy">
+        <div class="kpi-ico"><i class="pi pi-file"></i></div>
+        <div class="kpi-meta">
+          <span class="kpi-val">{{ fmt(schemeStats.totalApply) }}</span>
+          <span class="kpi-lbl">Total Scheme Applications</span>
+        </div>
+      </div>
+
+      <div class="kpi-card success">
+        <div class="kpi-ico"><i class="pi pi-check-circle"></i></div>
+        <div class="kpi-meta">
+          <span class="kpi-val">{{ fmt(schemeStats.approved) }}</span>
+          <span class="kpi-lbl">Approved Claims</span>
+        </div>
+      </div>
+
+      <div class="kpi-card gold">
+        <div class="kpi-ico"><i class="pi pi-wallet"></i></div>
+        <div class="kpi-meta">
+          <span class="kpi-val">{{ fmtL(schemeStats.totalDisbursedAmount) }}</span>
+          <span class="kpi-lbl">Total Financial Assistance</span>
+        </div>
+      </div>
+
+      <div class="kpi-card danger">
+        <div class="kpi-ico"><i class="pi pi-credit-card"></i></div>
+        <div class="kpi-meta">
+          <span class="kpi-val">{{ fmt(schemeStats.paymentPending) }}</span>
+          <span class="kpi-lbl">Payment Pending Vouchers</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Insights Card -->
+    <div class="insight-card">
+      <div class="ins-head">
+        <i class="pi pi-verified"></i>
+        <h3>TNCWWB Welfare Executive Insights</h3>
+      </div>
+      <p *ngIf="activeCategory === 'member'">
+        Out of <strong>{{ fmt(memberStats.totalMembers) }}</strong> registered construction workers in Year {{ selectedFY }}, <strong>{{ fmt(memberStats.cardIssued) }}</strong> identity cards have been issued with an active verification rate of <strong>90.8%</strong>.
+      </p>
+      <p *ngIf="activeCategory === 'scheme'">
+        Total financial grant disbursed under TNCWWB schemes stands at <strong>{{ fmtL(schemeStats.totalDisbursedAmount) }}</strong> across <strong>{{ fmt(schemeStats.approved) }}</strong> approved claims.
+      </p>
+    </div>
+  </div>
+
+  <!-- ── LIST MODE DATATABLE ───────────────────────────────────────────────── -->
+  <div class="tncwwb-body" *ngIf="viewMode === 'list'">
+    <!-- MEMBER LIST TABLE -->
+    <div class="table-card" *ngIf="activeCategory === 'member'">
+      <div class="table-head">
+        <h3><i class="pi pi-users"></i> Registered Construction Worker Members ({{ filteredMemberList.length }} records)</h3>
+      </div>
+
+      <p-table [value]="filteredMemberList" [paginator]="true" [rows]="rows" [first]="first" styleClass="p-datatable-striped">
+        <ng-template pTemplate="header">
+          <tr>
+            <th>#</th>
+            <th>Member ID</th>
+            <th>Worker Name</th>
+            <th>District</th>
+            <th>Trade / Skill</th>
+            <th>Gender</th>
+            <th>Reg. Date</th>
+            <th>Status</th>
+            <th>Card Issued</th>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-item let-i="rowIndex">
+          <tr>
+            <td>{{ i + 1 }}</td>
+            <td><strong class="id-tag">{{ item.id }}</strong></td>
+            <td>{{ item.name }}</td>
+            <td>{{ item.district }}</td>
+            <td>{{ item.trade }}</td>
+            <td>{{ item.gender }}</td>
+            <td>{{ item.regDate }}</td>
+            <td>
+              <span class="status-pill" [class.ok]="item.status==='Approved'" [class.warn]="item.status.includes('Pending')">
+                {{ item.status }}
+              </span>
+            </td>
+            <td>
+              <i class="pi" [class.pi-check-circle]="item.cardIssued" [class.pi-clock]="!item.cardIssued" [style.color]="item.cardIssued ? '#166534' : '#92400e'"></i>
+              <span class="card-tag">{{ item.cardIssued ? 'Issued' : 'Pending' }}</span>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+
+    <!-- SCHEME LIST TABLE -->
+    <div class="table-card" *ngIf="activeCategory === 'scheme'">
+      <div class="table-head">
+        <h3><i class="pi pi-wallet"></i> TNCWWB Scheme Assistance Claims ({{ filteredSchemeList.length }} records)</h3>
+      </div>
+
+      <p-table [value]="filteredSchemeList" [paginator]="true" [rows]="rows" [first]="first" styleClass="p-datatable-striped">
+        <ng-template pTemplate="header">
+          <tr>
+            <th>#</th>
+            <th>Claim Ref</th>
+            <th>Beneficiary Name</th>
+            <th>District</th>
+            <th>Scheme Category</th>
+            <th>Amount</th>
+            <th>App. Date</th>
+            <th>Status</th>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-item let-i="rowIndex">
+          <tr>
+            <td>{{ i + 1 }}</td>
+            <td><strong class="id-tag">{{ item.claimNo }}</strong></td>
+            <td>{{ item.memberName }}</td>
+            <td>{{ item.district }}</td>
+            <td>{{ item.schemeName }}</td>
+            <td><strong>₹{{ fmt(item.amount) }}</strong></td>
+            <td>{{ item.appDate }}</td>
+            <td>
+              <span class="status-pill" [class.ok]="item.status==='Approved'" [class.warn]="item.status.includes('Pending')" [class.bad]="item.status==='Payment Pending'">
+                {{ item.status }}
+              </span>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  </div>
+</div>

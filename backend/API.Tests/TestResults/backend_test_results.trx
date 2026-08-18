@@ -1,0 +1,238 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="f97b0d17-ebbe-4448-98bf-ca76fd3bf210" name="logup@LOGUROCKY 2026-08-13 17:39:55" runUser="LOGUROCKY\logup" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-08-13T17:39:56.0068638+05:30" queuing="2026-08-13T17:39:56.0068647+05:30" start="2026-08-13T17:39:51.0497599+05:30" finish="2026-08-13T17:39:56.1716707+05:30" />
+  <TestSettings name="default" id="9017318c-6d4b-4398-bf4c-b0662b2ba067">
+    <Deployment runDeploymentRoot="logup_LOGUROCKY_2026-08-13_17_39_55" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="4539afbc-6048-4466-b7a0-9d50da850415" testId="4459e048-c4e5-04f1-0e80-07aad350a6d4" testName="API.Tests.AuthServiceTests.LoginAsync_WrongPassword_ReturnsNull" computerName="LOGUROCKY" duration="00:00:00.0011319" startTime="2026-08-13T17:39:56.0904450+05:30" endTime="2026-08-13T17:39:56.0904453+05:30" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="4539afbc-6048-4466-b7a0-9d50da850415" />
+    <UnitTestResult executionId="eaceb1c4-e38b-4aef-a38e-b9bf56c99d9e" testId="02eb545b-99ce-1d69-14db-1b2cddbffe1e" testName="API.Tests.DetailCacheServiceTests.Test10_GetDataSource_ReturnsExpectedLabel(rowState: null, expected: &quot;NONE&quot;)" computerName="LOGUROCKY" duration="00:00:00.0023685" startTime="2026-08-13T17:39:56.1059382+05:30" endTime="2026-08-13T17:39:56.1059386+05:30" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="eaceb1c4-e38b-4aef-a38e-b9bf56c99d9e" />
+    <UnitTestResult executionId="cbce28c2-6ff7-4c9c-af8b-af1eb36f7df3" testId="dc4ca2b0-f92b-44e7-fc40-ec039ab9eec7" testName="API.Tests.DetailCacheServiceTests.Test04_NoCache_ApiFailure_ReturnsUnavailable_NeverThrows_NeverWritesSuccessData" computerName="LOGUROCKY" duration="00:00:00.0080594" startTime="2026-08-13T17:39:56.0911543+05:30" endTime="2026-08-13T17:39:56.0911545+05:30" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="cbce28c2-6ff7-4c9c-af8b-af1eb36f7df3" />
+    <UnitTestResult executionId="dbe0e590-0190-40a2-b018-6fd5d4f4d085" testId="8cca7ed5-8a25-a246-6a5e-f61619178a6d" testName="API.Tests.UnifiedIngestionServiceTests.SyncAllProjectApisAsync_CompletesSuccessfully_And_ReturnsResult" computerName="LOGUROCKY" duration="00:00:00.0520148" startTime="2026-08-13T17:39:56.0187516+05:30" endTime="2026-08-13T17:39:56.0187517+05:30" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="dbe0e590-0190-40a2-b018-6fd5d4f4d085" />
+    <UnitTestResult executionId="c57c7b83-287a-42f3-9b1a-6e6b5c6c0749" testId="9bb42f77-b0bf-cc26-1508-b3f09a4a7271" testName="API.Tests.DetailCacheServiceTests.Test03_NoCache_ApiSuccess_StoresAndReturnsFreshData" computerName="LOGUROCKY" duration="00:00:00.0030527" startTime="2026-08-13T17:39:56.1131463+05:30" endTime="2026-08-13T17:39:56.1131464+05:30" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="c57c7b83-287a-42f3-9b1a-6e6b5c6c0749" />
+    <UnitTestResult executionId="da9b13c5-ab78-4d04-82b3-2583030e47f0" testId="61a7afa6-0b86-c93d-976d-2ac91ad024ea" testName="API.Tests.DetailCacheServiceTests.Test05_ManualRefresh_Success_StoresNewData" computerName="LOGUROCKY" duration="00:00:00.0062425" startTime="2026-08-13T17:39:56.0993592+05:30" endTime="2026-08-13T17:39:56.0993593+05:30" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="da9b13c5-ab78-4d04-82b3-2583030e47f0" />
+    <UnitTestResult executionId="54558d72-9f04-4d35-8226-caa1610f56d8" testId="f42c16e9-a360-bed5-ec29-148dba6b3d31" testName="API.Tests.IngestionControllerTests.TriggerSync_ReturnsOkResult_WithSyncResult" computerName="LOGUROCKY" duration="00:00:01.5045472" startTime="2026-08-13T17:39:55.9869464+05:30" endTime="2026-08-13T17:39:55.9869465+05:30" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="54558d72-9f04-4d35-8226-caa1610f56d8" />
+    <UnitTestResult executionId="d9a401d2-c884-4c51-863d-a785e394d0bf" testId="67baad3c-6342-6fd6-a06d-ee5869571e7e" testName="API.Tests.UnitTest1.Test1" computerName="LOGUROCKY" duration="00:00:00.2805489" startTime="2026-08-13T17:39:54.7623029+05:30" endTime="2026-08-13T17:39:54.7623149+05:30" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d9a401d2-c884-4c51-863d-a785e394d0bf" />
+    <UnitTestResult executionId="d5546b94-a7a2-4260-bb11-8efc092df44a" testId="bd70edfc-22cb-7558-b3ae-133c13a16c60" testName="API.Tests.SingleFlightRegistryTests.Test13b_DifferentKeys_EachInvokeTheirOwnFactory" computerName="LOGUROCKY" duration="00:00:01.4355190" startTime="2026-08-13T17:39:55.9189861+05:30" endTime="2026-08-13T17:39:55.9189863+05:30" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d5546b94-a7a2-4260-bb11-8efc092df44a" />
+    <UnitTestResult executionId="5931d0c5-498a-4d62-a169-b605e850221d" testId="34b6eb23-000e-0c6c-c91d-b8926da388d0" testName="API.Tests.UnifiedIngestionServiceTests.GetRecordsAsync_FiltersByProjectName" computerName="LOGUROCKY" duration="00:00:01.4917858" startTime="2026-08-13T17:39:55.9665767+05:30" endTime="2026-08-13T17:39:55.9665772+05:30" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="5931d0c5-498a-4d62-a169-b605e850221d" />
+    <UnitTestResult executionId="b5c616ea-1c9a-49f4-a3ed-40b18ef89809" testId="2a727ad5-e0b5-e1fa-3527-8b25414c7e84" testName="API.Tests.DetailCacheServiceTests.Test02_StaleCache_ReturnsCachedDataImmediately_MarkedStale" computerName="LOGUROCKY" duration="00:00:00.0017824" startTime="2026-08-13T17:39:56.1174886+05:30" endTime="2026-08-13T17:39:56.1174888+05:30" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="b5c616ea-1c9a-49f4-a3ed-40b18ef89809" />
+    <UnitTestResult executionId="196f1be5-a4c9-427a-ab7b-f8b8a4d1b0d1" testId="284be0ec-bcca-79ee-ad3e-109f7d29d673" testName="API.Tests.IngestionControllerTests.GetIngestionStatus_ReturnsOkResult" computerName="LOGUROCKY" duration="00:00:00.0060152" startTime="2026-08-13T17:39:55.9899519+05:30" endTime="2026-08-13T17:39:55.9899521+05:30" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="196f1be5-a4c9-427a-ab7b-f8b8a4d1b0d1" />
+    <UnitTestResult executionId="57a9380b-2465-4890-b91b-af90c80eee11" testId="1ff955a2-c30e-a35a-fc4b-1cf1f387fb89" testName="API.Tests.DashboardMcpToolServiceTests.Test15_UnknownModule_RejectedBeforeAnyDownstreamCall" computerName="LOGUROCKY" duration="00:00:01.5176838" startTime="2026-08-13T17:39:55.9968910+05:30" endTime="2026-08-13T17:39:55.9968913+05:30" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="57a9380b-2465-4890-b91b-af90c80eee11" />
+    <UnitTestResult executionId="d71d8774-f663-4162-af98-bf4140cb55e3" testId="2ab35d8d-5470-f27e-5f35-bc5a7566e8d1" testName="API.Tests.DetailCacheServiceTests.Test10_GetDataSource_ReturnsExpectedLabel(rowState: &quot;fresh&quot;, expected: &quot;CACHE&quot;)" computerName="LOGUROCKY" duration="00:00:00.0010444" startTime="2026-08-13T17:39:56.1071917+05:30" endTime="2026-08-13T17:39:56.1071919+05:30" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d71d8774-f663-4162-af98-bf4140cb55e3" />
+    <UnitTestResult executionId="c81b166a-2a88-4966-9456-4dc8f2ebad9c" testId="d092d3f9-86a9-4b16-eaa3-4bf24a463646" testName="API.Tests.CountCacheServiceTests.Test12_NoCountCache_ApiFailure_ReturnsUnavailable_NeverThrows" computerName="LOGUROCKY" duration="00:00:00.0697935" startTime="2026-08-13T17:39:56.0794541+05:30" endTime="2026-08-13T17:39:56.0794543+05:30" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="c81b166a-2a88-4966-9456-4dc8f2ebad9c" />
+    <UnitTestResult executionId="7e30705e-fc03-46d5-af41-b1262253d930" testId="1093d1a5-2ac3-6940-a1e6-7e2b0f3ed684" testName="API.Tests.DetailCacheServiceTests.Test09_GetDataStatus_ExpiredRow_ReportsStale" computerName="LOGUROCKY" duration="00:00:00.0015289" startTime="2026-08-13T17:39:56.1087575+05:30" endTime="2026-08-13T17:39:56.1087577+05:30" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="7e30705e-fc03-46d5-af41-b1262253d930" />
+    <UnitTestResult executionId="a580fefc-0cb4-44e8-8308-f3ee358818d6" testId="2da80765-1a23-7a00-04fa-6709dd838ad5" testName="API.Tests.SingleFlightRegistryTests.Test13_ConcurrentCallsWithSameKey_InvokeFactoryExactlyOnce" computerName="LOGUROCKY" duration="00:00:00.0773475" startTime="2026-08-13T17:39:55.9991826+05:30" endTime="2026-08-13T17:39:55.9991828+05:30" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="a580fefc-0cb4-44e8-8308-f3ee358818d6" />
+    <UnitTestResult executionId="6a955ba7-ec23-4165-9d11-0e5b1fd1b7c4" testId="625f8528-ed10-d1f2-f1a3-dac84efd3964" testName="API.Tests.DetailCacheServiceTests.Test07_GetDataStatus_NoRow_ReturnsNotExists" computerName="LOGUROCKY" duration="00:00:00.0010483" startTime="2026-08-13T17:39:56.1100197+05:30" endTime="2026-08-13T17:39:56.1100199+05:30" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="6a955ba7-ec23-4165-9d11-0e5b1fd1b7c4" />
+    <UnitTestResult executionId="86bc64b0-c558-45b5-a2a4-2cc59729d38c" testId="9427a0b0-4aaa-95ca-d41e-c2ef18697053" testName="API.Tests.UnifiedIngestionServiceTests.GetUnifiedDashboardCountsAsync_ReturnsExpectedCounts" computerName="LOGUROCKY" duration="00:00:00.0014924" startTime="2026-08-13T17:39:56.0206316+05:30" endTime="2026-08-13T17:39:56.0206317+05:30" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="86bc64b0-c558-45b5-a2a4-2cc59729d38c" />
+    <UnitTestResult executionId="e4484c38-f295-47d9-b441-087e2253d9ee" testId="28f2b000-1060-61bf-86e5-5fefe3a773f5" testName="API.Tests.DetailCacheServiceTests.Test01_FreshCache_ReturnsCacheData_NeverCallsAdapter" computerName="LOGUROCKY" duration="00:00:00.0023746" startTime="2026-08-13T17:39:56.1156223+05:30" endTime="2026-08-13T17:39:56.1156225+05:30" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="e4484c38-f295-47d9-b441-087e2253d9ee" />
+    <UnitTestResult executionId="3d02573c-4773-42de-9007-2c31eb802857" testId="04761fed-ffc5-ca5d-68ca-069b9b2af03b" testName="API.Tests.AuthServiceTests.LoginAsync_AdminBackdoor_ReturnsToken" computerName="LOGUROCKY" duration="00:00:01.5995812" startTime="2026-08-13T17:39:56.0886887+05:30" endTime="2026-08-13T17:39:56.0886889+05:30" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="3d02573c-4773-42de-9007-2c31eb802857">
+      <Output>
+        <ErrorInfo>
+          <Message>Assert.NotNull() Failure: Value is null</Message>
+          <StackTrace>   at API.Tests.AuthServiceTests.LoginAsync_AdminBackdoor_ReturnsToken() in C:\Users\logup\Downloads\onedashboard\TAHDCO_UDP_FullStack_Angular16_DotNet8_MySQL (1)\backend\API.Tests\AuthServiceTests.cs:line 90&#xD;
+--- End of stack trace from previous location ---</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="6bf2cf0a-8d4e-4e1e-90f3-14f890267494" testId="7a8ed19d-4915-7188-96aa-97edfdd9b98d" testName="API.Tests.DashboardMcpToolServiceTests.Test16_ExceedingPerMinuteBudget_RejectsFurtherCalls" computerName="LOGUROCKY" duration="00:00:00.0182452" startTime="2026-08-13T17:39:56.0152339+05:30" endTime="2026-08-13T17:39:56.0152340+05:30" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="6bf2cf0a-8d4e-4e1e-90f3-14f890267494" />
+    <UnitTestResult executionId="78ff6585-76fb-4fff-9177-8a7c8ed45947" testId="6eefac46-870d-aca1-bd64-5be0cd2b9c4b" testName="API.Tests.DetailCacheRepositoryTests.Test14_MarkFailedAsync_SqlNeverTouchesResponseOrNormalizedDataColumns" computerName="LOGUROCKY" duration="00:00:01.5055563" startTime="2026-08-13T17:39:55.9872457+05:30" endTime="2026-08-13T17:39:55.9872458+05:30" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="78ff6585-76fb-4fff-9177-8a7c8ed45947" />
+    <UnitTestResult executionId="11ab0ca0-c7b2-40d5-9d6c-fb023690db6e" testId="46167049-acb6-4581-3254-9a8cb44392ae" testName="API.Tests.DetailCacheServiceTests.Test08_GetDataStatus_FreshRow_ReportsFresh" computerName="LOGUROCKY" duration="00:00:00.0017119" startTime="2026-08-13T17:39:56.0929972+05:30" endTime="2026-08-13T17:39:56.0929973+05:30" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="11ab0ca0-c7b2-40d5-9d6c-fb023690db6e" />
+    <UnitTestResult executionId="87fccb43-93f6-477c-89fa-96a0420f7a76" testId="19e9c8d7-2ec9-b3a7-afad-f519bf99961a" testName="API.Tests.AuthServiceTests.LoginAsync_InvalidEmail_ReturnsNull" computerName="LOGUROCKY" duration="00:00:00.0014135" startTime="2026-08-13T17:39:56.0903204+05:30" endTime="2026-08-13T17:39:56.0903205+05:30" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="87fccb43-93f6-477c-89fa-96a0420f7a76" />
+    <UnitTestResult executionId="5bbdf20f-1282-4ca5-9ceb-3a1e61bd86c2" testId="bae9bba5-764a-27e5-dc44-a21d8814a9d1" testName="API.Tests.DetailCacheServiceTests.Test06_ManualRefresh_Failure_NeverOverwritesOldData" computerName="LOGUROCKY" duration="00:00:01.5985767" startTime="2026-08-13T17:39:56.0901690+05:30" endTime="2026-08-13T17:39:56.0901704+05:30" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="5bbdf20f-1282-4ca5-9ceb-3a1e61bd86c2">
+      <Output>
+        <ErrorInfo>
+          <Message>Assert.False() Failure&#xD;
+Expected: False&#xD;
+Actual:   True</Message>
+          <StackTrace>   at API.Tests.DetailCacheServiceTests.Test06_ManualRefresh_Failure_NeverOverwritesOldData() in C:\Users\logup\Downloads\onedashboard\TAHDCO_UDP_FullStack_Angular16_DotNet8_MySQL (1)\backend\API.Tests\DetailCacheServiceTests.cs:line 208&#xD;
+--- End of stack trace from previous location ---</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="275dc8fa-9707-4b15-a60d-28c415cb5615" testId="360a68d0-3608-314f-c355-d2ed7a712d02" testName="API.Tests.DetailCacheRepositoryTests.Test14b_UpsertSuccessAsync_IsTheOnlySqlPathThatWritesResponseData" computerName="LOGUROCKY" duration="00:00:00.0269951" startTime="2026-08-13T17:39:56.0120268+05:30" endTime="2026-08-13T17:39:56.0120269+05:30" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="275dc8fa-9707-4b15-a60d-28c415cb5615" />
+    <UnitTestResult executionId="1f402489-1eb2-40fd-807a-d52df24c4f7f" testId="99a7cc2c-3863-a22d-b500-e0dd6f81de53" testName="API.Tests.DetailCacheServiceTests.Test10_GetDataSource_ReturnsExpectedLabel(rowState: &quot;stale&quot;, expected: &quot;STALE&quot;)" computerName="LOGUROCKY" duration="00:00:00.0039044" startTime="2026-08-13T17:39:56.1033448+05:30" endTime="2026-08-13T17:39:56.1033453+05:30" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="1f402489-1eb2-40fd-807a-d52df24c4f7f" />
+    <UnitTestResult executionId="600f1e02-efe1-495b-b98b-2ff3fe317e8a" testId="bdc20222-554f-73b4-8c4d-90be2dbf3eed" testName="API.Tests.CountCacheServiceTests.Test11_FreshCountCache_ReturnsCache_NeverCallsAdapter" computerName="LOGUROCKY" duration="00:00:01.5301607" startTime="2026-08-13T17:39:56.0094920+05:30" endTime="2026-08-13T17:39:56.0094922+05:30" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="600f1e02-efe1-495b-b98b-2ff3fe317e8a" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="API.Tests.DetailCacheServiceTests.Test10_GetDataSource_ReturnsExpectedLabel(rowState: &quot;fresh&quot;, expected: &quot;CACHE&quot;)" storage="c:\users\logup\downloads\onedashboard\tahdco_udp_fullstack_angular16_dotnet8_mysql (1)\backend\api.tests\bin\debug\net9.0\api.tests.dll" id="2ab35d8d-5470-f27e-5f35-bc5a7566e8d1">
+      <Execution id="d71d8774-f663-4162-af98-bf4140cb55e3" />
+      <TestMethod codeBase="C:\Users\logup\Downloads\onedashboard\TAHDCO_UDP_FullStack_Angular16_DotNet8_MySQL (1)\backend\API.Tests\bin\Debug\net9.0\API.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="API.Tests.DetailCacheServiceTests" name="Test10_GetDataSource_ReturnsExpectedLabel" />
+    </UnitTest>
+    <UnitTest name="API.Tests.UnitTest1.Test1" storage="c:\users\logup\downloads\onedashboard\tahdco_udp_fullstack_angular16_dotnet8_mysql (1)\backend\api.tests\bin\debug\net9.0\api.tests.dll" id="67baad3c-6342-6fd6-a06d-ee5869571e7e">
+      <Execution id="d9a401d2-c884-4c51-863d-a785e394d0bf" />
+      <TestMethod codeBase="C:\Users\logup\Downloads\onedashboard\TAHDCO_UDP_FullStack_Angular16_DotNet8_MySQL (1)\backend\API.Tests\bin\Debug\net9.0\API.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="API.Tests.UnitTest1" name="Test1" />
+    </UnitTest>
+    <UnitTest name="API.Tests.DetailCacheServiceTests.Test10_GetDataSource_ReturnsExpectedLabel(rowState: &quot;stale&quot;, expected: &quot;STALE&quot;)" storage="c:\users\logup\downloads\onedashboard\tahdco_udp_fullstack_angular16_dotnet8_mysql (1)\backend\api.tests\bin\debug\net9.0\api.tests.dll" id="99a7cc2c-3863-a22d-b500-e0dd6f81de53">
+      <Execution id="1f402489-1eb2-40fd-807a-d52df24c4f7f" />
+      <TestMethod codeBase="C:\Users\logup\Downloads\onedashboard\TAHDCO_UDP_FullStack_Angular16_DotNet8_MySQL (1)\backend\API.Tests\bin\Debug\net9.0\API.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="API.Tests.DetailCacheServiceTests" name="Test10_GetDataSource_ReturnsExpectedLabel" />
+    </UnitTest>
+    <UnitTest name="API.Tests.AuthServiceTests.LoginAsync_WrongPassword_ReturnsNull" storage="c:\users\logup\downloads\onedashboard\tahdco_udp_fullstack_angular16_dotnet8_mysql (1)\backend\api.tests\bin\debug\net9.0\api.tests.dll" id="4459e048-c4e5-04f1-0e80-07aad350a6d4">
+      <Execution id="4539afbc-6048-4466-b7a0-9d50da850415" />
+      <TestMethod codeBase="C:\Users\logup\Downloads\onedashboard\TAHDCO_UDP_FullStack_Angular16_DotNet8_MySQL (1)\backend\API.Tests\bin\Debug\net9.0\API.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="API.Tests.AuthServiceTests" name="LoginAsync_WrongPassword_ReturnsNull" />
+    </UnitTest>
+    <UnitTest name="API.Tests.DetailCacheServiceTests.Test02_StaleCache_ReturnsCachedDataImmediately_MarkedStale" storage="c:\users\logup\downloads\onedashboard\tahdco_udp_fullstack_angular16_dotnet8_mysql (1)\backend\api.tests\bin\debug\net9.0\api.tests.dll" id="2a727ad5-e0b5-e1fa-3527-8b25414c7e84">
+      <Execution id="b5c616ea-1c9a-49f4-a3ed-40b18ef89809" />
+      <TestMethod codeBase="C:\Users\logup\Downloads\onedashboard\TAHDCO_UDP_FullStack_Angular16_DotNet8_MySQL (1)\backend\API.Tests\bin\Debug\net9.0\API.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="API.Tests.DetailCacheServiceTests" name="Test02_StaleCache_ReturnsCachedDataImmediately_MarkedStale" />
+    </UnitTest>
+    <UnitTest name="API.Tests.DetailCacheServiceTests.Test10_GetDataSource_ReturnsExpectedLabel(rowState: null, expected: &quot;NONE&quot;)" storage="c:\users\logup\downloads\onedashboard\tahdco_udp_fullstack_angular16_dotnet8_mysql (1)\backend\api.tests\bin\debug\net9.0\api.tests.dll" id="02eb545b-99ce-1d69-14db-1b2cddbffe1e">
+      <Execution id="eaceb1c4-e38b-4aef-a38e-b9bf56c99d9e" />
+      <TestMethod codeBase="C:\Users\logup\Downloads\onedashboard\TAHDCO_UDP_FullStack_Angular16_DotNet8_MySQL (1)\backend\API.Tests\bin\Debug\net9.0\API.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="API.Tests.DetailCacheServiceTests" name="Test10_GetDataSource_ReturnsExpectedLabel" />
+    </UnitTest>
+    <UnitTest name="API.Tests.UnifiedIngestionServiceTests.SyncAllProjectApisAsync_CompletesSuccessfully_And_ReturnsResult" storage="c:\users\logup\downloads\onedashboard\tahdco_udp_fullstack_angular16_dotnet8_mysql (1)\backend\api.tests\bin\debug\net9.0\api.tests.dll" id="8cca7ed5-8a25-a246-6a5e-f61619178a6d">
+      <Execution id="dbe0e590-0190-40a2-b018-6fd5d4f4d085" />
+      <TestMethod codeBase="C:\Users\logup\Downloads\onedashboard\TAHDCO_UDP_FullStack_Angular16_DotNet8_MySQL (1)\backend\API.Tests\bin\Debug\net9.0\API.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="API.Tests.UnifiedIngestionServiceTests" name="SyncAllProjectApisAsync_CompletesSuccessfully_And_ReturnsResult" />
+    </UnitTest>
+    <UnitTest name="API.Tests.DetailCacheServiceTests.Test07_GetDataStatus_NoRow_ReturnsNotExists" storage="c:\users\logup\downloads\onedashboard\tahdco_udp_fullstack_angular16_dotnet8_mysql (1)\backend\api.tests\bin\debug\net9.0\api.tests.dll" id="625f8528-ed10-d1f2-f1a3-dac84efd3964">
+      <Execution id="6a955ba7-ec23-4165-9d11-0e5b1fd1b7c4" />
+      <TestMethod codeBase="C:\Users\logup\Downloads\onedashboard\TAHDCO_UDP_FullStack_Angular16_DotNet8_MySQL (1)\backend\API.Tests\bin\Debug\net9.0\API.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="API.Tests.DetailCacheServiceTests" name="Test07_GetDataStatus_NoRow_ReturnsNotExists" />
+    </UnitTest>
+    <UnitTest name="API.Tests.DetailCacheRepositoryTests.Test14_MarkFailedAsync_SqlNeverTouchesResponseOrNormalizedDataColumns" storage="c:\users\logup\downloads\onedashboard\tahdco_udp_fullstack_angular16_dotnet8_mysql (1)\backend\api.tests\bin\debug\net9.0\api.tests.dll" id="6eefac46-870d-aca1-bd64-5be0cd2b9c4b">
+      <Execution id="78ff6585-76fb-4fff-9177-8a7c8ed45947" />
+      <TestMethod codeBase="C:\Users\logup\Downloads\onedashboard\TAHDCO_UDP_FullStack_Angular16_DotNet8_MySQL (1)\backend\API.Tests\bin\Debug\net9.0\API.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="API.Tests.DetailCacheRepositoryTests" name="Test14_MarkFailedAsync_SqlNeverTouchesResponseOrNormalizedDataColumns" />
+    </UnitTest>
+    <UnitTest name="API.Tests.DetailCacheServiceTests.Test05_ManualRefresh_Success_StoresNewData" storage="c:\users\logup\downloads\onedashboard\tahdco_udp_fullstack_angular16_dotnet8_mysql (1)\backend\api.tests\bin\debug\net9.0\api.tests.dll" id="61a7afa6-0b86-c93d-976d-2ac91ad024ea">
+      <Execution id="da9b13c5-ab78-4d04-82b3-2583030e47f0" />
+      <TestMethod codeBase="C:\Users\logup\Downloads\onedashboard\TAHDCO_UDP_FullStack_Angular16_DotNet8_MySQL (1)\backend\API.Tests\bin\Debug\net9.0\API.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="API.Tests.DetailCacheServiceTests" name="Test05_ManualRefresh_Success_StoresNewData" />
+    </UnitTest>
+    <UnitTest name="API.Tests.DetailCacheRepositoryTests.Test14b_UpsertSuccessAsync_IsTheOnlySqlPathThatWritesResponseData" storage="c:\users\logup\downloads\onedashboard\tahdco_udp_fullstack_angular16_dotnet8_mysql (1)\backend\api.tests\bin\debug\net9.0\api.tests.dll" id="360a68d0-3608-314f-c355-d2ed7a712d02">
+      <Execution id="275dc8fa-9707-4b15-a60d-28c415cb5615" />
+      <TestMethod codeBase="C:\Users\logup\Downloads\onedashboard\TAHDCO_UDP_FullStack_Angular16_DotNet8_MySQL (1)\backend\API.Tests\bin\Debug\net9.0\API.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="API.Tests.DetailCacheRepositoryTests" name="Test14b_UpsertSuccessAsync_IsTheOnlySqlPathThatWritesResponseData" />
+    </UnitTest>
+    <UnitTest name="API.Tests.SingleFlightRegistryTests.Test13_ConcurrentCallsWithSameKey_InvokeFactoryExactlyOnce" storage="c:\users\logup\downloads\onedashboard\tahdco_udp_fullstack_angular16_dotnet8_mysql (1)\backend\api.tests\bin\debug\net9.0\api.tests.dll" id="2da80765-1a23-7a00-04fa-6709dd838ad5">
+      <Execution id="a580fefc-0cb4-44e8-8308-f3ee358818d6" />
+      <TestMethod codeBase="C:\Users\logup\Downloads\onedashboard\TAHDCO_UDP_FullStack_Angular16_DotNet8_MySQL (1)\backend\API.Tests\bin\Debug\net9.0\API.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="API.Tests.SingleFlightRegistryTests" name="Test13_ConcurrentCallsWithSameKey_InvokeFactoryExactlyOnce" />
+    </UnitTest>
+    <UnitTest name="API.Tests.IngestionControllerTests.GetIngestionStatus_ReturnsOkResult" storage="c:\users\logup\downloads\onedashboard\tahdco_udp_fullstack_angular16_dotnet8_mysql (1)\backend\api.tests\bin\debug\net9.0\api.tests.dll" id="284be0ec-bcca-79ee-ad3e-109f7d29d673">
+      <Execution id="196f1be5-a4c9-427a-ab7b-f8b8a4d1b0d1" />
+      <TestMethod codeBase="C:\Users\logup\Downloads\onedashboard\TAHDCO_UDP_FullStack_Angular16_DotNet8_MySQL (1)\backend\API.Tests\bin\Debug\net9.0\API.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="API.Tests.IngestionControllerTests" name="GetIngestionStatus_ReturnsOkResult" />
+    </UnitTest>
+    <UnitTest name="API.Tests.CountCacheServiceTests.Test12_NoCountCache_ApiFailure_ReturnsUnavailable_NeverThrows" storage="c:\users\logup\downloads\onedashboard\tahdco_udp_fullstack_angular16_dotnet8_mysql (1)\backend\api.tests\bin\debug\net9.0\api.tests.dll" id="d092d3f9-86a9-4b16-eaa3-4bf24a463646">
+      <Execution id="c81b166a-2a88-4966-9456-4dc8f2ebad9c" />
+      <TestMethod codeBase="C:\Users\logup\Downloads\onedashboard\TAHDCO_UDP_FullStack_Angular16_DotNet8_MySQL (1)\backend\API.Tests\bin\Debug\net9.0\API.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="API.Tests.CountCacheServiceTests" name="Test12_NoCountCache_ApiFailure_ReturnsUnavailable_NeverThrows" />
+    </UnitTest>
+    <UnitTest name="API.Tests.CountCacheServiceTests.Test11_FreshCountCache_ReturnsCache_NeverCallsAdapter" storage="c:\users\logup\downloads\onedashboard\tahdco_udp_fullstack_angular16_dotnet8_mysql (1)\backend\api.tests\bin\debug\net9.0\api.tests.dll" id="bdc20222-554f-73b4-8c4d-90be2dbf3eed">
+      <Execution id="600f1e02-efe1-495b-b98b-2ff3fe317e8a" />
+      <TestMethod codeBase="C:\Users\logup\Downloads\onedashboard\TAHDCO_UDP_FullStack_Angular16_DotNet8_MySQL (1)\backend\API.Tests\bin\Debug\net9.0\API.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="API.Tests.CountCacheServiceTests" name="Test11_FreshCountCache_ReturnsCache_NeverCallsAdapter" />
+    </UnitTest>
+    <UnitTest name="API.Tests.UnifiedIngestionServiceTests.GetRecordsAsync_FiltersByProjectName" storage="c:\users\logup\downloads\onedashboard\tahdco_udp_fullstack_angular16_dotnet8_mysql (1)\backend\api.tests\bin\debug\net9.0\api.tests.dll" id="34b6eb23-000e-0c6c-c91d-b8926da388d0">
+      <Execution id="5931d0c5-498a-4d62-a169-b605e850221d" />
+      <TestMethod codeBase="C:\Users\logup\Downloads\onedashboard\TAHDCO_UDP_FullStack_Angular16_DotNet8_MySQL (1)\backend\API.Tests\bin\Debug\net9.0\API.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="API.Tests.UnifiedIngestionServiceTests" name="GetRecordsAsync_FiltersByProjectName" />
+    </UnitTest>
+    <UnitTest name="API.Tests.UnifiedIngestionServiceTests.GetUnifiedDashboardCountsAsync_ReturnsExpectedCounts" storage="c:\users\logup\downloads\onedashboard\tahdco_udp_fullstack_angular16_dotnet8_mysql (1)\backend\api.tests\bin\debug\net9.0\api.tests.dll" id="9427a0b0-4aaa-95ca-d41e-c2ef18697053">
+      <Execution id="86bc64b0-c558-45b5-a2a4-2cc59729d38c" />
+      <TestMethod codeBase="C:\Users\logup\Downloads\onedashboard\TAHDCO_UDP_FullStack_Angular16_DotNet8_MySQL (1)\backend\API.Tests\bin\Debug\net9.0\API.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="API.Tests.UnifiedIngestionServiceTests" name="GetUnifiedDashboardCountsAsync_ReturnsExpectedCounts" />
+    </UnitTest>
+    <UnitTest name="API.Tests.DashboardMcpToolServiceTests.Test16_ExceedingPerMinuteBudget_RejectsFurtherCalls" storage="c:\users\logup\downloads\onedashboard\tahdco_udp_fullstack_angular16_dotnet8_mysql (1)\backend\api.tests\bin\debug\net9.0\api.tests.dll" id="7a8ed19d-4915-7188-96aa-97edfdd9b98d">
+      <Execution id="6bf2cf0a-8d4e-4e1e-90f3-14f890267494" />
+      <TestMethod codeBase="C:\Users\logup\Downloads\onedashboard\TAHDCO_UDP_FullStack_Angular16_DotNet8_MySQL (1)\backend\API.Tests\bin\Debug\net9.0\API.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="API.Tests.DashboardMcpToolServiceTests" name="Test16_ExceedingPerMinuteBudget_RejectsFurtherCalls" />
+    </UnitTest>
+    <UnitTest name="API.Tests.DetailCacheServiceTests.Test04_NoCache_ApiFailure_ReturnsUnavailable_NeverThrows_NeverWritesSuccessData" storage="c:\users\logup\downloads\onedashboard\tahdco_udp_fullstack_angular16_dotnet8_mysql (1)\backend\api.tests\bin\debug\net9.0\api.tests.dll" id="dc4ca2b0-f92b-44e7-fc40-ec039ab9eec7">
+      <Execution id="cbce28c2-6ff7-4c9c-af8b-af1eb36f7df3" />
+      <TestMethod codeBase="C:\Users\logup\Downloads\onedashboard\TAHDCO_UDP_FullStack_Angular16_DotNet8_MySQL (1)\backend\API.Tests\bin\Debug\net9.0\API.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="API.Tests.DetailCacheServiceTests" name="Test04_NoCache_ApiFailure_ReturnsUnavailable_NeverThrows_NeverWritesSuccessData" />
+    </UnitTest>
+    <UnitTest name="API.Tests.DetailCacheServiceTests.Test01_FreshCache_ReturnsCacheData_NeverCallsAdapter" storage="c:\users\logup\downloads\onedashboard\tahdco_udp_fullstack_angular16_dotnet8_mysql (1)\backend\api.tests\bin\debug\net9.0\api.tests.dll" id="28f2b000-1060-61bf-86e5-5fefe3a773f5">
+      <Execution id="e4484c38-f295-47d9-b441-087e2253d9ee" />
+      <TestMethod codeBase="C:\Users\logup\Downloads\onedashboard\TAHDCO_UDP_FullStack_Angular16_DotNet8_MySQL (1)\backend\API.Tests\bin\Debug\net9.0\API.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="API.Tests.DetailCacheServiceTests" name="Test01_FreshCache_ReturnsCacheData_NeverCallsAdapter" />
+    </UnitTest>
+    <UnitTest name="API.Tests.DetailCacheServiceTests.Test09_GetDataStatus_ExpiredRow_ReportsStale" storage="c:\users\logup\downloads\onedashboard\tahdco_udp_fullstack_angular16_dotnet8_mysql (1)\backend\api.tests\bin\debug\net9.0\api.tests.dll" id="1093d1a5-2ac3-6940-a1e6-7e2b0f3ed684">
+      <Execution id="7e30705e-fc03-46d5-af41-b1262253d930" />
+      <TestMethod codeBase="C:\Users\logup\Downloads\onedashboard\TAHDCO_UDP_FullStack_Angular16_DotNet8_MySQL (1)\backend\API.Tests\bin\Debug\net9.0\API.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="API.Tests.DetailCacheServiceTests" name="Test09_GetDataStatus_ExpiredRow_ReportsStale" />
+    </UnitTest>
+    <UnitTest name="API.Tests.IngestionControllerTests.TriggerSync_ReturnsOkResult_WithSyncResult" storage="c:\users\logup\downloads\onedashboard\tahdco_udp_fullstack_angular16_dotnet8_mysql (1)\backend\api.tests\bin\debug\net9.0\api.tests.dll" id="f42c16e9-a360-bed5-ec29-148dba6b3d31">
+      <Execution id="54558d72-9f04-4d35-8226-caa1610f56d8" />
+      <TestMethod codeBase="C:\Users\logup\Downloads\onedashboard\TAHDCO_UDP_FullStack_Angular16_DotNet8_MySQL (1)\backend\API.Tests\bin\Debug\net9.0\API.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="API.Tests.IngestionControllerTests" name="TriggerSync_ReturnsOkResult_WithSyncResult" />
+    </UnitTest>
+    <UnitTest name="API.Tests.DetailCacheServiceTests.Test06_ManualRefresh_Failure_NeverOverwritesOldData" storage="c:\users\logup\downloads\onedashboard\tahdco_udp_fullstack_angular16_dotnet8_mysql (1)\backend\api.tests\bin\debug\net9.0\api.tests.dll" id="bae9bba5-764a-27e5-dc44-a21d8814a9d1">
+      <Execution id="5bbdf20f-1282-4ca5-9ceb-3a1e61bd86c2" />
+      <TestMethod codeBase="C:\Users\logup\Downloads\onedashboard\TAHDCO_UDP_FullStack_Angular16_DotNet8_MySQL (1)\backend\API.Tests\bin\Debug\net9.0\API.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="API.Tests.DetailCacheServiceTests" name="Test06_ManualRefresh_Failure_NeverOverwritesOldData" />
+    </UnitTest>
+    <UnitTest name="API.Tests.AuthServiceTests.LoginAsync_AdminBackdoor_ReturnsToken" storage="c:\users\logup\downloads\onedashboard\tahdco_udp_fullstack_angular16_dotnet8_mysql (1)\backend\api.tests\bin\debug\net9.0\api.tests.dll" id="04761fed-ffc5-ca5d-68ca-069b9b2af03b">
+      <Execution id="3d02573c-4773-42de-9007-2c31eb802857" />
+      <TestMethod codeBase="C:\Users\logup\Downloads\onedashboard\TAHDCO_UDP_FullStack_Angular16_DotNet8_MySQL (1)\backend\API.Tests\bin\Debug\net9.0\API.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="API.Tests.AuthServiceTests" name="LoginAsync_AdminBackdoor_ReturnsToken" />
+    </UnitTest>
+    <UnitTest name="API.Tests.SingleFlightRegistryTests.Test13b_DifferentKeys_EachInvokeTheirOwnFactory" storage="c:\users\logup\downloads\onedashboard\tahdco_udp_fullstack_angular16_dotnet8_mysql (1)\backend\api.tests\bin\debug\net9.0\api.tests.dll" id="bd70edfc-22cb-7558-b3ae-133c13a16c60">
+      <Execution id="d5546b94-a7a2-4260-bb11-8efc092df44a" />
+      <TestMethod codeBase="C:\Users\logup\Downloads\onedashboard\TAHDCO_UDP_FullStack_Angular16_DotNet8_MySQL (1)\backend\API.Tests\bin\Debug\net9.0\API.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="API.Tests.SingleFlightRegistryTests" name="Test13b_DifferentKeys_EachInvokeTheirOwnFactory" />
+    </UnitTest>
+    <UnitTest name="API.Tests.DetailCacheServiceTests.Test08_GetDataStatus_FreshRow_ReportsFresh" storage="c:\users\logup\downloads\onedashboard\tahdco_udp_fullstack_angular16_dotnet8_mysql (1)\backend\api.tests\bin\debug\net9.0\api.tests.dll" id="46167049-acb6-4581-3254-9a8cb44392ae">
+      <Execution id="11ab0ca0-c7b2-40d5-9d6c-fb023690db6e" />
+      <TestMethod codeBase="C:\Users\logup\Downloads\onedashboard\TAHDCO_UDP_FullStack_Angular16_DotNet8_MySQL (1)\backend\API.Tests\bin\Debug\net9.0\API.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="API.Tests.DetailCacheServiceTests" name="Test08_GetDataStatus_FreshRow_ReportsFresh" />
+    </UnitTest>
+    <UnitTest name="API.Tests.DetailCacheServiceTests.Test03_NoCache_ApiSuccess_StoresAndReturnsFreshData" storage="c:\users\logup\downloads\onedashboard\tahdco_udp_fullstack_angular16_dotnet8_mysql (1)\backend\api.tests\bin\debug\net9.0\api.tests.dll" id="9bb42f77-b0bf-cc26-1508-b3f09a4a7271">
+      <Execution id="c57c7b83-287a-42f3-9b1a-6e6b5c6c0749" />
+      <TestMethod codeBase="C:\Users\logup\Downloads\onedashboard\TAHDCO_UDP_FullStack_Angular16_DotNet8_MySQL (1)\backend\API.Tests\bin\Debug\net9.0\API.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="API.Tests.DetailCacheServiceTests" name="Test03_NoCache_ApiSuccess_StoresAndReturnsFreshData" />
+    </UnitTest>
+    <UnitTest name="API.Tests.DashboardMcpToolServiceTests.Test15_UnknownModule_RejectedBeforeAnyDownstreamCall" storage="c:\users\logup\downloads\onedashboard\tahdco_udp_fullstack_angular16_dotnet8_mysql (1)\backend\api.tests\bin\debug\net9.0\api.tests.dll" id="1ff955a2-c30e-a35a-fc4b-1cf1f387fb89">
+      <Execution id="57a9380b-2465-4890-b91b-af90c80eee11" />
+      <TestMethod codeBase="C:\Users\logup\Downloads\onedashboard\TAHDCO_UDP_FullStack_Angular16_DotNet8_MySQL (1)\backend\API.Tests\bin\Debug\net9.0\API.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="API.Tests.DashboardMcpToolServiceTests" name="Test15_UnknownModule_RejectedBeforeAnyDownstreamCall" />
+    </UnitTest>
+    <UnitTest name="API.Tests.AuthServiceTests.LoginAsync_InvalidEmail_ReturnsNull" storage="c:\users\logup\downloads\onedashboard\tahdco_udp_fullstack_angular16_dotnet8_mysql (1)\backend\api.tests\bin\debug\net9.0\api.tests.dll" id="19e9c8d7-2ec9-b3a7-afad-f519bf99961a">
+      <Execution id="87fccb43-93f6-477c-89fa-96a0420f7a76" />
+      <TestMethod codeBase="C:\Users\logup\Downloads\onedashboard\TAHDCO_UDP_FullStack_Angular16_DotNet8_MySQL (1)\backend\API.Tests\bin\Debug\net9.0\API.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="API.Tests.AuthServiceTests" name="LoginAsync_InvalidEmail_ReturnsNull" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="4459e048-c4e5-04f1-0e80-07aad350a6d4" executionId="4539afbc-6048-4466-b7a0-9d50da850415" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="02eb545b-99ce-1d69-14db-1b2cddbffe1e" executionId="eaceb1c4-e38b-4aef-a38e-b9bf56c99d9e" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="dc4ca2b0-f92b-44e7-fc40-ec039ab9eec7" executionId="cbce28c2-6ff7-4c9c-af8b-af1eb36f7df3" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="8cca7ed5-8a25-a246-6a5e-f61619178a6d" executionId="dbe0e590-0190-40a2-b018-6fd5d4f4d085" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="9bb42f77-b0bf-cc26-1508-b3f09a4a7271" executionId="c57c7b83-287a-42f3-9b1a-6e6b5c6c0749" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="61a7afa6-0b86-c93d-976d-2ac91ad024ea" executionId="da9b13c5-ab78-4d04-82b3-2583030e47f0" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="f42c16e9-a360-bed5-ec29-148dba6b3d31" executionId="54558d72-9f04-4d35-8226-caa1610f56d8" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="67baad3c-6342-6fd6-a06d-ee5869571e7e" executionId="d9a401d2-c884-4c51-863d-a785e394d0bf" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="bd70edfc-22cb-7558-b3ae-133c13a16c60" executionId="d5546b94-a7a2-4260-bb11-8efc092df44a" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="34b6eb23-000e-0c6c-c91d-b8926da388d0" executionId="5931d0c5-498a-4d62-a169-b605e850221d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="2a727ad5-e0b5-e1fa-3527-8b25414c7e84" executionId="b5c616ea-1c9a-49f4-a3ed-40b18ef89809" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="284be0ec-bcca-79ee-ad3e-109f7d29d673" executionId="196f1be5-a4c9-427a-ab7b-f8b8a4d1b0d1" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1ff955a2-c30e-a35a-fc4b-1cf1f387fb89" executionId="57a9380b-2465-4890-b91b-af90c80eee11" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="2ab35d8d-5470-f27e-5f35-bc5a7566e8d1" executionId="d71d8774-f663-4162-af98-bf4140cb55e3" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="d092d3f9-86a9-4b16-eaa3-4bf24a463646" executionId="c81b166a-2a88-4966-9456-4dc8f2ebad9c" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1093d1a5-2ac3-6940-a1e6-7e2b0f3ed684" executionId="7e30705e-fc03-46d5-af41-b1262253d930" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="2da80765-1a23-7a00-04fa-6709dd838ad5" executionId="a580fefc-0cb4-44e8-8308-f3ee358818d6" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="625f8528-ed10-d1f2-f1a3-dac84efd3964" executionId="6a955ba7-ec23-4165-9d11-0e5b1fd1b7c4" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="9427a0b0-4aaa-95ca-d41e-c2ef18697053" executionId="86bc64b0-c558-45b5-a2a4-2cc59729d38c" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="28f2b000-1060-61bf-86e5-5fefe3a773f5" executionId="e4484c38-f295-47d9-b441-087e2253d9ee" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="04761fed-ffc5-ca5d-68ca-069b9b2af03b" executionId="3d02573c-4773-42de-9007-2c31eb802857" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="7a8ed19d-4915-7188-96aa-97edfdd9b98d" executionId="6bf2cf0a-8d4e-4e1e-90f3-14f890267494" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="6eefac46-870d-aca1-bd64-5be0cd2b9c4b" executionId="78ff6585-76fb-4fff-9177-8a7c8ed45947" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="46167049-acb6-4581-3254-9a8cb44392ae" executionId="11ab0ca0-c7b2-40d5-9d6c-fb023690db6e" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="19e9c8d7-2ec9-b3a7-afad-f519bf99961a" executionId="87fccb43-93f6-477c-89fa-96a0420f7a76" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="bae9bba5-764a-27e5-dc44-a21d8814a9d1" executionId="5bbdf20f-1282-4ca5-9ceb-3a1e61bd86c2" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="360a68d0-3608-314f-c355-d2ed7a712d02" executionId="275dc8fa-9707-4b15-a60d-28c415cb5615" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="99a7cc2c-3863-a22d-b500-e0dd6f81de53" executionId="1f402489-1eb2-40fd-807a-d52df24c4f7f" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="bdc20222-554f-73b4-8c4d-90be2dbf3eed" executionId="600f1e02-efe1-495b-b98b-2ff3fe317e8a" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Failed">
+    <Counters total="29" executed="29" passed="27" failed="2" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v2.8.2+699d445a1a (64-bit .NET 9.0.0)&#xD;
+[xUnit.net 00:00:01.32]   Discovering: API.Tests&#xD;
+[xUnit.net 00:00:01.37]   Discovered:  API.Tests&#xD;
+[xUnit.net 00:00:01.37]   Starting:    API.Tests&#xD;
+[xUnit.net 00:00:03.02]       Assert.NotNull() Failure: Value is null&#xD;
+[xUnit.net 00:00:03.03]       Stack Trace:&#xD;
+[xUnit.net 00:00:03.03]         C:\Users\logup\Downloads\onedashboard\TAHDCO_UDP_FullStack_Angular16_DotNet8_MySQL (1)\backend\API.Tests\AuthServiceTests.cs(90,0): at API.Tests.AuthServiceTests.LoginAsync_AdminBackdoor_ReturnsToken()&#xD;
+[xUnit.net 00:00:03.03]         --- End of stack trace from previous location ---&#xD;
+[xUnit.net 00:00:03.03]       Assert.False() Failure&#xD;
+[xUnit.net 00:00:03.03]       Expected: False&#xD;
+[xUnit.net 00:00:03.03]       Actual:   True&#xD;
+[xUnit.net 00:00:03.03]       Stack Trace:&#xD;
+[xUnit.net 00:00:03.03]         C:\Users\logup\Downloads\onedashboard\TAHDCO_UDP_FullStack_Angular16_DotNet8_MySQL (1)\backend\API.Tests\DetailCacheServiceTests.cs(208,0): at API.Tests.DetailCacheServiceTests.Test06_ManualRefresh_Failure_NeverOverwritesOldData()&#xD;
+[xUnit.net 00:00:03.03]         --- End of stack trace from previous location ---&#xD;
+[xUnit.net 00:00:03.06]   Finished:    API.Tests&#xD;
+</StdOut>
+    </Output>
+    <RunInfos>
+      <RunInfo computerName="LOGUROCKY" outcome="Error" timestamp="2026-08-13T17:39:56.0859813+05:30">
+        <Text>[xUnit.net 00:00:03.02]     API.Tests.AuthServiceTests.LoginAsync_AdminBackdoor_ReturnsToken [FAIL]</Text>
+      </RunInfo>
+      <RunInfo computerName="LOGUROCKY" outcome="Error" timestamp="2026-08-13T17:39:56.0898718+05:30">
+        <Text>[xUnit.net 00:00:03.03]     API.Tests.DetailCacheServiceTests.Test06_ManualRefresh_Failure_NeverOverwritesOldData [FAIL]</Text>
+      </RunInfo>
+    </RunInfos>
+  </ResultSummary>
+</TestRun>

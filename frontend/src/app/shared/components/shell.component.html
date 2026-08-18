@@ -1,0 +1,233 @@
+<p-confirmDialog></p-confirmDialog>
+<p-toast></p-toast>
+<div class="shell" [class.collapsed]="collapsed">
+
+  <!-- ── Topbar ─────────────────────────────────────────────────── -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <button class="menu-btn" (click)="toggleMenu()" aria-label="Toggle sidebar">
+        <i class="pi" [class.pi-bars]="!collapsed" [class.pi-angle-double-right]="collapsed"></i>
+      </button>
+
+      <div class="brand" (click)="router.navigate(['/overview'])" role="button" tabindex="0">
+        <img src="assets/logo.svg" alt="TAHDCO Logo" class="brand-logo-img">
+      </div>
+
+      <!-- ── Dashboard Title & Role Badge in Navigation Bar ── -->
+      <div class="topbar-title-wrap" *ngIf="roleHeaderInfo">
+        <div class="topbar-role-badge">{{ roleHeaderInfo.badge }}</div>
+        <div class="topbar-title-text">
+          <span class="topbar-title">{{ roleHeaderInfo.title }}</span>
+          <span class="topbar-subtitle">{{ roleHeaderInfo.subtitle }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Center Filter Controls in Navigation Bar (Perfect Center Alignment) ── -->
+    <div class="topbar-center">
+      <div class="topbar-filters">
+        <!-- Financial Year multiselect dropdown -->
+        <div class="tb-filter-group">
+          <p-multiSelect
+            [options]="fyOptions"
+            [(ngModel)]="selFY"
+            placeholder="Financial Year"
+            optionLabel="label"
+            optionValue="value"
+            [maxSelectedLabels]="1"
+            selectedItemsLabel="{0} FY"
+            styleClass="tb-multisel"
+            appendTo="body"
+            (onChange)="onTopFilterChange()">
+          </p-multiSelect>
+        </div>
+
+        <!-- Division multiselect dropdown -->
+        <div class="tb-filter-group">
+          <p-multiSelect
+            [options]="divOptions"
+            [(ngModel)]="selDiv"
+            placeholder="All Divisions"
+            optionLabel="label"
+            optionValue="value"
+            [maxSelectedLabels]="1"
+            selectedItemsLabel="{0} Div"
+            styleClass="tb-multisel"
+            appendTo="body"
+            (onChange)="onTopFilterChange()">
+          </p-multiSelect>
+        </div>
+
+        <!-- (Count, Cost, Both) view toggle buttons -->
+        <div class="tb-view-toggle">
+          <button type="button" class="tb-vt-btn" [class.active]="viewMode==='count'" (click)="setTopView('count')" pTooltip="View Work Counts" tooltipPosition="bottom">
+            <i class="pi pi-hashtag"></i> Count
+          </button>
+          <button type="button" class="tb-vt-btn" [class.active]="viewMode==='cost'" (click)="setTopView('cost')" pTooltip="View Financial Costs (Lakhs)" tooltipPosition="bottom">
+            <i class="pi pi-indian-rupee"></i> Cost
+          </button>
+          <button type="button" class="tb-vt-btn" [class.active]="viewMode==='both'" (click)="setTopView('both')" pTooltip="View Both Count & Cost" tooltipPosition="bottom">
+            <i class="pi pi-sliders-h"></i> Both
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="topbar-right">
+      <button class="tb-icon" (click)="clearCache()" aria-label="Clear Cache & Refresh Data" pTooltip="Clear Cache & Refresh Data" tooltipPosition="bottom">
+        <i class="pi pi-refresh" [class.pi-spin]="cacheClearing"></i>
+      </button>
+      <button class="tb-icon" aria-label="Help" pTooltip="Help & guides" tooltipPosition="bottom"><i class="pi pi-question-circle"></i></button>
+      <button class="tb-icon has-dot" (click)="openNotifications()" aria-label="Notifications" pTooltip="Notifications list" tooltipPosition="bottom">
+        <i class="pi pi-bell"></i><span class="dot" *ngIf="notifCount">{{ notifCount }}</span>
+      </button>
+
+      <div class="topbar-divider"></div>
+
+      <div class="user-pill">
+        <div class="avatar">{{ initials }}
+          <span class="role-tag">{{ roleShort }}</span>
+        </div>
+        <div class="user-info">
+          <div class="u-name">{{ user?.name }}</div>
+          <div class="u-role">{{ roleLabel }}</div>
+        </div>
+        <button class="tb-icon signout" (click)="logout()" aria-label="Sign out" pTooltip="Sign out" tooltipPosition="bottom">
+          <i class="pi pi-sign-out"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── Sidebar ────────────────────────────────────────────────── -->
+  
+  <!-- Reusable Sidebar Content Template -->
+  <ng-template #sidebarContent>
+
+    <nav>
+      <ng-container *ngFor="let group of navGroups">
+        <div class="nav-group" *ngIf="groupVisible(group)">
+          <span class="nav-label" *ngIf="!collapsed">{{ group.label }}</span>
+          <button class="nav-item" *ngFor="let item of visibleItems(group.items)"
+            [class.active]="isActive(item)"
+            (click)="router.navigate([item.route])"
+            [attr.title]="collapsed ? item.label : null">
+            <span class="nav-ico"><i class="pi {{ item.icon }}"></i></span>
+            <span class="nav-text" *ngIf="!collapsed">
+              {{ item.label }}
+              <small *ngIf="item.sub">{{ item.sub }}</small>
+            </span>
+          </button>
+        </div>
+      </ng-container>
+    </nav>
+
+    <div class="sidebar-foot" *ngIf="!collapsed">
+      <div class="scope-card">
+        <i class="pi pi-map-marker"></i>
+        <div>
+          <span class="sc-label">Your access</span>
+          <span class="sc-value">{{ scopeLine }}</span>
+        </div>
+      </div>
+      <span class="ver">v8 · Angular 16</span>
+    </div>
+  
+  </ng-template>
+  
+  <aside class="sidebar">
+    <ng-container *ngTemplateOutlet="sidebarContent"></ng-container>
+  </aside>
+  
+  <!-- Mobile/Tablet Drawer -->
+  <p-sidebar [(visible)]="mobileMenuOpen" position="left" [baseZIndex]="10000" styleClass="p-0 border-0 mobile-nav-drawer" [style]="{width: '280px', backgroundColor: '#0b1b34'}">
+    <div class="p-4 bg-slate-900 border-b border-white/10 flex items-center justify-between">
+      <img src="assets/logo.svg" alt="TAHDCO Logo" style="height: 32px;">
+    </div>
+    <ng-container *ngTemplateOutlet="sidebarContent"></ng-container>
+  </p-sidebar>
+
+
+  <!-- ── Content ────────────────────────────────────────────────── -->
+  <main class="main-content"><router-outlet></router-outlet></main>
+</div>
+
+<!-- ── NOTIFICATIONS OVERLAY DIALOG ────────────────────────────────────── -->
+<p-dialog [(visible)]="notifDialogVisible" [modal]="true" [style]="{width: '760px', maxWidth: '95vw'}" [draggable]="false" [resizable]="false" styleClass="notif-dialog">
+  <ng-template pTemplate="header">
+    <div class="notif-header-title">
+      <i class="pi pi-bell"></i>
+      <div>
+        <h3>System Notifications & Alerts</h3>
+        <p>Project-wise notifications filtered by frequency and status</p>
+      </div>
+    </div>
+  </ng-template>
+
+  <!-- Filter Bar -->
+  <div class="notif-filters-bar">
+    <div class="notif-filter">
+      <label>Project</label>
+      <p-dropdown [options]="projectFilterOptions" [(ngModel)]="selNotifProject" (onChange)="onNotifFilterChange()" placeholder="All Projects"></p-dropdown>
+    </div>
+
+    <div class="notif-filter">
+      <label>Frequency</label>
+      <p-dropdown [options]="freqFilterOptions" [(ngModel)]="selNotifFreq" (onChange)="onNotifFilterChange()" placeholder="All Frequencies"></p-dropdown>
+    </div>
+
+    <div class="notif-filter">
+      <label>Status</label>
+      <p-dropdown [options]="statusFilterOptions" [(ngModel)]="selNotifStatus" (onChange)="onNotifFilterChange()" placeholder="All Statuses"></p-dropdown>
+    </div>
+
+    <div class="notif-filter search-filter">
+      <label>Search</label>
+      <div class="notif-search-input">
+        <i class="pi pi-search"></i>
+        <input type="text" [(ngModel)]="notifSearchText" (keyup.enter)="onNotifFilterChange()" placeholder="Search alert subject…">
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification List -->
+  <div class="notif-list-container" *ngIf="!notifLoading">
+    <div class="notif-card" *ngFor="let item of notificationsList" [class.unread]="!item.isRead">
+      <div class="notif-card-left">
+        <div class="notif-proj-badge">{{ item.project || 'THMS' }}</div>
+        <div class="notif-meta">
+          <span class="freq-pill">{{ item.frequency || 'Daily' }}</span>
+          <span class="status-pill" 
+                [class.status-pending]="(item.status || '').includes('Pending')" 
+                [class.status-completed]="item.status === 'Completed'" 
+                [class.status-progress]="item.status === 'In Progress' || item.status === 'Started'" 
+                [class.status-overdue]="item.status === 'Overdue' || item.status === 'Not Started'">
+            {{ item.status || 'Active' }}
+          </span>
+          <span class="notif-time"><i class="pi pi-clock"></i> {{ item.sentAt || 'Just now' }}</span>
+        </div>
+        <h4 class="notif-subject">{{ item.subject || 'System Activity Alert' }}</h4>
+        <p class="notif-msg">{{ item.message || 'Operational alert logged for project monitoring.' }}</p>
+      </div>
+      <button class="notif-action-btn" (click)="notifDialogVisible=false; router.navigate(['/scheme-report'])" pTooltip="View details" tooltipPosition="left">
+        <i class="pi pi-arrow-right"></i>
+      </button>
+    </div>
+
+    <div class="notif-empty" *ngIf="!notificationsList.length">
+      <i class="pi pi-inbox text-4xl text-slate-400 mb-2"></i>
+      <p class="font-bold text-slate-700">No notifications match the selected project, frequency, and status filters.</p>
+      <button type="button" class="mt-3 px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 cursor-pointer shadow-xs" (click)="resetNotifFilters()">
+        <i class="pi pi-refresh"></i> Reset Filters
+      </button>
+    </div>
+  </div>
+
+  <div class="notif-loading" *ngIf="notifLoading">
+    <i class="pi pi-spin pi-spinner text-blue-600 text-2xl"></i>
+    <span class="font-bold text-slate-700">Loading notifications…</span>
+  </div>
+</p-dialog>
+
+<!-- TAHDCO AI Copilot Floating Assistant Widget -->
+<app-ai-assistant></app-ai-assistant>

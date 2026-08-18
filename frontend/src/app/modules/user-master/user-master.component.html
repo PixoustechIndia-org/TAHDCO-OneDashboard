@@ -1,0 +1,184 @@
+<p-toast></p-toast>
+<p-confirmDialog></p-confirmDialog>
+<div class="page-wrap">
+
+  <!-- Header -->
+  <div class="mod-header">
+    <div class="mod-title-wrap">
+      <div class="mod-icon"><i class="pi pi-users"></i></div>
+      <div>
+        <h1 class="mod-title">User Master</h1>
+        <p class="mod-sub">{{ users.length }} users · {{ activeCount }} active</p>
+      </div>
+    </div>
+    <div class="mod-actions">
+      <button class="btn btn-solid-navy" (click)="openAdd()"><i class="pi pi-plus"></i><span>Add user</span></button>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filter-bar">
+    <div class="fgrp search-grp">
+      <label>Search</label>
+      <span class="p-input-icon-left">
+        <i class="pi pi-search"></i>
+        <input pInputText [(ngModel)]="searchTerm" (ngModelChange)="applyFilter()" placeholder="Name or email…" class="search-inp">
+      </span>
+    </div>
+    <div class="fgrp">
+      <label>Role</label>
+      <p-dropdown [options]="roleOptions" [(ngModel)]="roleFilter" (onChange)="applyFilter()" placeholder="All roles" styleClass="flt-drop" appendTo="body"></p-dropdown>
+    </div>
+    <div class="filter-spacer"></div>
+    <button class="btn-icon-outline" (click)="loadUsers()" pTooltip="Reload" aria-label="Reload"><i class="pi pi-refresh"></i></button>
+  </div>
+
+  <!-- Table -->
+  <div class="sec-card">
+    <div class="sec-hdr">
+      <div class="sec-hdr-left">
+        <i class="pi pi-list"></i>
+        <span class="sec-title">Registered users</span>
+        <span class="row-count">{{ filteredUsers.length }} shown</span>
+      </div>
+
+      <!-- Export Toolbar -->
+      <div class="export-toolbar">
+        <button type="button" (click)="exportExcel()" class="um-export-btn excel" title="Export to Excel">
+          <i class="pi pi-file-excel"></i> Excel
+        </button>
+        <button type="button" (click)="copyToClipboard()" class="um-export-btn copy" title="Copy to Clipboard">
+          <i class="pi pi-copy"></i> Copy
+        </button>
+        <button type="button" (click)="exportCSV()" class="um-export-btn csv" title="Export to CSV">
+          <i class="pi pi-file"></i> CSV
+        </button>
+        <button type="button" (click)="printTable()" class="um-export-btn print" title="Print Table">
+          <i class="pi pi-print"></i> Print
+        </button>
+      </div>
+    </div>
+    <p-table [value]="filteredUsers" [loading]="loading" [paginator]="true" [rows]="rows" [(first)]="first"
+      [totalRecords]="filteredUsers.length" [rowsPerPageOptions]="[10,25,50,100]" [showCurrentPageReport]="true"
+      currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries" [showFirstLastIcon]="true"
+      [rowHover]="true" dataKey="id" styleClass="p-datatable-sm um-table">
+      <ng-template pTemplate="header">
+        <tr>
+          <th style="width:50px">#</th>
+          <th pSortableColumn="name">Name <p-sortIcon field="name"></p-sortIcon></th>
+          <th pSortableColumn="email">Email <p-sortIcon field="email"></p-sortIcon></th>
+          <th style="width:170px" pSortableColumn="role">Role <p-sortIcon field="role"></p-sortIcon></th>
+          <th style="width:140px" pSortableColumn="districtName">District / Div <p-sortIcon field="districtName"></p-sortIcon></th>
+          <th>App access</th>
+          <th style="width:100px;text-align:center" pSortableColumn="isActive">Status <p-sortIcon field="isActive"></p-sortIcon></th>
+          <th style="width:130px;text-align:center">Actions</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-u let-i="rowIndex">
+        <tr>
+          <td class="text-center text-muted">{{ first + i + 1 }}</td>
+          <td>
+            <div class="user-cell">
+              <div class="u-avatar">{{ (u.name || '').charAt(0) }}</div>
+              <span class="fw-600">{{ u.name || '' }}</span>
+            </div>
+          </td>
+          <td class="text-muted">{{ u.email || '' }}</td>
+          <td><span class="badge" [ngClass]="roleBadgeClass(u.role || '')">{{ roleLabel(u.role || '') }}</span></td>
+          <td class="text-muted">{{ u.districtName || (u.divisionName || 'All') }}</td>
+          <td>
+            <div class="app-chips">
+              <span class="app-chip" *ngFor="let a of (u.appAccess || []).slice(0,3); trackBy: trackByIndex">{{ a }}</span>
+              <span class="app-chip more" *ngIf="u.appAccess && u.appAccess.length > 3">+{{ u.appAccess.length - 3 }}</span>
+            </div>
+          </td>
+          <td class="text-center">
+            <span class="status-dot" [class.active]="u.isActive" [class.inactive]="!u.isActive"></span>
+            {{ u.isActive ? 'Active' : 'Inactive' }}
+          </td>
+          <td class="text-center">
+            <div class="action-btns">
+              <button class="act-btn edit" (click)="openEdit(u)" pTooltip="Edit" aria-label="Edit"><i class="pi pi-pencil"></i></button>
+              <button class="act-btn toggle" (click)="toggleActive(u)" [pTooltip]="u.isActive ? 'Deactivate' : 'Activate'" aria-label="Toggle"><i class="pi" [class.pi-ban]="u.isActive" [class.pi-check]="!u.isActive"></i></button>
+              <button class="act-btn delete" (click)="confirmDelete(u)" pTooltip="Delete" aria-label="Delete"><i class="pi pi-trash"></i></button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr><td colspan="8" class="empty-state"><i class="pi pi-users"></i><p>No users found</p></td></tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>
+
+<!-- Add/Edit dialog -->
+<p-dialog *ngIf="dialogVisible" [(visible)]="dialogVisible" [modal]="true" [draggable]="false" [resizable]="false"
+  [style]="{ width: '640px' }" [header]="isEditMode ? 'Edit user' : 'Add user'">
+  <div class="form-body">
+    <div class="form-field">
+      <label>Full name</label>
+      <input pInputText [(ngModel)]="editingUser.name" placeholder="e.g. Rajesh Kumar" class="w-100">
+    </div>
+    <div class="form-field">
+      <label>Email address</label>
+      <input pInputText [(ngModel)]="editingUser.email" type="email" placeholder="user@tahdco.in" class="w-100">
+    </div>
+    <div class="form-field" *ngIf="!isEditMode">
+      <label>Password</label>
+      <input pInputText [(ngModel)]="editingUser.password" type="password" placeholder="Initial password" class="w-100">
+    </div>
+    <div class="form-row-2">
+      <div class="form-field">
+        <label>Role</label>
+        <p-dropdown [options]="roleOptions.slice(1)" [(ngModel)]="editingUser.role" styleClass="w-100" appendTo="body"></p-dropdown>
+      </div>
+      <div class="form-field">
+        <label>Division</label>
+        <p-dropdown [options]="divisionOptions" [(ngModel)]="editingUser.divisionName" (onChange)="onDivisionChange()"
+          placeholder="Select division" styleClass="w-100" appendTo="body"></p-dropdown>
+      </div>
+    </div>
+    <div class="form-field">
+      <label>District <span class="text-muted" style="font-weight:400">(required for District Manager)</span></label>
+      <p-dropdown [options]="districtOptions" [(ngModel)]="editingUser.districtName" [filter]="true"
+        placeholder="Select district" styleClass="w-100" appendTo="body"
+        [disabled]="!districtOptions.length"></p-dropdown>
+    </div>
+
+    <!-- Project privileges: View · Create · Edit · Update · Delete -->
+    <div class="form-field">
+      <label>Project privileges</label>
+      <div class="priv-table-wrap">
+        <table class="priv-table">
+          <thead>
+            <tr>
+              <th class="priv-proj">Project</th>
+              <th>All</th>
+              <th *ngFor="let a of privActions; trackBy: trackByIndex">{{ a | titlecase }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let p of projects; trackBy: trackByIndex">
+              <td class="priv-proj">{{ p }}</td>
+              <td>
+                <p-checkbox [binary]="true" [ngModel]="allChecked(p)"
+                  (ngModelChange)="toggleAll(p, $event)"></p-checkbox>
+              </td>
+              <td *ngFor="let a of privActions; trackBy: trackByIndex">
+                <p-checkbox [binary]="true" [(ngModel)]="editingPrivs[p][a]"></p-checkbox>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="text-muted" style="font-size:11px;margin:6px 0 0">
+        "View" controls module visibility (app access); Create/Edit/Update/Delete control actions inside the module.
+      </p>
+    </div>
+  </div>
+  <ng-template pTemplate="footer">
+    <button class="btn btn-outline-navy" (click)="dialogVisible=false"><i class="pi pi-times"></i><span>Cancel</span></button>
+    <button class="btn btn-solid-navy" (click)="saveUser()"><i class="pi pi-check"></i><span>{{ isEditMode ? 'Update' : 'Create' }}</span></button>
+  </ng-template>
+</p-dialog>

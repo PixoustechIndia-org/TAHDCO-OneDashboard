@@ -1,0 +1,284 @@
+<div class="page-wrap" *ngIf="config">
+
+  <!-- ── HEADER with breadcrumb ─────────────────────────────────── -->
+  <div class="drill-header shadow-sm" [style.--acc]="config.accent" [style.--acc-s]="config.accentSoft">
+    <button class="back-btn" (click)="back()" aria-label="Back to overview" pTooltip="Back to Overview" tooltipPosition="bottom">
+      <i class="pi pi-arrow-left"></i>
+    </button>
+    <div class="dh-icon"><i class="pi {{ config.icon }}"></i></div>
+    <div class="dh-text">
+      <div class="dh-breadcrumb">
+        <span class="crumb link" (click)="back()">Overview</span>
+        <i class="pi pi-chevron-right"></i>
+        <span class="crumb current">{{ config.moduleCode }}</span>
+      </div>
+      <h1 class="dh-title">{{ config.moduleName }}</h1>
+    </div>
+  </div>
+
+  <!-- ── TOP OF THE PAGE: ROW SELECTOR STRIP CARDS (Quick Select Division) ─────────────────────── -->
+  <div class="strip-container shadow-sm mb-4">
+    <div class="strip-header">
+      <span class="strip-title"><i class="pi pi-th-large mr-1.5 text-blue-600"></i>Quick Select Division</span>
+      <span class="strip-count"><i class="pi pi-compass text-emerald-500 mr-1"></i>{{ filteredRows.length }} Divisions Available</span>
+    </div>
+    <div class="row-strip">
+      <button class="strip-card shadow-xs" *ngFor="let r of filteredRows; trackBy: trackByRowKey"
+        [class.active]="activeRow?.key === r.key"
+        [style.--acc]="config.accent"
+        (click)="selectRow(r)">
+        <div class="sc-top">
+          <span class="si-label">{{ r.label }}</span>
+          <span class="si-dot" [class.active-dot]="activeRow?.key === r.key"></span>
+        </div>
+        <span class="si-value">{{ formatNum(r.value) }}</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── SIDE-BY-SIDE PANELS ────────────────────────────────────── -->
+  <div class="drill-body">
+
+    <!-- LEFT: chart / 3d / table panel -->
+    <div class="panel chart-panel shadow-sm">
+      <div class="panel-hdr">
+        <div class="flex items-center gap-2">
+          <div class="hdr-icon-wrap">
+            <i class="pi pi-chart-bar text-primary" *ngIf="viewMode !== 'table'"></i>
+            <i class="pi pi-table text-primary" *ngIf="viewMode === 'table'"></i>
+          </div>
+          <div>
+            <span class="hdr-title">{{ config.valueLabel }} by {{ config.moduleId === 'housing' || config.moduleId === 'enrollment' || config.moduleId === 'tod' || config.moduleId === 'patrol' || config.moduleId === 'patrol360' ? 'District' : (config.moduleId === 'scheme' || config.moduleId === 'telp' || config.moduleId === 'oneportal' ? 'Scheme' : 'Division') }}</span>
+            <span class="hdr-badge">{{ filteredRows.length }} Entries</span>
+          </div>
+        </div>
+
+        <!-- View Mode Switcher Pills & Action Buttons -->
+        <div class="flex items-center gap-2">
+          <div class="view-pill-group">
+            <button type="button" class="v-pill-btn" [class.active]="viewMode === '3d'" (click)="setViewMode('3d')" pTooltip="3D Interactive Visual Chart" tooltipPosition="top">
+              <i class="pi pi-box mr-1"></i>3D Chart
+            </button>
+            <button type="button" class="v-pill-btn" [class.active]="viewMode === '2d'" (click)="setViewMode('2d')" pTooltip="2D Stacked Bar Chart" tooltipPosition="top">
+              <i class="pi pi-chart-bar mr-1"></i>2D Chart
+            </button>
+            <button type="button" class="v-pill-btn" [class.active]="viewMode === 'table'" (click)="setViewMode('table')" pTooltip="Interactive Data Table" tooltipPosition="top">
+              <i class="pi pi-table mr-1"></i>Table View
+            </button>
+          </div>
+
+          <button *ngIf="viewMode === 'table'" type="button" (click)="openAddModal()" 
+                  class="btn-add-table shadow-sm" pTooltip="Add New Record / Row" tooltipPosition="top">
+            <i class="pi pi-plus mr-1"></i>Add Entry
+          </button>
+        </div>
+      </div>
+
+      <!-- Search & Filters Toolbar -->
+      <div class="drill-filter-row">
+        <div class="search-box">
+          <i class="pi pi-search search-ico"></i>
+          <input type="text" [(ngModel)]="searchTerm" (ngModelChange)="onFilterChange()" placeholder="Search name..." class="search-input" />
+          <button *ngIf="searchTerm" (click)="searchTerm=''; onFilterChange()" class="clear-btn" aria-label="Clear search">
+            <i class="pi pi-times"></i>
+          </button>
+        </div>
+
+        <p-dropdown *ngIf="hasDivisions" [options]="divisionOptions" [(ngModel)]="selectedDivision" 
+                    (onChange)="onFilterChange()" placeholder="All Divisions" 
+                    styleClass="filter-pill-dropdown" appendTo="body"></p-dropdown>
+
+        <p-dropdown *ngIf="hasPhases" [options]="phaseOptions" [(ngModel)]="selectedPhase" 
+                    (onChange)="onFilterChange()" placeholder="All Phases" 
+                    styleClass="filter-pill-dropdown" appendTo="body"></p-dropdown>
+
+        <button *ngIf="viewMode === 'table'" type="button" (click)="exportTableCSV()" 
+                class="btn-export-csv" pTooltip="Export to CSV" tooltipPosition="top">
+          <i class="pi pi-file-excel mr-1 text-emerald-600"></i>Export
+        </button>
+      </div>
+
+      <!-- ── 1. 3D CHART VIEW ────────────────────────────────────── -->
+      <div class="chart-scroll" *ngIf="viewMode === '3d'">
+        <div class="isometric-3d-container">
+          <div class="iso-row" *ngFor="let r of filteredRows; trackBy: trackByRowKey"
+               [class.active-iso-row]="activeRow?.key === r.key"
+               (click)="selectRow(r)">
+            <div class="iso-label-area">
+              <span class="iso-label-text">{{ r.label }}</span>
+              <span class="iso-total-badge">{{ formatNum(r.value) }}</span>
+            </div>
+
+            <!-- 3D Cylindrical Perspective Stacked Bar -->
+            <div class="iso-bar-track">
+              <div class="iso-cylinder-bar">
+                <div class="iso-segment" *ngFor="let s of r.segments"
+                     [style.width.%]="segmentPct(r, s.value)"
+                     [style.background]="s.color"
+                     [pTooltip]="s.label + ': ' + formatNum(s.value) + ' (' + segmentPct(r, s.value) + '%)'"
+                     tooltipPosition="top">
+                  <div class="iso-cap" [style.background]="s.color"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Percentages mini badges -->
+            <div class="iso-pct-tags">
+              <span class="iso-tag" *ngFor="let s of r.segments" [style.color]="s.color">
+                {{ segmentPct(r, s.value) }}%
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── 2. 2D BAR CHART VIEW ────────────────────────────────── -->
+      <div class="chart-scroll" *ngIf="viewMode === '2d'">
+        <div [style.height.px]="filteredRows.length * 48 + 70" style="min-height: 320px; width: 100%;">
+          <p-chart type="bar" [data]="chartData" [options]="chartOpts" [style.height.px]="filteredRows.length * 48 + 70"></p-chart>
+        </div>
+      </div>
+
+      <!-- ── 3. INTERACTIVE DATA TABLE VIEW (User Addable & Viewable Table) ────── -->
+      <div class="table-scroll-view p-3" *ngIf="viewMode === 'table'">
+        <p-table #dtDrill [value]="filteredRows" [paginator]="true" [rows]="10" 
+                 [rowsPerPageOptions]="[5, 10, 25, 50]" [showCurrentPageReport]="true"
+                 currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
+                 styleClass="p-datatable-striped p-datatable-gridlines compact-drill-table">
+          <ng-template pTemplate="header">
+            <tr>
+              <th pSortableColumn="label" class="cursor-pointer">
+                {{ config.moduleId === 'housing' || config.moduleId === 'enrollment' || config.moduleId === 'tod' || config.moduleId === 'patrol' || config.moduleId === 'patrol360' ? 'District' : (config.moduleId === 'scheme' || config.moduleId === 'telp' || config.moduleId === 'oneportal' ? 'Scheme' : 'Division') }}
+                <p-sortIcon field="label"></p-sortIcon>
+              </th>
+              <th pSortableColumn="value" class="cursor-pointer text-right">{{ config.valueLabel }} <p-sortIcon field="value"></p-sortIcon></th>
+              <th class="text-right">In Progress</th>
+              <th class="text-right">Not Started</th>
+              <th class="text-right">Completed</th>
+              <th style="width: 80px;" class="text-center">Action</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-r>
+            <tr [class.table-row-selected]="activeRow?.key === r.key" (click)="selectRow(r)" class="cursor-pointer">
+              <td class="font-bold text-slate-800">{{ r.label }}</td>
+              <td class="text-right font-black text-blue-600">{{ formatNum(r.value) }}</td>
+              <td class="text-right text-emerald-600 font-semibold">{{ formatNum(r.segments[0]?.value || 0) }}</td>
+              <td class="text-right text-red-500 font-semibold">{{ formatNum(r.segments[1]?.value || 0) }}</td>
+              <td class="text-right text-slate-900 font-bold">{{ formatNum(r.segments[2]?.value || 0) }}</td>
+              <td class="text-center">
+                <button type="button" pButton icon="pi pi-search" class="p-button-rounded p-button-text p-button-sm text-blue-600" 
+                        (click)="selectRow(r)" pTooltip="Inspect Detail"></button>
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </div>
+
+    </div>
+
+    <!-- RIGHT: detail panel -->
+    <div class="panel detail-panel shadow-sm" *ngIf="activeRow as row" [style.--acc]="config.accent" [style.--acc-s]="config.accentSoft">
+      <div class="panel-hdr">
+        <div class="flex items-center gap-2">
+          <div class="hdr-icon-wrap">
+            <i class="pi pi-info-circle text-blue-600"></i>
+          </div>
+          <div>
+            <span class="hdr-title">Detail — {{ row.label }}</span>
+          </div>
+        </div>
+        <span class="detail-active-tag">Active Selection</span>
+      </div>
+
+      <!-- headline card -->
+      <div class="detail-headline">
+        <div class="dh-glow"></div>
+        <div class="dh-content">
+          <div class="dh-value" [style.color]="config.accent">{{ formatNum(row.value) }}</div>
+          <div class="dh-caption">{{ config.valueLabel }}</div>
+        </div>
+      </div>
+
+      <!-- segment breakdown with progress bars -->
+      <div class="seg-block">
+        <div class="seg-title"><i class="pi pi-sliders-h mr-1.5"></i>Status Breakdown</div>
+        <div class="seg-row" *ngFor="let s of row.segments; trackBy: trackByIndex">
+          <div class="seg-top">
+            <span class="seg-dot" [style.background]="s.color"></span>
+            <span class="seg-label">{{ s.label }}</span>
+            <span class="seg-val-badge" [style.color]="s.color" [style.border-color]="s.color + '40'">{{ formatNum(s.value) }}</span>
+            <span class="seg-pct">{{ segmentPct(row, s.value) }}%</span>
+          </div>
+          <div class="seg-bar">
+            <div class="seg-fill" [style.width.%]="segmentPct(row, s.value)" [style.background]="s.color"></div>
+          </div>
+        </div>
+        <div class="seg-total">
+          <span class="flex items-center gap-1.5"><i class="pi pi-check-circle text-emerald-500"></i> Total Works</span>
+          <strong>{{ formatNum(rowTotal(row)) }}</strong>
+        </div>
+      </div>
+
+      <!-- extra fields grid -->
+      <div class="extra-block" *ngIf="extraKeys(row).length">
+        <div class="seg-title"><i class="pi pi-table mr-1.5"></i>All Key Fields</div>
+        <div class="extra-grid">
+          <div class="extra-card" *ngFor="let k of extraKeys(row); trackBy: trackByIndex">
+            <span class="ex-key">{{ k }}</span>
+            <span class="ex-val">{{ formatNum(row.extra![k]) }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- ══ ADD NEW ENTRY MODAL DIALOG ═════════════════════════════════════ -->
+<p-dialog header="Add New Division / District Record" [(visible)]="displayAddModal" [modal]="true" 
+          [style]="{width: '450px'}" [draggable]="false" [resizable]="false">
+  <div class="p-fluid flex flex-col gap-3 pt-2">
+    <div>
+      <label class="font-bold text-xs text-slate-700 block mb-1">Division / District Name *</label>
+      <input type="text" pInputText [(ngModel)]="newEntry.label" placeholder="e.g. Dindigul Division" class="p-inputtext-sm w-full" />
+    </div>
+
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <label class="font-bold text-xs text-slate-700 block mb-1">Total Works</label>
+        <input type="number" pInputText [(ngModel)]="newEntry.value" class="p-inputtext-sm w-full" />
+      </div>
+      <div>
+        <label class="font-bold text-xs text-slate-700 block mb-1">In Progress</label>
+        <input type="number" pInputText [(ngModel)]="newEntry.inProgress" class="p-inputtext-sm w-full" />
+      </div>
+    </div>
+
+    <div class="grid grid-cols-3 gap-2">
+      <div>
+        <label class="font-bold text-xs text-slate-700 block mb-1">Not Started</label>
+        <input type="number" pInputText [(ngModel)]="newEntry.notStarted" class="p-inputtext-sm w-full" />
+      </div>
+      <div>
+        <label class="font-bold text-xs text-slate-700 block mb-1">Completed</label>
+        <input type="number" pInputText [(ngModel)]="newEntry.completed" class="p-inputtext-sm w-full" />
+      </div>
+      <div>
+        <label class="font-bold text-xs text-slate-700 block mb-1">M-Books</label>
+        <input type="number" pInputText [(ngModel)]="newEntry.mBooks" class="p-inputtext-sm w-full" />
+      </div>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <button pButton label="Cancel" icon="pi pi-times" class="p-button-text p-button-sm" (click)="displayAddModal=false"></button>
+    <button pButton label="Save Record" icon="pi pi-check" class="p-button-primary p-button-sm" 
+            [disabled]="!newEntry.label" (click)="saveNewEntry()"></button>
+  </ng-template>
+</p-dialog>
+
+<div class="loading-state" *ngIf="loading">
+  <i class="pi pi-spin pi-spinner text-3xl text-blue-600"></i>
+  <span>Loading drill-down data…</span>
+</div>

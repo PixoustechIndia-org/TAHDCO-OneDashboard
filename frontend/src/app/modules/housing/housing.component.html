@@ -1,0 +1,232 @@
+<p-toast></p-toast>
+<div class="page-wrap">
+  <!-- Header -->
+  <div class="mod-header">
+    <div class="mod-title-wrap">
+      <div class="mod-icon"><i class="pi pi-home"></i></div>
+      <div>
+        <h1 class="mod-title">Housing Construction (THMS)</h1>
+        <p class="mod-sub">{{ selectedDiv }} · {{ selectedDistrict }} · {{ selectedPhase }} · {{ tableData.length }} records</p>
+      </div>
+    </div>
+    <div class="mod-actions">
+      <p-button icon="pi pi-download" label="Export" styleClass="btn-gold" (onClick)="export()"></p-button>
+    </div>
+  </div>
+
+  <!-- KPI strip -->
+  <div class="kpi-strip">
+    <div class="kpi-tile" *ngFor="let k of kpis" [style.--kpi-accent]="k.accent" [style.--kpi-soft]="k.soft">
+      <div class="kpi-ico"><i class="pi {{ k.icon }}"></i></div>
+      <div class="kpi-val">{{ k.value | number }}{{ k.suffix || '' }}</div>
+      <div class="kpi-lbl">{{ k.label }}</div>
+    </div>
+  </div>
+
+  <!-- Filters: Division · District · Phase · Search -->
+  <div class="filter-bar">
+    <div class="fgrp">
+      <label>Division</label>
+      <p-dropdown [options]="divOptions" [(ngModel)]="selectedDiv" (onChange)="onDivisionChange()" styleClass="flt-drop" appendTo="body"></p-dropdown>
+    </div>
+    <div class="fgrp">
+      <label>District <i *ngIf="districtLocked" class="pi pi-lock" style="font-size:10px" pTooltip="Locked to your district"></i></label>
+      <p-dropdown [options]="distOptions" [(ngModel)]="selectedDistrict" (onChange)="onFilterChange()"
+        [disabled]="districtLocked" [filter]="true" styleClass="flt-drop" appendTo="body"></p-dropdown>
+    </div>
+    <div class="fgrp">
+      <label>Phase</label>
+      <p-dropdown [options]="phaseOptions" [(ngModel)]="selectedPhase" (onChange)="onFilterChange()" styleClass="flt-drop" appendTo="body"></p-dropdown>
+    </div>
+    <div class="fgrp search-grp">
+      <label>Search</label>
+      <span class="p-input-icon-left">
+        <i class="pi pi-search"></i>
+        <input pInputText [(ngModel)]="searchTerm" (ngModelChange)="onSearch()" placeholder="District, division or phase…" class="search-inp">
+      </span>
+    </div>
+    <div class="filter-spacer"></div>
+    <div class="view-toggle">
+      <button class="vbtn" [class.active]="viewMode==='table'" (click)="viewMode='table'" aria-label="Table view"><i class="pi pi-table"></i></button>
+      <button class="vbtn" [class.active]="viewMode==='chart'" (click)="viewMode='chart'" aria-label="Charts view"><i class="pi pi-chart-bar"></i></button>
+    </div>
+    <p-button icon="pi pi-refresh" styleClass="btn-outline" (onClick)="load()"></p-button>
+  </div>
+
+  <!-- ── Table view (sortable columns) ── -->
+  <div class="sec-card" *ngIf="viewMode==='table'">
+    <div class="sec-hdr">
+      <i class="pi pi-list"></i>
+      <span class="sec-title">Phase-wise construction status</span>
+      <span class="row-count">{{ tableData.length }} records</span>
+    </div>
+    <p-table [value]="tableData" [loading]="loading" [paginator]="true" [rows]="rows" [(first)]="first"
+      [totalRecords]="tableData.length" [rowsPerPageOptions]="[15,25,50]" sortMode="single"
+      [rowHover]="true" responsiveLayout="scroll" styleClass="p-datatable-sm mod-table">
+      <ng-template pTemplate="header">
+        <tr>
+          <th style="width:44px">#</th>
+          <th pSortableColumn="division">Division <p-sortIcon field="division"></p-sortIcon></th>
+          <th pSortableColumn="district">District <p-sortIcon field="district"></p-sortIcon></th>
+          <th pSortableColumn="phase" class="text-center">Phase <p-sortIcon field="phase"></p-sortIcon></th>
+          <th pSortableColumn="totalHouses" class="text-center">Total <p-sortIcon field="totalHouses"></p-sortIcon></th>
+          <th pSortableColumn="notStarted" class="text-center">Not started <p-sortIcon field="notStarted"></p-sortIcon></th>
+          <th pSortableColumn="started" class="text-center">In progress <p-sortIcon field="started"></p-sortIcon></th>
+          <th pSortableColumn="completed" class="text-center">Completed <p-sortIcon field="completed"></p-sortIcon></th>
+          <th style="width:150px">Completion</th>
+          <th class="text-center">Status</th>
+          <th style="width:60px" class="text-center">Details</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-row let-i="rowIndex">
+        <tr>
+          <td class="text-center text-muted">{{ first + i + 1 }}</td>
+          <td>{{ row.division }}</td>
+          <td class="fw-600">{{ row.district }}</td>
+          <td class="text-center"><span class="pill pill-gold">{{ row.phase }}</span></td>
+          <td class="text-center"><span class="pill pill-navy">{{ row.totalHouses }}</span></td>
+          <td class="text-center">{{ row.notStarted }}</td>
+          <td class="text-center">{{ row.started }}</td>
+          <td class="text-center">{{ row.completed }}</td>
+          <td>
+            <div class="mini-bar-wrap">
+              <div class="mini-bar"><span [style.width.%]="completionPct(row)" [style.--bar-color]="barColor(completionPct(row))"></span></div>
+              <span class="mini-bar-pct">{{ completionPct(row) }}%</span>
+            </div>
+          </td>
+          <td class="text-center"><span class="pill {{ statusPill(row).cls }}">{{ statusPill(row).text }}</span></td>
+          <td class="text-center">
+            <p-button icon="pi pi-info-circle" styleClass="p-button-text p-button-sm info-btn"
+              pTooltip="Milestone breakdown" (onClick)="openRowDetail(row)"></p-button>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="footer" *ngIf="tableData.length">
+        <tr>
+          <td colspan="4" class="fw-600">Programme total</td>
+          <td class="text-center">{{ summary.totalHouses | number }}</td>
+          <td class="text-center">{{ summary.notStarted | number }}</td>
+          <td class="text-center">{{ summary.started | number }}</td>
+          <td class="text-center">{{ summary.completed | number }}</td>
+          <td colspan="3"></td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr><td colspan="11" class="empty-state">
+          <i class="pi pi-inbox"></i>
+          <p>No records match the selected filters</p>
+        </td></tr>
+      </ng-template>
+    </p-table>
+  </div>
+
+  <!-- ── Charts view: 5 analytics cards ── -->
+  <ng-container *ngIf="viewMode==='chart'">
+    <div class="sec-card">
+      <div class="sec-hdr">
+        <i class="pi pi-chart-bar"></i>
+        <span class="sec-title">Construction status by division</span>
+        <span class="sec-sub">stacked · follows filters</span>
+        <div class="chart-actions">
+          <button class="chart-act-btn" (click)="downloadChart('divChart')" pTooltip="Download Chart" tooltipPosition="bottom"><i class="pi pi-download"></i></button>
+          <button class="chart-act-btn" (click)="printChart('divChart')" pTooltip="Print Chart" tooltipPosition="bottom"><i class="pi pi-print"></i></button>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:300px">
+        <p-chart id="divChart" type="bar" [data]="divisionChart" [options]="stackedOpts" height="300"
+          *ngIf="divisionChart?.datasets?.length; else noChart"></p-chart>
+      </div>
+    </div>
+
+    <div class="chart-grid">
+      <div class="sec-card">
+        <div class="sec-hdr">
+          <i class="pi pi-flag"></i><span class="sec-title">Milestone details</span>
+          <div class="chart-actions">
+            <button class="chart-act-btn" (click)="downloadChart('msChart')" pTooltip="Download Chart" tooltipPosition="bottom"><i class="pi pi-download"></i></button>
+            <button class="chart-act-btn" (click)="printChart('msChart')" pTooltip="Print Chart" tooltipPosition="bottom"><i class="pi pi-print"></i></button>
+          </div>
+        </div>
+        <div class="chart-wrap" style="height:250px">
+          <p-chart id="msChart" type="pie" [data]="milestoneChart" [options]="pieOpts" height="250"
+            *ngIf="milestoneChart?.datasets?.length; else noChart"></p-chart>
+        </div>
+      </div>
+      <div class="sec-card">
+        <div class="sec-hdr">
+          <i class="pi pi-chart-pie"></i><span class="sec-title">Status overview</span>
+          <div class="chart-actions">
+            <button class="chart-act-btn" (click)="downloadChart('stChart')" pTooltip="Download Chart" tooltipPosition="bottom"><i class="pi pi-download"></i></button>
+            <button class="chart-act-btn" (click)="printChart('stChart')" pTooltip="Print Chart" tooltipPosition="bottom"><i class="pi pi-print"></i></button>
+          </div>
+        </div>
+        <div class="chart-wrap" style="height:250px">
+          <p-chart id="stChart" type="doughnut" [data]="statusChart" [options]="doughnutOpts" height="250"
+            *ngIf="statusChart?.datasets?.length; else noChart"></p-chart>
+        </div>
+      </div>
+      <div class="sec-card">
+        <div class="sec-hdr">
+          <i class="pi pi-map"></i><span class="sec-title">Infrastructure details</span>
+          <span class="sec-sub">hill / others / plain</span>
+          <div class="chart-actions">
+            <button class="chart-act-btn" (click)="downloadChart('infChart')" pTooltip="Download Chart" tooltipPosition="bottom"><i class="pi pi-download"></i></button>
+            <button class="chart-act-btn" (click)="printChart('infChart')" pTooltip="Print Chart" tooltipPosition="bottom"><i class="pi pi-print"></i></button>
+          </div>
+        </div>
+        <div class="chart-wrap" style="height:250px">
+          <p-chart id="infChart" type="bar" [data]="infraChart" [options]="infraOpts" height="250"
+            *ngIf="infraChart?.datasets?.length; else noChart"></p-chart>
+        </div>
+        <div class="lm-strip" *ngIf="lastMonth?.completed != null">
+          <span class="sec-sub">Last month:</span>
+          <span class="pill pill-ok">{{ lastMonth.completed }} completed</span>
+          <span class="pill pill-info">{{ lastMonth.inProgress }} in progress</span>
+          <span class="pill pill-bad">{{ lastMonth.notStarted }} not started</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec-card">
+      <div class="sec-hdr">
+        <i class="pi pi-chart-bar"></i>
+        <span class="sec-title">Construction status by district</span>
+        <span class="sec-sub">stacked · sorted by volume · follows filters</span>
+        <div class="chart-actions">
+          <button class="chart-act-btn" (click)="downloadChart('dstChart')" pTooltip="Download Chart" tooltipPosition="bottom"><i class="pi pi-download"></i></button>
+          <button class="chart-act-btn" (click)="printChart('dstChart')" pTooltip="Print Chart" tooltipPosition="bottom"><i class="pi pi-print"></i></button>
+        </div>
+      </div>
+      <div class="chart-wrap" [style.height]="districtChartHeight">
+        <p-chart id="dstChart" type="bar" [data]="districtChart" [options]="hBarOpts" [height]="'100%'"
+          *ngIf="districtChart?.datasets?.length; else noChart"></p-chart>
+      </div>
+    </div>
+  </ng-container>
+
+  <ng-template #noChart><div class="no-chart"><i class="pi pi-chart-bar"></i><p>No data for the selected filters</p></div></ng-template>
+</div>
+
+<!-- Detail dialog: milestone breakdown -->
+<p-dialog [(visible)]="dialogVisible" [modal]="true" [draggable]="false" [resizable]="false"
+  [style]="{width:'460px'}" [header]="dialogTitle" (onHide)="closeDialog()">
+  <div class="dlg-body" *ngIf="activeRow">
+    <div style="height:190px;position:relative"><p-chart type="doughnut" [data]="dialogChartData" [options]="dialogChartOpts" height="190"></p-chart></div>
+    <div class="dlg-info">
+      <div class="di-row"><span class="di-label">Phase</span><span class="di-val">{{ activeRow.phase }}</span></div>
+      <div class="di-row"><span class="di-label">Total houses</span><span class="di-val">{{ activeRow.totalHouses }}</span></div>
+      <div class="di-row"><span class="di-label">Not started</span><span class="di-val">{{ activeRow.notStarted }}</span></div>
+      <div class="di-row"><span class="di-label">In progress</span><span class="di-val">{{ activeRow.started }}</span></div>
+      <div class="di-row"><span class="di-label">Grade beam</span><span class="di-val">{{ activeRow.gradBeam }}</span></div>
+      <div class="di-row"><span class="di-label">Basement</span><span class="di-val">{{ activeRow.basement }}</span></div>
+      <div class="di-row"><span class="di-label">Lintel level</span><span class="di-val">{{ activeRow.lintelLevel }}</span></div>
+      <div class="di-row"><span class="di-label">Roof level</span><span class="di-val">{{ activeRow.roofLevel }}</span></div>
+      <div class="di-row"><span class="di-label">Completed</span><span class="di-val">{{ activeRow.completed }}</span></div>
+      <div class="di-row"><span class="di-label">Completion</span><span class="di-val">{{ completionPct(activeRow) }}%</span></div>
+    </div>
+  </div>
+  <ng-template pTemplate="footer">
+    <p-button label="Close" styleClass="btn-outline" (onClick)="closeDialog()"></p-button>
+    <p-button label="Export" icon="pi pi-download" styleClass="btn-navy" (onClick)="export()"></p-button>
+  </ng-template>
+</p-dialog>

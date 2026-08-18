@@ -1,0 +1,139 @@
+<p-toast></p-toast>
+
+<div class="audit-log-page">
+  <!-- ── HEADER BAR ────────────────────────────────────────────────────────── -->
+  <header class="audit-header">
+    <div class="header-brand">
+      <div class="audit-badge"><i class="pi pi-history"></i> AUDIT LOG</div>
+      <div>
+        <h1 class="header-title">System Audit Log & User Activity Trail</h1>
+        <p class="header-sub">Comprehensive Security, Ingestion, Scheduler & Authentication Event Auditing</p>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <button class="export-btn" (click)="exportAuditLogs()">
+        <i class="pi pi-download"></i> Export Audit Logs
+      </button>
+    </div>
+  </header>
+
+  <!-- ── KPI METRICS CARDS ────────────────────────────────────────────────── -->
+  <div class="kpi-grid">
+    <div class="kpi-card navy">
+      <div class="kpi-ico"><i class="pi pi-list"></i></div>
+      <div class="kpi-meta">
+        <span class="kpi-val">{{ summaryStats.totalLogs }}</span>
+        <span class="kpi-lbl">Total Logged Actions</span>
+      </div>
+    </div>
+
+    <div class="kpi-card info">
+      <div class="kpi-ico"><i class="pi pi-sync"></i></div>
+      <div class="kpi-meta">
+        <span class="kpi-val">{{ summaryStats.ingestionSyncs }}</span>
+        <span class="kpi-lbl">Ingestion & Scheduler Syncs</span>
+      </div>
+    </div>
+
+    <div class="kpi-card success">
+      <div class="kpi-ico"><i class="pi pi-download"></i></div>
+      <div class="kpi-meta">
+        <span class="kpi-val">{{ summaryStats.exportsGenerated }}</span>
+        <span class="kpi-lbl">Data Exports Generated</span>
+      </div>
+    </div>
+
+    <div class="kpi-card danger">
+      <div class="kpi-ico"><i class="pi pi-shield"></i></div>
+      <div class="kpi-meta">
+        <span class="kpi-val">{{ summaryStats.securityEvents }}</span>
+        <span class="kpi-lbl">Security & Auth Events</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PRIMARY CONTROL FILTER BAR ────────────────────────────────────────── -->
+  <div class="filter-card">
+    <div class="filter-controls">
+      <div class="filter-item">
+        <label>Action Category</label>
+        <p-dropdown [options]="actionOptions" [(ngModel)]="selectedAction" (onChange)="onFilterChange()"></p-dropdown>
+      </div>
+
+      <div class="filter-item">
+        <label>Project / Module</label>
+        <p-dropdown [options]="moduleOptions" [(ngModel)]="selectedModule" (onChange)="onFilterChange()"></p-dropdown>
+      </div>
+
+      <div class="filter-item">
+        <label>User Role</label>
+        <p-dropdown [options]="roleOptions" [(ngModel)]="selectedRole" (onChange)="onFilterChange()"></p-dropdown>
+      </div>
+
+      <div class="filter-item search-item">
+        <label>Search Trail</label>
+        <div class="search-wrap">
+          <i class="pi pi-search"></i>
+          <input type="text" [(ngModel)]="searchTerm" (input)="onFilterChange()" placeholder="Search email, IP, action details…">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── AUDIT LOG TABLE ───────────────────────────────────────────────────── -->
+  <div class="table-card">
+    <div class="table-head">
+      <h3><i class="pi pi-shield"></i> User Activity & System Audit Trail ({{ filteredLogs.length }} events)</h3>
+    </div>
+
+    <p-table #dtAudit [value]="filteredLogs" [paginator]="true" [rows]="rows" [first]="first" styleClass="p-datatable-striped p-datatable-gridlines">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>#</th>
+          <th>Timestamp</th>
+          <th>User / Officer</th>
+          <th>Role</th>
+          <th>IP Address</th>
+          <th>Category</th>
+          <th>Module</th>
+          <th>Action Name</th>
+          <th>Details</th>
+          <th>Status</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-log let-i="rowIndex">
+        <tr>
+          <td>{{ i + 1 }}</td>
+          <td><span class="time-tag"><i class="pi pi-clock text-xs"></i> {{ log.timestamp }}</span></td>
+          <td>
+            <div class="user-cell">
+              <strong>{{ log.userName }}</strong>
+              <small>{{ log.userEmail }}</small>
+            </div>
+          </td>
+          <td><span class="role-chip">{{ log.role | uppercase }}</span></td>
+          <td><code>{{ log.ipAddress }}</code></td>
+          <td><span class="cat-pill">{{ log.category }}</span></td>
+          <td><strong>{{ log.module }}</strong></td>
+          <td>{{ log.action }}</td>
+          <td class="details-cell">{{ log.details }}</td>
+          <td>
+            <span class="status-pill" [class.ok]="log.status === 'SUCCESS'" [class.bad]="log.status === 'FAILED'">
+              {{ log.status }}
+            </span>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="10" class="text-center p-6 text-slate-500 font-bold">
+            No audit log entries match the selected category, module, role, and search filters.
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>

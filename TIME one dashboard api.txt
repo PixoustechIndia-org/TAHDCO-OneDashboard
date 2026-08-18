@@ -1,0 +1,181 @@
+Api URL vary from domain to domain but name is constant
+
+Total count api:  https://time.tahdco.com/api/Dashboard/Get_Mbook_Tender_Status
+
+Payload: 
+
+{
+  "divisionIds": [],
+  "division": ["Chennai"],
+ 
+  "district": [],
+ 
+  "year": [
+    "2023",
+    "2024",
+    "2025",
+    "2026"
+  ]
+}
+
+
+
+Detailed API for work:   https://timeqa.pixous.info/api/Report/OneDashboard_Work_Get
+
+Work Status- In-progress,Startedbutstilled,Slowprogress,NotStarted,Completed
+Mbook status- Saved as Mbooknotuploaded, submitted as Mbookuploaded, Payment pending, Pending done
+
+Payload: 
+ {
+  "skip": 0,
+  "take": 10,
+  "searchString": "",
+  "sorting": {
+    "fieldName": "",
+    "sort": ""
+  },
+  "columnSearch": [
+    {
+      "fieldName": "",
+      "searchString": ""
+    }
+  ],
+  "where": {
+    "isActive": true
+  },
+
+
+  "fromDate": "2023-07-22T12:15:21.857Z",
+  "toDate": "2026-07-22T12:15:21.857Z",
+
+  "camerastatusList": "",
+  "type": "work",
+
+
+  "districtNameList": ["chennai"
+  
+  ],
+  "divisionNameList": [
+  ],
+  "statusNameList": [
+  
+  ]
+}
+
+
+
+Mbook:
+
+ {
+  "skip": 0,
+  "take": 10,
+  "searchString": "",
+  "sorting": {
+    "fieldName": "",
+    "sort": ""
+  },
+  "columnSearch": [
+    {
+      "fieldName": "",
+      "searchString": ""
+    }
+  ],
+  "where": {
+    "isActive": true
+  },
+
+
+  "fromDate": "2023-07-22T12:15:21.857Z",
+  "toDate": "2026-07-22T12:15:21.857Z",
+
+  "camerastatusList": "",
+  "type": "mbook",
+
+
+  "districtNameList": ["chennai"
+  
+  ],
+  "divisionNameList": [
+  ],
+  "statusNameList": [
+  "saved"
+  ]
+}
+
+
+Active cameras:
+
+{
+  "skip": 0,
+  "take": 10,
+  "searchString": "",
+  "sorting": {
+    "fieldName": "",
+    "sort": ""
+  },
+  "columnSearch": [
+    {
+      "fieldName": "",
+      "searchString": ""
+    }
+  ],
+  "where": {
+    "isActive": true
+  },
+
+
+  "fromDate": "2023-07-22T12:15:21.857Z",
+  "toDate": "2026-07-22T12:15:21.857Z",
+
+  "camerastatusList": "Live",
+  "type": "work",
+
+
+  "districtNameList": ["chennai"
+  
+  ],
+  "divisionNameList": [
+  ],
+  "statusNameList": [
+  
+  ]
+}
+
+
+InActive cameras:
+
+{
+  "skip": 0,
+  "take": 10,
+  "searchString": "",
+  "sorting": {
+    "fieldName": "",
+    "sort": ""
+  },
+  "columnSearch": [
+    {
+      "fieldName": "",
+      "searchString": ""
+    }
+  ],
+  "where": {
+    "isActive": true
+  },
+
+
+  "fromDate": "2023-07-22T12:15:21.857Z",
+  "toDate": "2026-07-22T12:15:21.857Z",
+
+  "camerastatusList": "Completed",
+  "type": "work",
+
+
+  "districtNameList": ["chennai"
+ 
+  ],
+  "divisionNameList": [
+  ],
+  "statusNameList": [
+ 
+  ]
+}

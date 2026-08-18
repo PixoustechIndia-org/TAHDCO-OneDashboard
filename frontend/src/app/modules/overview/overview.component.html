@@ -1,0 +1,71 @@
+<div class="page-wrap">
+
+  <!-- ── HERO HEADER ────────────────────────────────────────────── -->
+  <div class="overview-hero">
+    <div class="hero-left">
+      <h1 class="hero-title">{{ welcomeMsg }}, {{ user?.name || 'User' }}</h1>
+      <p class="hero-sub">
+        <span class="role-chip">{{ roleLabel }}</span>
+        <span class="hero-date">{{ today }}</span>
+      </p>
+    </div>
+    <div class="hero-right">
+      <div class="hero-stat">
+        <span class="hs-value">9</span>
+        <span class="hs-label">Applications</span>
+      </div>
+      <div class="hero-divider"></div>
+      <div class="hero-stat">
+        <span class="hs-value">{{ visibleTiles.length }}</span>
+        <span class="hs-label">You can access</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="overview-label">
+    <i class="pi pi-th-large"></i>
+    <span>All applications — click any tile to open the module</span>
+  </div>
+
+  <!-- ── MODULE GRID ────────────────────────────────────────────── -->
+  <div class="module-grid" *ngIf="!loading; else gridSkel">
+    <button class="module-tile" *ngFor="let tile of visibleTiles; trackBy: trackByTileId"
+      [style.--acc]="tile.accent" [style.--acc-s]="tile.accentSoft"
+      (click)="openModule(tile)"
+      [attr.aria-label]="'Open ' + tile.name">
+
+      <div class="tile-head">
+        <div class="tile-icon"><i class="pi {{ tile.icon }}"></i></div>
+        <div class="tile-code">{{ tile.code }}</div>
+        <i class="pi pi-arrow-up-right tile-arrow"></i>
+      </div>
+
+      <div class="tile-primary">
+        <span class="tp-value">{{ formatNum(tile.primaryValue) }}</span>
+        <span class="tp-label">{{ tile.primaryLabel }}</span>
+      </div>
+
+      <div class="tile-name">{{ tile.name }}</div>
+
+      <div class="tile-stats">
+        <div class="ts-item" *ngFor="let s of tile.stats; let si = index; trackBy: trackByStatIndex">
+          <span class="ts-dot" [ngClass]="toneClass(s.tone)"></span>
+          <span class="ts-label">{{ s.label }}</span>
+          <span class="ts-value" [ngClass]="toneClass(s.tone)">{{ formatNum(s.value) }}</span>
+        </div>
+      </div>
+    </button>
+  </div>
+
+  <ng-template #gridSkel>
+    <div class="module-grid">
+      <div class="module-tile skel-tile" *ngFor="let i of [1,2,3,4,5,6,7,8,9]">
+        <div class="skel" style="height:34px;width:34px;border-radius:8px;margin-bottom:14px;"></div>
+        <div class="skel" style="height:26px;width:60%;margin-bottom:8px;"></div>
+        <div class="skel" style="height:11px;width:80%;margin-bottom:14px;"></div>
+        <div class="skel" style="height:9px;width:100%;"></div>
+      </div>
+    </div>
+  </ng-template>
+
+</div>

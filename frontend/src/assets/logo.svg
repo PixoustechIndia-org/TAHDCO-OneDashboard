@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 60" fill="none">
+  <!-- Shield Badge Background -->
+  <rect x="4" y="6" width="48" height="48" rx="14" fill="url(#tahdcoGrad)" />
+  <rect x="4" y="6" width="48" height="48" rx="14" stroke="#c9a227" stroke-width="1.5" stroke-opacity="0.6"/>
+  
+  <!-- Building & Pillar Emblem -->
+  <path d="M28 14L16 23H40L28 14Z" fill="#c9a227"/>
+  <rect x="18" y="24" width="4" height="15" rx="1" fill="#ffffff"/>
+  <rect x="26" y="24" width="4" height="15" rx="1" fill="#ffffff"/>
+  <rect x="34" y="24" width="4" height="15" rx="1" fill="#ffffff"/>
+  <rect x="15" y="40" width="26" height="3" rx="1" fill="#c9a227"/>
+  <circle cx="28" cy="20" r="2.5" fill="#ffffff"/>
+
+  <!-- TAHDCO Text -->
+  <text x="62" y="32" font-family="'Outfit', 'Inter', sans-serif" font-size="22" font-weight="900" fill="#ffffff" letter-spacing="1">TAHDCO</text>
+  <text x="63" y="45" font-family="'Inter', sans-serif" font-size="9" font-weight="700" fill="#c9a227" letter-spacing="1.2">UNIFIED DASHBOARD PORTAL</text>
+
+  <!-- Gradients -->
+  <defs>
+    <linearGradient id="tahdcoGrad" x1="4" y1="6" x2="52" y2="54" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0f2042"/>
+      <stop offset="0.6" stop-color="#162a55"/>
+      <stop offset="1" stop-color="#1c366b"/>
+    </linearGradient>
+  </defs>
+</svg>

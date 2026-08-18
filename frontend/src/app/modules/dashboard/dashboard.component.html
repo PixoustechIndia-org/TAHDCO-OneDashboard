@@ -1,0 +1,292 @@
+<p-toast></p-toast>
+<div class="page-wrap" [attr.data-lens]="mode" [style.--lens]="activeLens.accentVar" [style.--lens-soft]="activeLens.accentSoftVar">
+
+  <!-- ══ Header ══════════════════════════════════════════════════ -->
+  <div class="dash-top">
+    <div class="dt-left">
+      <h1>{{ greeting }}, {{ user?.name || 'User' }}</h1>
+      <p>{{ today }} · <span class="clock"><i class="pi pi-clock"></i> {{ clock }}</span></p>
+    </div>
+    <div class="dt-right">
+      <div class="live-pill"><span class="pulse"></span> Live data</div>
+      <button class="btn-icon-outline" (click)="refresh()" pTooltip="Refresh" tooltipPosition="bottom" aria-label="Refresh"><i class="pi pi-refresh"></i></button>
+      <button class="btn btn-solid-navy btn-sm" (click)="exportView()"><i class="pi pi-download"></i><span>Export</span></button>
+    </div>
+  </div>
+
+  <!-- ══ Lens switcher (signature element) ═══════════════════════ -->
+  <div class="lens-bar">
+    <div class="lens-switch" [style.--i]="activeIndex" role="tablist" aria-label="Dashboard view">
+      <span class="lens-indicator"></span>
+      <button class="lens-tab" *ngFor="let l of lenses"
+        role="tab" [attr.aria-selected]="mode === l.mode"
+        [class.active]="mode === l.mode" (click)="setMode(l.mode)">
+        <i class="pi {{ l.icon }}"></i>
+        <span class="lt-title">{{ l.title }}</span>
+      </button>
+    </div>
+    <p class="lens-tagline"><i class="pi {{ activeLens.icon }}"></i> {{ activeLens.tagline }}</p>
+  </div>
+
+  <!-- loading skeleton -->
+  <div class="skel-grid" *ngIf="loading">
+    <div class="skel" *ngFor="let i of [1,2,3,4]" style="height:118px;border-radius:16px;"></div>
+    <div class="skel" style="grid-column:1/-1;height:300px;border-radius:16px;"></div>
+  </div>
+
+  <ng-container *ngIf="!loading" [ngSwitch]="mode">
+
+    <!-- ═══════════════ STRATEGIC ═══════════════ -->
+    <div *ngSwitchCase="'strategic'" class="lens-view">
+      <!-- health band -->
+      <div class="health-band">
+        <div class="hb-score">
+          <div class="hb-ring" [style.--p]="health" [style.--ring]="'var(--gold-400)'">
+            <div class="hb-inner"><span class="hb-num tnum">{{ health }}</span><span class="hb-unit">/100</span></div>
+          </div>
+          <div class="hb-text">
+            <span class="hb-eyebrow">Corporation health index</span>
+            <h2>Delivery is <strong>{{ health >= 80 ? 'strong' : health >= 60 ? 'steady' : 'under pressure' }}</strong> this period</h2>
+            <p>Weighted across housing, tenders, schemes, training and CCTV uptime.</p>
+          </div>
+        </div>
+        <div class="hb-stats">
+          <div class="hb-stat" *ngFor="let s of headline; trackBy: trackByIndex">
+            <span class="hbs-val tnum">{{ s.value }}</span>
+            <span class="hbs-label">{{ s.label }}</span>
+            <span class="hbs-sub">{{ s.sub }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- outcome rings -->
+      <div class="ring-grid">
+        <div class="ring-card" *ngFor="let r of rings; trackBy: trackByKey">
+          <div class="ring" [style.--p]="r.pct" [style.--ring]="r.color">
+            <div class="ring-mid"><i class="pi {{ r.icon }}" [style.color]="r.color"></i></div>
+          </div>
+          <div class="ring-info">
+            <span class="ri-pct tnum" [style.color]="r.color">{{ r.pct }}%</span>
+            <span class="ri-label">{{ r.label }}</span>
+            <span class="ri-sub tnum">{{ formatNum(r.value) }} / {{ formatNum(r.target) }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- targets + leaderboard -->
+      <div class="two-col">
+        <div class="sec-card">
+          <div class="sec-hdr"><i class="pi pi-flag"></i><span class="sec-title">Programme delivery vs annual target</span></div>
+          <div class="pad">
+            <div class="target-row" *ngFor="let g of targets; trackBy: trackByKey">
+              <div class="tr-top">
+                <span class="tr-label">{{ g.label }}</span>
+                <span class="tr-val tnum">{{ formatNum(g.value) }} <em>/ {{ formatNum(g.target) }}</em></span>
+              </div>
+              <div class="pg-bar"><span class="pg-fill" [style.width.%]="g.pct" [style.background]="g.color"></span></div>
+              <span class="tr-pct tnum" [style.color]="g.color">{{ g.pct }}%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="sec-card">
+          <div class="sec-hdr"><i class="pi pi-trophy"></i><span class="sec-title">Division performance</span><span class="hdr-note">Top 6 by progress</span></div>
+          <div class="pad">
+            <div class="lb-row" *ngFor="let l of leaderboard; let idx = index; trackBy: trackByKey">
+              <span class="lb-rank" [class.gold]="idx===0">{{ idx + 1 }}</span>
+              <div class="lb-body">
+                <div class="lb-name">{{ l.division }} <span class="lb-meta tnum">{{ l.works }} works · {{ l.mBooks }} M-Books</span></div>
+                <div class="pg-bar sm"><span class="pg-fill" [style.width.%]="l.pct" style="background:var(--navy)"></span></div>
+              </div>
+              <span class="lb-pct tnum">{{ l.pct }}%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- risks -->
+      <div class="sec-card">
+        <div class="sec-hdr"><i class="pi pi-exclamation-circle"></i><span class="sec-title">Needs leadership attention</span></div>
+        <div class="risk-grid">
+          <div class="risk-item" *ngFor="let r of risks; trackBy: trackByKey" [ngClass]="'sev-' + r.sev">
+            <div class="risk-ico"><i class="pi {{ r.icon }}"></i></div>
+            <div class="risk-body">
+              <span class="risk-count tnum">{{ formatNum(r.count) }}</span>
+              <span class="risk-label">{{ r.label }}</span>
+              <span class="risk-hint">{{ r.hint }}</span>
+            </div>
+            <span class="risk-tag">{{ r.note }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════ TACTICAL ═══════════════ -->
+    <div *ngSwitchCase="'tactical'" class="lens-view">
+      <!-- movers -->
+      <div class="mover-strip">
+        <div class="mover-lead"><i class="pi pi-arrow-down-right"></i><div><span>Biggest gaps to target</span><small>Focus areas for this quarter</small></div></div>
+        <div class="mover-card" *ngFor="let m of movers; trackBy: trackByKey">
+          <span class="mv-label">{{ m.label }}</span>
+          <div class="mv-bottom">
+            <span class="mv-gap tnum" [style.color]="m.color">{{ formatNum(m.gap) }} <em>to go</em></span>
+            <span class="mv-pct tnum">{{ m.pct }}%</span>
+          </div>
+          <div class="pg-bar sm"><span class="pg-fill" [style.width.%]="m.pct" [style.background]="m.color"></span></div>
+        </div>
+      </div>
+
+      <!-- scorecards -->
+      <div class="sec-card">
+        <div class="sec-hdr"><i class="pi pi-th-large"></i><span class="sec-title">Division scorecards</span><span class="hdr-note">Ranked by works progress</span></div>
+        <div class="score-grid">
+          <div class="score-card" *ngFor="let s of scorecards; trackBy: trackByKey" [ngClass]="'st-' + s.cls">
+            <div class="sc-head">
+              <span class="sc-name">{{ s.division }}</span>
+              <span class="sc-status">{{ s.status }}</span>
+            </div>
+            <div class="sc-pct tnum">{{ s.pct }}<em>%</em></div>
+            <div class="pg-bar"><span class="pg-fill" [style.width.%]="s.pct"></span></div>
+            <div class="sc-foot tnum">
+              <span>{{ s.works }} works</span>
+              <span>{{ s.inProgress }} active</span>
+              <span>{{ s.notStarted }} pending</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- bottlenecks -->
+      <div class="sec-card">
+        <div class="sec-hdr"><i class="pi pi-filter"></i><span class="sec-title">Where work is getting stuck</span></div>
+        <div class="pad">
+          <div class="bn-row" *ngFor="let b of bottlenecks; trackBy: trackByKey" [ngClass]="'sev-' + b.sev">
+            <span class="bn-dot"></span>
+            <div class="bn-body">
+              <div class="bn-top"><span class="bn-label">{{ b.label }}</span><span class="bn-count tnum">{{ formatNum(b.count) }}</span></div>
+              <div class="pg-bar sm"><span class="pg-fill" [style.width.%]="b.pct"></span></div>
+            </div>
+            <span class="bn-owner">{{ b.owner }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════ OPERATIONAL ═══════════════ -->
+    <div *ngSwitchCase="'operational'" class="lens-view">
+      <!-- live tiles -->
+      <div class="live-grid">
+        <div class="live-tile" *ngFor="let t of liveTiles; trackBy: trackByKey" [ngClass]="'lt-' + t.tone">
+          <div class="lt-head"><span class="lt-ico"><i class="pi {{ t.icon }}"></i></span><span class="lt-live"><span class="dot"></span>live</span></div>
+          <span class="lt-val tnum">{{ formatNum(t.value) }}</span>
+          <span class="lt-label">{{ t.label }}</span>
+          <span class="lt-foot">{{ t.foot }}</span>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <!-- works status -->
+        <div class="sec-card">
+          <div class="sec-hdr"><i class="pi pi-chart-pie"></i><span class="sec-title">Works status right now</span></div>
+          <div class="chart-wrap" style="height:250px"><p-chart type="doughnut" [data]="worksChart" [options]="worksChartOpts" height="250"></p-chart></div>
+        </div>
+
+        <!-- camera uptime gauge -->
+        <div class="sec-card">
+          <div class="sec-hdr"><i class="pi pi-video"></i><span class="sec-title">CCTV uptime</span></div>
+          <div class="pad gauge-wrap">
+            <div class="gauge" [style.--p]="cameraUptime">
+              <div class="gauge-center"><span class="g-num tnum">{{ cameraUptime }}%</span><span class="g-cap">online</span></div>
+            </div>
+            <div class="offline-list">
+              <span class="ol-title">Offline duration</span>
+              <div class="ol-row" *ngFor="let o of offlineBars; trackBy: trackByKey">
+                <span class="ol-dot" [style.background]="o.color"></span>
+                <span class="ol-label">{{ o.label }}</span>
+                <span class="ol-val tnum">{{ o.value }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <!-- task board -->
+        <div class="sec-card">
+          <div class="sec-hdr"><i class="pi pi-list-check"></i><span class="sec-title">Task &amp; event board</span></div>
+          <div class="board">
+            <div class="board-col" *ngFor="let c of taskBoard; trackBy: trackByKey">
+              <span class="bc-dot" [style.background]="c.color"></span>
+              <span class="bc-val tnum">{{ c.value }}</span>
+              <span class="bc-label">{{ c.label }}</span>
+              <div class="bc-bar"><span [style.height.%]="c.pct" [style.background]="c.color"></span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- alerts -->
+        <div class="sec-card">
+          <div class="sec-hdr"><i class="pi pi-bell"></i><span class="sec-title">Alerts &amp; actions</span><span class="hdr-note">{{ alerts.length }} open</span></div>
+          <div class="alert-list">
+            <div class="alert-row" *ngFor="let a of alerts; trackBy: trackByIndex" [ngClass]="'sev-' + a.sev">
+              <span class="al-ico"><i class="pi {{ a.icon }}"></i></span>
+              <span class="al-title">{{ a.title }}</span>
+              <button class="al-action">{{ a.action }}<i class="pi pi-arrow-right"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- activity feed -->
+      <div class="sec-card">
+        <div class="sec-hdr"><i class="pi pi-history"></i><span class="sec-title">Recent activity</span></div>
+        <div class="feed">
+          <div class="feed-row" *ngFor="let f of activity; trackBy: trackByIndex">
+            <span class="fr-ico" [ngClass]="'tone-' + f.tone"><i class="pi {{ f.icon }}"></i></span>
+            <span class="fr-text">{{ f.text }}</span>
+            <span class="fr-time">{{ f.time }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════ ANALYTICAL ═══════════════ -->
+    <div *ngSwitchCase="'analytical'" class="lens-view">
+      <!-- filter row -->
+      <div class="filter-bar">
+        <span class="fb-label"><i class="pi pi-sliders-h"></i> Refine</span>
+        <p-dropdown [options]="fyOptions" [(ngModel)]="selectedFY" styleClass="fb-drop" appendTo="body"></p-dropdown>
+        <p-dropdown [options]="divOptions" [(ngModel)]="selectedDiv" styleClass="fb-drop" appendTo="body"></p-dropdown>
+        <span class="fb-note">Showing {{ selectedDiv }} · {{ selectedFY }}</span>
+      </div>
+
+      <div class="two-col">
+        <div class="sec-card">
+          <div class="sec-hdr"><i class="pi pi-chart-bar"></i><span class="sec-title">Tender status by division</span></div>
+          <div class="chart-wrap" style="height:280px"><p-chart type="bar" [data]="tenderDivChart" [options]="tenderDivChartOpts" height="280"></p-chart></div>
+        </div>
+        <div class="sec-card">
+          <div class="sec-hdr"><i class="pi pi-building"></i><span class="sec-title">Housing construction stages</span></div>
+          <div class="chart-wrap" style="height:280px"><p-chart type="bar" [data]="stagesChart" [options]="stagesChartOpts" height="280"></p-chart></div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="sec-card">
+          <div class="sec-hdr"><i class="pi pi-wallet"></i><span class="sec-title">Scheme applications by project</span></div>
+          <div class="chart-wrap" style="height:250px"><p-chart type="bar" [data]="schemeChart" [options]="schemeChartOpts" height="250"></p-chart></div>
+        </div>
+        <div class="sec-card">
+          <div class="sec-hdr"><i class="pi pi-users"></i><span class="sec-title">Enrollment by gender</span></div>
+          <div class="chart-wrap" style="height:250px"><p-chart type="doughnut" [data]="genderChart" [options]="genderChartOpts" height="250"></p-chart></div>
+        </div>
+      </div>
+
+      <div class="sec-card">
+        <div class="sec-hdr"><i class="pi pi-chart-line"></i><span class="sec-title">Skill training — monthly completions</span></div>
+        <div class="chart-wrap" style="height:240px"><p-chart type="line" [data]="trendChart" [options]="trendChartOpts" height="240"></p-chart></div>
+      </div>
+    </div>
+
+  </ng-container>
+</div>
