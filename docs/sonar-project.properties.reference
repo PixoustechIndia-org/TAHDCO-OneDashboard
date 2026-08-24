@@ -1,19 +1,30 @@
 # ============================================================================
 # SonarQube analysis configuration - TAHDCO OneDashboard (UDP)
 # ============================================================================
-# IMPORTANT / how this file is consumed:
+# DO NOT MOVE THIS FILE BACK TO THE REPOSITORY ROOT.
 #
 # The C# half of this repository can only be analysed by the SonarScanner for
 # .NET (`dotnet sonarscanner begin` -> `dotnet build` -> `dotnet sonarscanner
 # end`), because the C# rules run as Roslyn analysers during compilation.
-# That scanner generates its OWN properties file under `.sonarqube/out/` and
-# does not read this file. Therefore the analysis-critical values below
-# (exclusions, coverage report paths, encoding) are ALSO passed explicitly on
-# the `begin` command line in .github/workflows/deploy.yml, and the two must be
-# kept in sync.
 #
-# This file remains the single declarative reference for the project's scope
-# and is what a plain `sonar-scanner` CLI run would consume.
+# That scanner does not merely ignore a sonar-project.properties file at the
+# project base directory - it ABORTS. Observed for real in workflow run
+# 32763152844 with scanner 11.2.1:
+#
+#   sonar-project.properties files are not understood by the SonarScanner
+#   for .NET. Remove those files from the following folders: <repo root>
+#   Post-processing failed. Exit code: 1
+#
+# The analysis was built and the coverage reports were produced, but nothing
+# was published. Hence this file lives under docs/ with a .reference suffix.
+#
+# THE LIVE CONFIGURATION IS THE `dotnet sonarscanner begin` COMMAND IN
+# .github/workflows/deploy.yml. Every analysis-critical value below
+# (exclusions, coverage report paths, encoding, projectBaseDir) is passed
+# there explicitly, and the two must be kept in sync by hand.
+#
+# This file is documentation of the intended analysis scope, and is what a
+# plain `sonar-scanner` CLI run would consume if one were ever used.
 # ============================================================================
 
 # --- Project identity --------------------------------------------------------
