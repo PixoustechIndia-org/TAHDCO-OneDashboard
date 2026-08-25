@@ -217,7 +217,14 @@ jobs:
         continue-on-error: true
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: dotnet sonarscanner end /d:sonar.token="$env:SONAR_TOKEN"
+        run: |
+          $log = "${{ github.workspace }}/artifacts/sonar-end.log"
+          dotnet sonarscanner end /d:sonar.token="$env:SONAR_TOKEN" /d:sonar.verbose=true 2>&1 |
+            Tee-Object -FilePath $log | Out-Null
+          $code = $LASTEXITCODE
+          Write-Host "--- sonar end wrote $((Get-Item $log).Length) bytes; last 20 lines ---"
+          Get-Content -LiteralPath $log -Tail 20
+          exit $code
 
       # TEMPORARY DIAGNOSTIC - remove once the frontend LCOV import is resolved.
       # Run 32764764754 published successfully and imported C# OpenCover, but the
@@ -251,14 +258,24 @@ jobs:
           Write-Host ""
           Write-Host "=== lcov.info on disk at end-of-analysis time ==="
           foreach ($p in @("$ws/frontend/coverage/lcov.info", "$ws/frontend/coverage/tahdco-udp/lcov.info")) {
-            if (Test-Path $p) {
-              $sf = @(Select-String -LiteralPath $p -Pattern '^SF:' | Select-Object -First 3)
-              Write-Host "  EXISTS $p  ($((Get-Item $p).Length) bytes)"
-              $sf | ForEach-Object { Write-Host "     $($_.Line)" }
-            } else {
-              Write-Host "  ABSENT $p"
-            }
+            if (Test-Path $p) { Write-Host "  EXISTS $p ($((Get-Item $p).Length) bytes)" } else { Write-Host "  ABSENT $p" }
           }
+          Write-Host ""
+          Write-Host "=== engine log: every line mentioning lcov / coverage sensors ==="
+          $el = "$ws/artifacts/sonar-end.log"
+          if (Test-Path $el) {
+            Get-Content -LiteralPath $el |
+              Where-Object { $_ -match 'lcov|Coverage|coverage' } |
+              Where-Object { $_ -notmatch 'node_modules|Excluded sources|frontend.coverage.app|\.html"' } |
+              Select-Object -First 60 |
+              ForEach-Object { Write-Host "  $_" }
+            Write-Host ""
+            Write-Host "=== engine log: sensors that executed ==="
+            Get-Content -LiteralPath $el |
+              Select-String -Pattern 'INFO: Sensor .*\[javascript\]' |
+              ForEach-Object { $_.Line.Trim() } | Sort-Object -Unique |
+              ForEach-Object { Write-Host "  $_" }
+          } else { Write-Host "  MISSING $el" }
 
       # ----------------------------------------------------------------------
       # Report
