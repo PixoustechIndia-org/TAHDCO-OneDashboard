@@ -148,7 +148,10 @@ jobs:
             'frontend/e2e/**',
             '**/*.min.js',
             '**/*.min.css',
-            '**/coverage/**',
+            '**/coverage/**/*.html',
+            '**/coverage/**/*.js',
+            '**/coverage/**/*.css',
+            '**/coverage/**/*.png',
             '**/TestResults/**',
             '**/.angular/**',
             '.sonarqube/**',
@@ -177,7 +180,6 @@ jobs:
             /d:sonar.token="$env:SONAR_TOKEN" `
             /d:sonar.sourceEncoding="UTF-8" `
             /d:sonar.scm.provider="git" `
-            /d:sonar.verbose="true" `
             /d:sonar.exclusions="$exclusions" `
             /d:sonar.coverage.exclusions="$coverageExclusions" `
             /d:sonar.cs.opencover.reportsPaths="artifacts/coverage/backend/**/coverage.opencover.xml" `
