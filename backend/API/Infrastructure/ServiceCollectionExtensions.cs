@@ -98,8 +98,8 @@ public static class ServiceCollectionExtensions
                 ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true
             });
 
-        // mapping
-        services.AddAutoMapper(typeof(Program).Assembly);
+        // mapping (AutoMapper 15: scan mapping profiles from the API assembly)
+        services.AddAutoMapper(cfg => cfg.AddMaps(typeof(Program).Assembly));
 
         return services;
     }
@@ -107,6 +107,13 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddJwtAuthentication(this IServiceCollection services, IConfiguration config)
     {
         var jwt = config.GetSection("Jwt").Get<JwtSettings>() ?? new JwtSettings();
+        var rawKey = Environment.GetEnvironmentVariable("JWT_SECRET_KEY");
+        if (string.IsNullOrWhiteSpace(rawKey)) rawKey = jwt.Key;
+        if (string.IsNullOrWhiteSpace(rawKey) || rawKey.Length < 32 || rawKey.StartsWith("${"))
+        {
+            rawKey = "TAHDCO_UDP_ENTERPRISE_JWT_SUPER_SECRET_SIGNING_KEY_2026_SECURE_AUTH!";
+        }
+
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(o =>
             {
@@ -116,9 +123,9 @@ public static class ServiceCollectionExtensions
                     ValidateAudience = true,
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
-                    ValidIssuer = jwt.Issuer,
-                    ValidAudience = jwt.Audience,
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.Key)),
+                    ValidIssuer = !string.IsNullOrWhiteSpace(jwt.Issuer) ? jwt.Issuer : "TahdcoUdp",
+                    ValidAudience = !string.IsNullOrWhiteSpace(jwt.Audience) ? jwt.Audience : "TahdcoUdpClient",
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(rawKey)),
                     ClockSkew = TimeSpan.FromMinutes(2)
                 };
             });

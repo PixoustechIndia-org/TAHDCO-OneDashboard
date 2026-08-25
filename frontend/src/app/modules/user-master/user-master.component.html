@@ -114,53 +114,167 @@
 
 <!-- Add/Edit dialog -->
 <p-dialog *ngIf="dialogVisible" [(visible)]="dialogVisible" [modal]="true" [draggable]="false" [resizable]="false"
-  [style]="{ width: '640px' }" [header]="isEditMode ? 'Edit user' : 'Add user'">
+  [style]="{ width: '680px', maxWidth: '95vw' }" [header]="isEditMode ? 'Edit User' : 'Add User'" styleClass="user-form-dialog"
+  (onHide)="closeDialog()">
   <div class="form-body">
+    
+    <!-- Full Name -->
     <div class="form-field">
-      <label>Full name</label>
-      <input pInputText [(ngModel)]="editingUser.name" placeholder="e.g. Rajesh Kumar" class="w-100">
-    </div>
-    <div class="form-field">
-      <label>Email address</label>
-      <input pInputText [(ngModel)]="editingUser.email" type="email" placeholder="user@tahdco.in" class="w-100">
-    </div>
-    <div class="form-field" *ngIf="!isEditMode">
-      <label>Password</label>
-      <input pInputText [(ngModel)]="editingUser.password" type="password" placeholder="Initial password" class="w-100">
-    </div>
-    <div class="form-row-2">
-      <div class="form-field">
-        <label>Role</label>
-        <p-dropdown [options]="roleOptions.slice(1)" [(ngModel)]="editingUser.role" styleClass="w-100" appendTo="body"></p-dropdown>
-      </div>
-      <div class="form-field">
-        <label>Division</label>
-        <p-dropdown [options]="divisionOptions" [(ngModel)]="editingUser.divisionName" (onChange)="onDivisionChange()"
-          placeholder="Select division" styleClass="w-100" appendTo="body"></p-dropdown>
-      </div>
-    </div>
-    <div class="form-field">
-      <label>District <span class="text-muted" style="font-weight:400">(required for District Manager)</span></label>
-      <p-dropdown [options]="districtOptions" [(ngModel)]="editingUser.districtName" [filter]="true"
-        placeholder="Select district" styleClass="w-100" appendTo="body"
-        [disabled]="!districtOptions.length"></p-dropdown>
+      <label class="form-label">
+        Full Name <span class="req-star">*</span>
+      </label>
+      <input pInputText [(ngModel)]="editingUser.name" (input)="validateField('name')" (blur)="validateField('name')"
+        [class.ng-invalid]="errors.name" [class.ng-dirty]="errors.name"
+        placeholder="e.g. Rajesh Kumar" class="w-100 inp-field">
+      <small class="field-error-msg" *ngIf="errors.name">
+        <i class="pi pi-times-circle"></i> {{ errors.name }}
+      </small>
     </div>
 
-    <!-- Project privileges: View · Create · Edit · Update · Delete -->
+    <!-- Email Address -->
     <div class="form-field">
-      <label>Project privileges</label>
-      <div class="priv-table-wrap">
+      <label class="form-label">
+        Email Address <span class="req-star">*</span>
+      </label>
+      <input pInputText [(ngModel)]="editingUser.email" (input)="validateField('email')" (blur)="validateField('email')"
+        [class.ng-invalid]="errors.email" [class.ng-dirty]="errors.email"
+        type="email" placeholder="e.g. user@tahdco.in" class="w-100 inp-field">
+      <small class="field-error-msg" *ngIf="errors.email">
+        <i class="pi pi-times-circle"></i> {{ errors.email }}
+      </small>
+    </div>
+
+    <!-- Password field (shown in both Add and Edit modes) -->
+    <div class="form-field">
+      <label class="form-label">
+        Password <span class="req-star" *ngIf="!isEditMode">*</span>
+        <span class="text-muted text-xs ml-1" *ngIf="isEditMode">(Leave blank to keep existing password, or enter a new password)</span>
+      </label>
+      <div class="p-inputgroup relative">
+        <input pInputText [(ngModel)]="editingUser.password" (input)="validateField('password')" (blur)="validateField('password')"
+          [class.ng-invalid]="errors.password" [class.ng-dirty]="errors.password"
+          [type]="showUserPassword ? 'text' : 'password'"
+          [placeholder]="isEditMode ? 'Enter new password or leave blank to retain' : 'Initial password (e.g. Password123!)'"
+          class="w-100 inp-field">
+        <button type="button" class="btn-pwd-toggle" (click)="showUserPassword = !showUserPassword" [title]="showUserPassword ? 'Hide Password' : 'Show Password'">
+          <i class="pi" [class.pi-eye]="!showUserPassword" [class.pi-eye-slash]="showUserPassword"></i>
+        </button>
+      </div>
+      <small class="field-error-msg" *ngIf="errors.password">
+        <i class="pi pi-times-circle"></i> {{ errors.password }}
+      </small>
+    </div>
+
+    <!-- Role & Selection Mode -->
+    <div class="form-row-2">
+      <!-- Role Dropdown with Select2 Search Filter -->
+      <div class="form-field">
+        <label class="form-label">
+          Role <span class="req-star">*</span>
+        </label>
+        <p-dropdown [options]="roleOptions.slice(1)" [(ngModel)]="editingUser.role"
+          [filter]="true" filterBy="label" filterPlaceholder="Search role (Select2)..."
+          (onChange)="validateField('role'); onDivisionChange()"
+          [class.ng-invalid]="errors.role" [class.ng-dirty]="errors.role"
+          styleClass="w-100 select2-drop" appendTo="body" placeholder="Select Role">
+        </p-dropdown>
+        <small class="field-error-msg" *ngIf="errors.role">
+          <i class="pi pi-times-circle"></i> {{ errors.role }}
+        </small>
+      </div>
+
+      <!-- Division (Select2 Searchable Dropdown or MultiSelect) -->
+      <div class="form-field">
+        <div class="flex align-items-center justify-content-between mb-1">
+          <label class="form-label mb-0">
+            Division <span class="req-star" *ngIf="isDivisionRequired()">*</span>
+          </label>
+          <button type="button" class="btn-mode-toggle" (click)="multiSelectMode = !multiSelectMode" pTooltip="Toggle Single / Multi-Select Mode" tooltipPosition="top">
+            <i class="pi" [class.pi-check-square]="multiSelectMode" [class.pi-list]="!multiSelectMode"></i>
+            {{ multiSelectMode ? 'Multi-Select ON' : 'Multi-Select' }}
+          </button>
+        </div>
+
+        <!-- Single Select2 Dropdown -->
+        <p-dropdown *ngIf="!multiSelectMode" [options]="divisionOptions" [(ngModel)]="editingUser.divisionName"
+          [filter]="true" filterBy="label" filterPlaceholder="Search division..." [showClear]="true"
+          (onChange)="onDivisionChange(); validateField('division')"
+          [class.ng-invalid]="errors.division" [class.ng-dirty]="errors.division"
+          placeholder="Select division (Select2)" styleClass="w-100 select2-drop" appendTo="body">
+        </p-dropdown>
+
+        <!-- Multi-Select Dropdown -->
+        <p-multiSelect *ngIf="multiSelectMode" [options]="divisionOptions" [(ngModel)]="selectedDivisions"
+          [filter]="true" filterBy="label" filterPlaceHolder="Search divisions..."
+          placeholder="Select Divisions (Multi-Select)" [maxSelectedLabels]="2" selectedItemsLabel="{0} Divisions"
+          (onChange)="onDivisionChange(); validateField('division')"
+          styleClass="w-100 select2-multisel" appendTo="body">
+        </p-multiSelect>
+
+        <small class="field-error-msg" *ngIf="errors.division">
+          <i class="pi pi-times-circle"></i> {{ errors.division }}
+        </small>
+      </div>
+    </div>
+
+    <!-- District Field (Select2 Searchable Dropdown or MultiSelect) -->
+    <div class="form-field">
+      <label class="form-label">
+        District <span class="req-star" *ngIf="isDistrictRequired()">*</span>
+        <span class="text-muted text-xs ml-1" *ngIf="editingUser.role === 'dm'">(Mandatory for District Manager)</span>
+      </label>
+
+      <!-- Single Select2 District Dropdown -->
+      <p-dropdown *ngIf="!multiSelectMode" [options]="districtOptions" [(ngModel)]="editingUser.districtName"
+        [filter]="true" filterBy="label" filterPlaceholder="Type to search district (Select2)..." [showClear]="true"
+        (onChange)="validateField('district')"
+        [class.ng-invalid]="errors.district" [class.ng-dirty]="errors.district"
+        placeholder="Select district (Select2 Searchable)" styleClass="w-100 select2-drop" appendTo="body"
+        [disabled]="!districtOptions.length">
+      </p-dropdown>
+
+      <!-- Multi-Select District Dropdown -->
+      <p-multiSelect *ngIf="multiSelectMode" [options]="districtOptions" [(ngModel)]="selectedDistricts"
+        [filter]="true" filterBy="label" filterPlaceHolder="Search districts..."
+        placeholder="Select Districts (Multi-Select)" [maxSelectedLabels]="3" selectedItemsLabel="{0} Districts"
+        (onChange)="validateField('district')"
+        styleClass="w-100 select2-multisel" appendTo="body"
+        [disabled]="!districtOptions.length">
+      </p-multiSelect>
+
+      <small class="field-error-msg" *ngIf="errors.district">
+        <i class="pi pi-times-circle"></i> {{ errors.district }}
+      </small>
+      <small class="text-muted text-xs block mt-1" *ngIf="!districtOptions.length && editingUser.divisionName">
+        No districts found for selected division.
+      </small>
+    </div>
+
+    <!-- Project Privileges: View · Create · Edit · Update · Delete -->
+    <div class="form-field mt-3">
+      <div class="flex align-items-center justify-content-between mb-2">
+        <label class="form-label mb-0">
+          Project Privileges Matrix <span class="req-star">*</span>
+        </label>
+        <span class="text-xs text-muted">Core: Engineering, Welfare, TNCWWB</span>
+      </div>
+
+      <div class="priv-table-wrap shadow-sm">
         <table class="priv-table">
           <thead>
             <tr>
-              <th class="priv-proj">Project</th>
-              <th>All</th>
-              <th *ngFor="let a of privActions; trackBy: trackByIndex">{{ a | titlecase }}</th>
+              <th class="priv-proj">Project Master</th>
+              <th style="width: 60px">ALL</th>
+              <th *ngFor="let a of privActions; trackBy: trackByIndex" style="width: 75px">{{ a | uppercase }}</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let p of projects; trackBy: trackByIndex">
-              <td class="priv-proj">{{ p }}</td>
+            <tr *ngFor="let p of projects; trackBy: trackByIndex" [class.highlight-core]="p==='Engineering'||p==='Welfare'||p==='TNCWWB'||p==='TNCWWN'">
+              <td class="priv-proj">
+                <i class="pi pi-folder mr-1 text-primary text-xs"></i>
+                <span class="font-bold">{{ p === 'TNCWWN' ? 'TNCWWB' : p }}</span>
+                <span *ngIf="p==='Engineering'||p==='Welfare'||p==='TNCWWB'||p==='TNCWWN'" class="badge-core ml-1">Core</span>
+              </td>
               <td>
                 <p-checkbox [binary]="true" [ngModel]="allChecked(p)"
                   (ngModelChange)="toggleAll(p, $event)"></p-checkbox>
@@ -173,12 +287,18 @@
         </table>
       </div>
       <p class="text-muted" style="font-size:11px;margin:6px 0 0">
-        "View" controls module visibility (app access); Create/Edit/Update/Delete control actions inside the module.
+        <i class="pi pi-info-circle text-primary mr-1"></i>
+        <strong>View</strong> controls module access; <strong>Create/Edit/Update/Delete</strong> control operational permissions.
       </p>
     </div>
   </div>
+
   <ng-template pTemplate="footer">
-    <button class="btn btn-outline-navy" (click)="dialogVisible=false"><i class="pi pi-times"></i><span>Cancel</span></button>
-    <button class="btn btn-solid-navy" (click)="saveUser()"><i class="pi pi-check"></i><span>{{ isEditMode ? 'Update' : 'Create' }}</span></button>
+    <button class="btn btn-outline-navy mr-2" (click)="closeDialog()">
+      <i class="pi pi-times mr-1"></i><span>Cancel</span>
+    </button>
+    <button class="btn btn-solid-navy" (click)="saveUser()" [disabled]="saving">
+      <i class="pi pi-check mr-1"></i><span>{{ isEditMode ? 'Update User' : 'Create User' }}</span>
+    </button>
   </ng-template>
 </p-dialog>

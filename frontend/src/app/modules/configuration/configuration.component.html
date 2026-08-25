@@ -2,136 +2,666 @@
 <p-confirmDialog></p-confirmDialog>
 
 <div class="page-wrap">
-  <!-- Header -->
+  <!-- Master Header -->
   <div class="mod-header shadow-sm">
     <div class="mod-title-wrap">
-      <div class="mod-icon"><i class="pi pi-map"></i></div>
+      <div class="mod-icon"><i class="pi pi-cog"></i></div>
       <div>
-        <h1 class="mod-title">Local Body Configuration</h1>
-        <p class="mod-sub">Master Directory of Tamil Nadu Administrative Divisions, Districts &amp; Local Bodies</p>
+        <h1 class="mod-title">System &amp; Project Configuration Hub</h1>
+        <p class="mod-sub">Manage Roles, Project Master Names, User/Role Project Mappings &amp; Administrative Local Bodies</p>
       </div>
     </div>
     <div class="mod-actions">
-      <input type="file" (change)="onFileChange($event)" accept=".xlsx, .xls" style="display:none" #fileInput>
+      <button class="btn btn-outline-navy mr-2" (click)="loadRoles(); loadProjects(); loadMappings(); loadRecords();" pTooltip="Refresh All Configuration Datasets" tooltipPosition="bottom">
+        <i class="pi pi-refresh mr-1"></i><span>Refresh Hub</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- PrimeNG TabView -->
+  <div class="config-tabs-wrapper shadow-sm mt-3">
+    <p-tabView [(activeIndex)]="activeTabIndex" styleClass="custom-config-tabs">
       
-      <button class="btn btn-outline-navy mr-2" (click)="confirmClear()" [disabled]="uploading || loading" *ngIf="records.length > 0" pTooltip="Clear All Records" tooltipPosition="bottom">
-        <i class="pi pi-trash mr-1 text-red-500"></i><span>Clear</span>
-      </button>
+      <!-- ════════════════════════════════════════════════════════════════════
+           TAB 1: ROLE CREATION & PERMISSION MANAGEMENT
+           ════════════════════════════════════════════════════════════════════ -->
+      <p-tabPanel header="1. Role Management" leftIcon="pi pi-id-card">
+        <div class="tab-content-inner p-3">
+          <!-- Toolbar -->
+          <div class="flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+            <div class="flex align-items-center gap-2 flex-grow-1" style="max-width: 420px;">
+              <span class="p-input-icon-left w-full">
+                <i class="pi pi-search"></i>
+                <input pInputText [(ngModel)]="roleSearch" (ngModelChange)="applyRoleFilter()" placeholder="Search Role Name, Code or Description..." class="w-full search-inp">
+              </span>
+            </div>
+            <div class="flex align-items-center gap-2">
+              <button class="btn btn-solid-navy" (click)="openNewRole()">
+                <i class="pi pi-plus mr-1"></i><span>Create New Role</span>
+              </button>
+            </div>
+          </div>
 
-      <button class="btn btn-outline-navy mr-2" (click)="exportExcel()" [disabled]="records.length === 0" pTooltip="Export Filtered Data to Excel" tooltipPosition="bottom">
-        <i class="pi pi-file-excel mr-1 text-emerald-600"></i><span>Export Excel</span>
-      </button>
+          <!-- Roles Table -->
+          <p-table [value]="filteredRoles" [loading]="roleLoading" [paginator]="true" [rows]="10" responsiveLayout="scroll" styleClass="p-datatable-sm p-datatable-striped config-table">
+            <ng-template pTemplate="header">
+              <tr>
+                <th style="width: 60px" class="text-center">S.No</th>
+                <th style="width: 140px">Role Code</th>
+                <th style="width: 200px">Role Name</th>
+                <th>Description</th>
+                <th style="width: 120px" class="text-center">Scope</th>
+                <th style="width: 110px" class="text-center">Type</th>
+                <th style="width: 90px" class="text-center">Users</th>
+                <th style="width: 220px">Assigned Projects</th>
+                <th style="width: 100px" class="text-center">Status</th>
+                <th style="width: 110px" class="text-center">Actions</th>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-r let-i="rowIndex">
+              <tr>
+                <td class="text-center text-muted font-monospace">{{ i + 1 }}</td>
+                <td><span class="font-mono text-primary font-semibold">{{ r.roleCode }}</span></td>
+                <td class="font-semibold text-slate-900">{{ r.roleName }}</td>
+                <td class="text-slate-600 text-sm">{{ r.description || '-' }}</td>
+                <td class="text-center">
+                  <span class="scope-badge" [class.scope-all]="r.scope==='all'" [class.scope-div]="r.scope==='division'" [class.scope-dist]="r.scope==='district'">
+                    {{ r.scope | uppercase }}
+                  </span>
+                </td>
+                <td class="text-center">
+                  <span class="badge-pill" [class.bg-slate-200]="r.isSystem" [class.text-slate-800]="r.isSystem" [class.bg-emerald-100]="!r.isSystem" [class.text-emerald-800]="!r.isSystem">
+                    {{ r.isSystem ? 'System Core' : 'Custom Role' }}
+                  </span>
+                </td>
+                <td class="text-center font-semibold text-slate-700">{{ r.userCount || 0 }}</td>
+                <td>
+                  <div class="flex flex-wrap gap-1">
+                    <span *ngFor="let prj of (r.assignedProjects || []).slice(0, 4)" class="tag-chip">{{ prj }}</span>
+                    <span *ngIf="(r.assignedProjects || []).length > 4" class="tag-chip-more">+{{ r.assignedProjects.length - 4 }}</span>
+                    <span *ngIf="!(r.assignedProjects?.length)" class="text-muted text-xs">None mapped</span>
+                  </div>
+                </td>
+                <td class="text-center">
+                  <span class="status-dot" [class.status-active]="r.isActive" [class.status-inactive]="!r.isActive">
+                    {{ r.isActive ? 'Active' : 'Inactive' }}
+                  </span>
+                </td>
+                <td class="text-center">
+                  <button class="action-btn edit-btn mr-1" (click)="openEditRole(r)" pTooltip="Edit Role" tooltipPosition="top">
+                    <i class="pi pi-pencil"></i>
+                  </button>
+                  <button class="action-btn del-btn" (click)="confirmDeleteRole(r)" [disabled]="r.isSystem" [pTooltip]="r.isSystem ? 'System role protected' : 'Delete Role'" tooltipPosition="top">
+                    <i class="pi pi-trash"></i>
+                  </button>
+                </td>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="emptymessage">
+              <tr>
+                <td colspan="10" class="empty-state">
+                  <i class="pi pi-id-card text-4xl text-slate-400 mb-2"></i>
+                  <p class="font-semibold text-slate-700">No matching application roles found.</p>
+                </td>
+              </tr>
+            </ng-template>
+          </p-table>
+        </div>
+      </p-tabPanel>
 
-      <button class="btn btn-outline-navy mr-2" (click)="fileInput.click()" [disabled]="uploading" pTooltip="Import Spreadsheet (.xlsx, .xls)" tooltipPosition="bottom">
-        <i class="pi" [class.pi-spin]="uploading" [class.pi-spinner]="uploading" [class.pi-upload]="!uploading"></i>
-        <span>{{ uploading ? 'Importing...' : 'Import Excel' }}</span>
-      </button>
+      <!-- ════════════════════════════════════════════════════════════════════
+           TAB 2: PROJECT NAME CREATION (Engineering, Welfare, TNCWWN, etc.)
+           ════════════════════════════════════════════════════════════════════ -->
+      <p-tabPanel header="2. Project Master" leftIcon="pi pi-folder">
+        <div class="tab-content-inner p-3">
+          <!-- Toolbar -->
+          <div class="flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+            <div class="flex flex-wrap align-items-center gap-2 flex-grow-1" style="max-width: 600px;">
+              <span class="p-input-icon-left flex-grow-1">
+                <i class="pi pi-search"></i>
+                <input pInputText [(ngModel)]="projectSearch" (ngModelChange)="applyProjectFilter()" placeholder="Search Project Name, Code, or Category..." class="w-full search-inp">
+              </span>
+              <p-dropdown [options]="categoryOptions" [(ngModel)]="projectCategoryFilter" (onChange)="applyProjectFilter()" placeholder="Filter Category" styleClass="filter-dropdown" appendTo="body"></p-dropdown>
+            </div>
+            <div class="flex align-items-center gap-2">
+              <button class="btn btn-solid-navy" (click)="openNewProject()">
+                <i class="pi pi-plus mr-1"></i><span>Add Project</span>
+              </button>
+            </div>
+          </div>
 
-      <button class="btn btn-solid-navy" (click)="openNewModal()">
-        <i class="pi pi-plus mr-1"></i><span>Add Record</span>
-      </button>
-    </div>
-  </div>
+          <!-- Required Projects Highlight Banner -->
+          <div class="required-projects-banner mb-3 p-3 border-round flex flex-wrap align-items-center justify-content-between gap-2">
+            <div class="flex items-center gap-2">
+              <i class="pi pi-check-circle text-emerald-600 text-xl"></i>
+              <div>
+                <span class="font-semibold text-slate-800">Core Corporation Umbrella Projects:</span>
+                <span class="text-xs text-slate-600 ml-2">Configured with Engineering, Welfare, and TNCWWN multi-department aggregators.</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="badge-pill bg-indigo-100 text-indigo-800 font-semibold"><i class="pi pi-wrench mr-1"></i>Engineering</span>
+              <span class="badge-pill bg-emerald-100 text-emerald-800 font-semibold"><i class="pi pi-heart mr-1"></i>Welfare</span>
+              <span class="badge-pill bg-purple-100 text-purple-800 font-semibold"><i class="pi pi-id-card mr-1"></i>TNCWWN</span>
+            </div>
+          </div>
 
-  <!-- Filters Toolbar -->
-  <div class="filter-bar shadow-sm">
-    <div class="fgrp search-grp">
-      <label class="flabel"><i class="pi pi-search mr-1"></i> Search</label>
-      <span class="p-input-icon-left w-full">
-        <i class="pi pi-search"></i>
-        <input pInputText [(ngModel)]="searchTerm" (ngModelChange)="onFilterChange()" placeholder="Search State, District, Local body, Block..." class="search-inp w-full">
-      </span>
-    </div>
+          <!-- Projects Table -->
+          <p-table [value]="filteredProjects" [loading]="projectLoading" [paginator]="true" [rows]="10" responsiveLayout="scroll" styleClass="p-datatable-sm p-datatable-striped config-table">
+            <ng-template pTemplate="header">
+              <tr>
+                <th style="width: 60px" class="text-center">S.No</th>
+                <th style="width: 50px" class="text-center">Icon</th>
+                <th style="width: 140px">Project Code</th>
+                <th style="width: 220px">Project Name</th>
+                <th style="width: 150px">Category</th>
+                <th>Description</th>
+                <th style="width: 180px">API Endpoint</th>
+                <th style="width: 90px" class="text-center">Active Roles</th>
+                <th style="width: 90px" class="text-center">Active Users</th>
+                <th style="width: 100px" class="text-center">Status</th>
+                <th style="width: 100px" class="text-center">Actions</th>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-p let-i="rowIndex">
+              <tr>
+                <td class="text-center text-muted font-monospace">{{ i + 1 }}</td>
+                <td class="text-center"><i class="pi {{ p.icon || 'pi-folder' }} text-lg text-primary"></i></td>
+                <td><span class="font-mono font-bold text-slate-900">{{ p.projectCode }}</span></td>
+                <td class="font-semibold text-slate-900">
+                  {{ p.projectName }}
+                  <span *ngIf="p.projectCode === 'ENG' || p.projectCode === 'WELFARE' || p.projectCode === 'TNCWWB'" class="ml-1 text-xs text-primary font-bold">(Required)</span>
+                </td>
+                <td>
+                  <span class="category-badge" [class.cat-eng]="p.category==='Engineering'" [class.cat-welfare]="p.category==='Welfare'" [class.cat-tncwwb]="p.category==='Welfare Board'" [class.cat-other]="p.category!=='Engineering' && p.category!=='Welfare' && p.category!=='Welfare Board'">
+                    {{ p.category }}
+                  </span>
+                </td>
+                <td class="text-slate-600 text-sm">{{ p.description || '-' }}</td>
+                <td><span class="font-mono text-xs text-slate-500 truncate block" style="max-width: 170px;" [pTooltip]="p.apiEndpoint">{{ p.apiEndpoint || '-' }}</span></td>
+                <td class="text-center font-semibold text-slate-700">{{ p.activeRoleCount || 0 }}</td>
+                <td class="text-center font-semibold text-slate-700">{{ p.activeUserCount || 0 }}</td>
+                <td class="text-center">
+                  <span class="status-dot" [class.status-active]="p.status==='Active'" [class.status-inactive]="p.status!=='Active'">
+                    {{ p.status }}
+                  </span>
+                </td>
+                <td class="text-center">
+                  <button class="action-btn edit-btn mr-1" (click)="openEditProject(p)" pTooltip="Edit Project" tooltipPosition="top">
+                    <i class="pi pi-pencil"></i>
+                  </button>
+                  <button class="action-btn del-btn" (click)="confirmDeleteProject(p)" pTooltip="Delete Project" tooltipPosition="top">
+                    <i class="pi pi-trash"></i>
+                  </button>
+                </td>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="emptymessage">
+              <tr>
+                <td colspan="11" class="empty-state">
+                  <i class="pi pi-folder text-4xl text-slate-400 mb-2"></i>
+                  <p class="font-semibold text-slate-700">No matching projects found.</p>
+                </td>
+              </tr>
+            </ng-template>
+          </p-table>
+        </div>
+      </p-tabPanel>
 
-    <div class="fgrp">
-      <label class="flabel"><i class="pi pi-compass mr-1"></i> Division</label>
-      <p-dropdown [options]="divisions" [(ngModel)]="selectedDivision" (onChange)="onFilterChange()" placeholder="All Divisions" styleClass="filter-dropdown" appendTo="body"></p-dropdown>
-    </div>
+      <!-- ════════════════════════════════════════════════════════════════════
+           TAB 3: PROJECT MAPPING (Map Users/Roles to Projects with CRUD)
+           ════════════════════════════════════════════════════════════════════ -->
+      <p-tabPanel header="3. Project Mapping" leftIcon="pi pi-sliders-h">
+        <div class="tab-content-inner p-3">
+          <!-- Toolbar -->
+          <div class="flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+            <div class="flex flex-wrap align-items-center gap-2 flex-grow-1" style="max-width: 650px;">
+              <span class="p-input-icon-left flex-grow-1">
+                <i class="pi pi-search"></i>
+                <input pInputText [(ngModel)]="mappingSearch" (ngModelChange)="applyMappingFilter()" placeholder="Search Entity, Role, Project Name or Code..." class="w-full search-inp">
+              </span>
+              <p-dropdown [options]="mappingTypeOptions" [(ngModel)]="mappingTypeFilter" (onChange)="applyMappingFilter()" placeholder="Type" styleClass="filter-dropdown" appendTo="body"></p-dropdown>
+            </div>
+            <div class="flex align-items-center gap-2">
+              <button class="btn btn-solid-navy" (click)="openNewMapping()">
+                <i class="pi pi-link mr-1"></i><span>Map Project</span>
+              </button>
+            </div>
+          </div>
 
-    <div class="fgrp">
-      <label class="flabel"><i class="pi pi-map-marker mr-1"></i> District</label>
-      <p-dropdown [options]="districts" [(ngModel)]="selectedDistrict" (onChange)="onFilterChange()" placeholder="All Districts" styleClass="filter-dropdown" appendTo="body"></p-dropdown>
-    </div>
+          <!-- Mappings Table with CRUD Permissions Matrix -->
+          <p-table [value]="filteredMappings" [loading]="mappingLoading" [paginator]="true" [rows]="10" responsiveLayout="scroll" styleClass="p-datatable-sm p-datatable-striped config-table">
+            <ng-template pTemplate="header">
+              <tr>
+                <th style="width: 60px" class="text-center">S.No</th>
+                <th style="width: 110px" class="text-center">Type</th>
+                <th style="width: 200px">Entity (User / Role)</th>
+                <th style="width: 180px">Project</th>
+                <th class="text-center" style="width: 320px">CRUD Permissions Matrix</th>
+                <th style="width: 100px" class="text-center">Status</th>
+                <th style="width: 140px">Assigned By</th>
+                <th style="width: 100px" class="text-center">Actions</th>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-m let-i="rowIndex">
+              <tr>
+                <td class="text-center text-muted font-monospace">{{ i + 1 }}</td>
+                <td class="text-center">
+                  <span class="badge-pill font-semibold" [class.bg-blue-100]="m.mappingType==='ROLE'" [class.text-blue-800]="m.mappingType==='ROLE'" [class.bg-teal-100]="m.mappingType==='USER'" [class.text-teal-800]="m.mappingType==='USER'">
+                    {{ m.mappingType }}
+                  </span>
+                </td>
+                <td>
+                  <div class="font-semibold text-slate-900">{{ m.entityName }}</div>
+                  <div class="text-xs text-slate-500 font-mono">{{ m.entityCode }}</div>
+                </td>
+                <td>
+                  <div class="font-semibold text-slate-900">{{ m.projectName }}</div>
+                  <div class="text-xs text-primary font-mono font-bold">{{ m.projectCode }}</div>
+                </td>
+                <td>
+                  <div class="flex align-items-center justify-content-center gap-1">
+                    <span class="perm-pill" [class.perm-on]="m.canView" [class.perm-off]="!m.canView" pTooltip="View Permission">VIEW</span>
+                    <span class="perm-pill" [class.perm-on]="m.canCreate" [class.perm-off]="!m.canCreate" pTooltip="Create Permission">CREATE</span>
+                    <span class="perm-pill" [class.perm-on]="m.canEdit" [class.perm-off]="!m.canEdit" pTooltip="Edit Permission">EDIT</span>
+                    <span class="perm-pill" [class.perm-on]="m.canUpdate" [class.perm-off]="!m.canUpdate" pTooltip="Update Permission">UPDATE</span>
+                    <span class="perm-pill" [class.perm-on]="m.canDelete" [class.perm-off]="!m.canDelete" pTooltip="Delete Permission">DELETE</span>
+                  </div>
+                </td>
+                <td class="text-center">
+                  <span class="status-dot" [class.status-active]="m.status==='Active'" [class.status-inactive]="m.status!=='Active'">
+                    {{ m.status }}
+                  </span>
+                </td>
+                <td class="text-slate-600 text-sm">{{ m.assignedBy || 'System' }}</td>
+                <td class="text-center">
+                  <button class="action-btn edit-btn mr-1" (click)="openEditMapping(m)" pTooltip="Edit Permissions" tooltipPosition="top">
+                    <i class="pi pi-pencil"></i>
+                  </button>
+                  <button class="action-btn del-btn" (click)="confirmDeleteMapping(m)" pTooltip="Revoke Mapping" tooltipPosition="top">
+                    <i class="pi pi-trash"></i>
+                  </button>
+                </td>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="emptymessage">
+              <tr>
+                <td colspan="8" class="empty-state">
+                  <i class="pi pi-sliders-h text-4xl text-slate-400 mb-2"></i>
+                  <p class="font-semibold text-slate-700">No project mappings found.</p>
+                </td>
+              </tr>
+            </ng-template>
+          </p-table>
+        </div>
+      </p-tabPanel>
 
-    <div class="fgrp">
-      <label class="flabel"><i class="pi pi-building mr-1"></i> Local Body Type</label>
-      <p-dropdown [options]="localBodyTypes" [(ngModel)]="selectedType" (onChange)="onFilterChange()" placeholder="All Types" styleClass="filter-dropdown" appendTo="body"></p-dropdown>
-    </div>
+      <!-- ════════════════════════════════════════════════════════════════════
+           TAB 4: USER PRIVILEGES FUNCTION & CRUD PERMISSION MATRIX
+           ════════════════════════════════════════════════════════════════════ -->
+      <p-tabPanel header="4. User Privileges" leftIcon="pi pi-shield">
+        <div class="tab-content-inner p-3">
+          <!-- Toolbar -->
+          <div class="flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+            <div class="flex flex-wrap align-items-center gap-2 flex-grow-1" style="max-width: 650px;">
+              <span class="p-input-icon-left flex-grow-1">
+                <i class="pi pi-search"></i>
+                <input pInputText [(ngModel)]="userSearch" (ngModelChange)="applyUserFilter()" placeholder="Search User Name, Email, or District..." class="w-full search-inp">
+              </span>
+              <p-dropdown [options]="roleOptions" [(ngModel)]="userRoleFilter" (onChange)="applyUserFilter()" placeholder="Filter Role" styleClass="filter-dropdown" appendTo="body"></p-dropdown>
+            </div>
+            <div class="flex align-items-center gap-2">
+              <button class="btn btn-outline-navy" (click)="loadUsersList()" pTooltip="Reload User Privileges" tooltipPosition="bottom">
+                <i class="pi pi-refresh mr-1"></i><span>Reload Users</span>
+              </button>
+            </div>
+          </div>
 
-    <div class="filter-spacer"></div>
-    <button class="btn-icon-outline" (click)="loadRecords()" pTooltip="Reload Data" tooltipPosition="bottom" aria-label="Reload"><i class="pi pi-refresh" [class.pi-spin]="loading"></i></button>
-  </div>
+          <!-- User Privileges Grid Table -->
+          <p-table [value]="filteredUsersList" [loading]="userPrivilegeLoading" [paginator]="true" [rows]="5" responsiveLayout="scroll" styleClass="p-datatable-sm p-datatable-striped config-table">
+            <ng-template pTemplate="header">
+              <tr>
+                <th style="width: 50px" class="text-center">S.No</th>
+                <th style="width: 220px">User Details</th>
+                <th style="width: 130px" class="text-center">Role / Scope</th>
+                <th style="min-width: 500px">Project Privileges Matrix (CRUD per Project)</th>
+                <th style="width: 90px" class="text-center">Status</th>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-u let-i="rowIndex">
+              <tr>
+                <td class="text-center text-muted font-monospace">{{ i + 1 }}</td>
+                <td>
+                  <div class="font-bold text-slate-900">{{ u.name }}</div>
+                  <div class="text-xs text-slate-500 font-mono">{{ u.email }}</div>
+                  <div class="text-xs text-slate-600" *ngIf="u.districtName || u.divisionName">
+                    {{ u.districtName || u.divisionName }}
+                  </div>
+                </td>
+                <td class="text-center">
+                  <span class="badge-pill bg-indigo-100 text-indigo-800 font-semibold mb-1 block">{{ u.role | uppercase }}</span>
+                  <span class="scope-badge" [class.scope-all]="u.scope==='all'" [class.scope-div]="u.scope==='division'" [class.scope-dist]="u.scope==='district'">
+                    {{ u.scope }}
+                  </span>
+                </td>
+                <td>
+                  <div class="priv-matrix-grid">
+                    <div *ngFor="let prj of ['Engineering', 'Welfare', 'TNCWWB', 'TIPS', 'TIME', 'THMS', 'TAMS', 'Scheme', 'TELP']" class="priv-prj-row mb-2 p-2 border-round bg-slate-50 border-1 border-slate-200">
+                      <div class="flex align-items-center justify-content-between mb-1">
+                        <span class="font-bold text-xs text-slate-800 flex align-items-center gap-1">
+                          <i class="pi pi-folder text-primary text-xs"></i>
+                          {{ prj }}
+                          <span *ngIf="prj === 'Engineering' || prj === 'Welfare' || prj === 'TNCWWB'" class="text-indigo-600 font-semibold">(Core)</span>
+                        </span>
+                      </div>
+                      <div class="flex flex-wrap align-items-center gap-2">
+                        <label class="priv-chk-lbl" [class.checked]="getUserPrivilege(u, prj, 'view')">
+                          <input type="checkbox" [checked]="getUserPrivilege(u, prj, 'view')" (change)="toggleUserPrivilege(u, prj, 'view')">
+                          <span>View</span>
+                        </label>
+                        <label class="priv-chk-lbl" [class.checked]="getUserPrivilege(u, prj, 'create')">
+                          <input type="checkbox" [checked]="getUserPrivilege(u, prj, 'create')" (change)="toggleUserPrivilege(u, prj, 'create')">
+                          <span>Create</span>
+                        </label>
+                        <label class="priv-chk-lbl" [class.checked]="getUserPrivilege(u, prj, 'edit')">
+                          <input type="checkbox" [checked]="getUserPrivilege(u, prj, 'edit')" (change)="toggleUserPrivilege(u, prj, 'edit')">
+                          <span>Edit</span>
+                        </label>
+                        <label class="priv-chk-lbl" [class.checked]="getUserPrivilege(u, prj, 'update')">
+                          <input type="checkbox" [checked]="getUserPrivilege(u, prj, 'update')" (change)="toggleUserPrivilege(u, prj, 'update')">
+                          <span>Update</span>
+                        </label>
+                        <label class="priv-chk-lbl" [class.checked]="getUserPrivilege(u, prj, 'delete')">
+                          <input type="checkbox" [checked]="getUserPrivilege(u, prj, 'delete')" (change)="toggleUserPrivilege(u, prj, 'delete')">
+                          <span>Delete</span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </td>
+                <td class="text-center">
+                  <span class="status-dot" [class.status-active]="u.isActive" [class.status-inactive]="!u.isActive">
+                    {{ u.isActive ? 'Active' : 'Inactive' }}
+                  </span>
+                </td>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="emptymessage">
+              <tr>
+                <td colspan="5" class="empty-state">
+                  <i class="pi pi-shield text-4xl text-slate-400 mb-2"></i>
+                  <p class="font-semibold text-slate-700">No users found.</p>
+                </td>
+              </tr>
+            </ng-template>
+          </p-table>
+        </div>
+      </p-tabPanel>
 
-  <!-- Table -->
-  <div class="sec-card shadow-sm">
-    <div class="sec-hdr">
-      <div class="flex items-center gap-2">
-        <i class="pi pi-list text-primary"></i>
-        <span class="sec-title">Local Body Mapping Data</span>
-      </div>
-      <span class="row-count">{{ filteredRecords.length }} of {{ records.length }} Records</span>
-    </div>
-    
-    <p-table [value]="filteredRecords" [loading]="loading" [paginator]="true" [rows]="rows" [(first)]="first"
-      [totalRecords]="filteredRecords.length" [rowsPerPageOptions]="[10,15,25,50,100]"
-      [rowHover]="true" responsiveLayout="scroll" styleClass="p-datatable-sm p-datatable-striped config-table">
-      <ng-template pTemplate="header">
-        <tr>
-          <th style="width:60px" class="text-center">S.No</th>
-          <th>State</th>
-          <th>Division</th>
-          <th>District</th>
-          <th>Local Body Type</th>
-          <th>Name of Local Body</th>
-          <th>Block</th>
-          <th>Village Panchayat</th>
-          <th>Corporation</th>
-          <th>Town Panchayat</th>
-          <th>Municipality</th>
-          <th>GCC</th>
-          <th>CMWSSB</th>
-          <th style="width:100px" class="text-center">Actions</th>
-        </tr>
-      </ng-template>
-      <ng-template pTemplate="body" let-r let-i="rowIndex">
-        <tr>
-          <td class="text-center text-muted font-monospace">{{ r.sno || (first + i + 1) }}</td>
-          <td>{{ r.state }}</td>
-          <td><span class="badge-pill bg-slate-100 text-slate-700">{{ r.division }}</span></td>
-          <td class="fw-600 text-slate-900">{{ r.district }}</td>
-          <td><span class="lb-type-badge">{{ r.localBody }}</span></td>
-          <td class="font-medium text-slate-800">{{ r.localBodyName }}</td>
-          <td>{{ r.block }}</td>
-          <td>{{ r.villagePanchayat }}</td>
-          <td>{{ r.corporation }}</td>
-          <td>{{ r.townPanchayat }}</td>
-          <td>{{ r.municipality }}</td>
-          <td>{{ r.gcc }}</td>
-          <td>{{ r.cmwssb }}</td>
-          <td class="text-center">
-            <button class="action-btn edit-btn" (click)="openEditModal(r)" pTooltip="Edit Record" tooltipPosition="top">
-              <i class="pi pi-pencil"></i>
-            </button>
-            <button class="action-btn del-btn" (click)="deleteRecord(r)" pTooltip="Delete Record" tooltipPosition="top">
-              <i class="pi pi-trash"></i>
-            </button>
-          </td>
-        </tr>
-      </ng-template>
-      <ng-template pTemplate="emptymessage">
-        <tr>
-          <td colspan="14" class="empty-state">
-            <i class="pi pi-file-excel text-4xl text-slate-400 mb-2"></i>
-            <p class="font-semibold text-slate-700">No matching mapping records found.</p>
-            <p class="text-xs text-slate-500">Click <strong>Import Excel</strong> to upload mapping data or <strong>Add Record</strong> to create manually.</p>
-          </td>
-        </tr>
-      </ng-template>
-    </p-table>
+      <!-- ════════════════════════════════════════════════════════════════════
+           TAB 5: LOCAL BODY MASTER DIRECTORY (Preserved & Enhanced)
+           ════════════════════════════════════════════════════════════════════ -->
+      <p-tabPanel header="5. Local Body Directory" leftIcon="pi pi-map">
+        <div class="tab-content-inner p-3">
+          <!-- Toolbar -->
+          <div class="flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+            <div class="flex flex-wrap align-items-center gap-2 flex-grow-1">
+              <span class="p-input-icon-left" style="min-width: 240px;">
+                <i class="pi pi-search"></i>
+                <input pInputText [(ngModel)]="searchTerm" (ngModelChange)="onFilterChange()" placeholder="Search District, Block, Local Body..." class="w-full search-inp">
+              </span>
+              <p-dropdown [options]="divisions" [(ngModel)]="selectedDivision" (onChange)="onFilterChange()" placeholder="All Divisions" styleClass="filter-dropdown" appendTo="body"></p-dropdown>
+              <p-dropdown [options]="districts" [(ngModel)]="selectedDistrict" (onChange)="onFilterChange()" placeholder="All Districts" styleClass="filter-dropdown" appendTo="body"></p-dropdown>
+              <p-dropdown [options]="localBodyTypes" [(ngModel)]="selectedType" (onChange)="onFilterChange()" placeholder="All Types" styleClass="filter-dropdown" appendTo="body"></p-dropdown>
+            </div>
+            <div class="flex align-items-center gap-2">
+              <input type="file" (change)="onFileChange($event)" accept=".xlsx, .xls" style="display:none" #fileInput>
+              
+              <button class="btn btn-outline-navy" (click)="confirmClear()" [disabled]="uploading || loading" *ngIf="records.length > 0" pTooltip="Clear All Records" tooltipPosition="bottom">
+                <i class="pi pi-trash mr-1 text-red-500"></i><span>Clear</span>
+              </button>
+
+              <button class="btn btn-outline-navy" (click)="exportExcel()" [disabled]="records.length === 0" pTooltip="Export Filtered Data to Excel" tooltipPosition="bottom">
+                <i class="pi pi-file-excel mr-1 text-emerald-600"></i><span>Export</span>
+              </button>
+
+              <button class="btn btn-outline-navy" (click)="fileInput.click()" [disabled]="uploading" pTooltip="Import Spreadsheet (.xlsx, .xls)" tooltipPosition="bottom">
+                <i class="pi" [class.pi-spin]="uploading" [class.pi-spinner]="uploading" [class.pi-upload]="!uploading"></i>
+                <span>{{ uploading ? 'Importing...' : 'Import' }}</span>
+              </button>
+
+              <button class="btn btn-solid-navy" (click)="openNewModal()">
+                <i class="pi pi-plus mr-1"></i><span>Add Record</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Local Body Table -->
+          <p-table [value]="filteredRecords" [loading]="loading" [paginator]="true" [rows]="rows" [(first)]="first"
+            [totalRecords]="filteredRecords.length" [rowsPerPageOptions]="[10,15,25,50,100]"
+            [rowHover]="true" responsiveLayout="scroll" styleClass="p-datatable-sm p-datatable-striped config-table">
+            <ng-template pTemplate="header">
+              <tr>
+                <th style="width:60px" class="text-center">S.No</th>
+                <th>State</th>
+                <th>Division</th>
+                <th>District</th>
+                <th>Local Body Type</th>
+                <th>Name of Local Body</th>
+                <th>Block</th>
+                <th>Village Panchayat</th>
+                <th>Corporation</th>
+                <th>Town Panchayat</th>
+                <th>Municipality</th>
+                <th>GCC</th>
+                <th>CMWSSB</th>
+                <th style="width:100px" class="text-center">Actions</th>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-r let-i="rowIndex">
+              <tr>
+                <td class="text-center text-muted font-monospace">{{ r.sno || (first + i + 1) }}</td>
+                <td>{{ r.state }}</td>
+                <td><span class="badge-pill bg-slate-100 text-slate-700">{{ r.division }}</span></td>
+                <td class="fw-600 text-slate-900">{{ r.district }}</td>
+                <td><span class="lb-type-badge">{{ r.localBody }}</span></td>
+                <td class="font-medium text-slate-800">{{ r.localBodyName }}</td>
+                <td>{{ r.block }}</td>
+                <td>{{ r.villagePanchayat }}</td>
+                <td>{{ r.corporation }}</td>
+                <td>{{ r.townPanchayat }}</td>
+                <td>{{ r.municipality }}</td>
+                <td>{{ r.gcc }}</td>
+                <td>{{ r.cmwssb }}</td>
+                <td class="text-center">
+                  <button class="action-btn edit-btn mr-1" (click)="openEditModal(r)" pTooltip="Edit Record" tooltipPosition="top">
+                    <i class="pi pi-pencil"></i>
+                  </button>
+                  <button class="action-btn del-btn" (click)="deleteRecord(r)" pTooltip="Delete Record" tooltipPosition="top">
+                    <i class="pi pi-trash"></i>
+                  </button>
+                </td>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="emptymessage">
+              <tr>
+                <td colspan="14" class="empty-state">
+                  <i class="pi pi-file-excel text-4xl text-slate-400 mb-2"></i>
+                  <p class="font-semibold text-slate-700">No matching mapping records found.</p>
+                </td>
+              </tr>
+            </ng-template>
+          </p-table>
+        </div>
+      </p-tabPanel>
+    </p-tabView>
   </div>
 </div>
 
-<!-- ══ ADD / EDIT MODAL DIALOG ══════════════════════════════════════════ -->
+<!-- ════════════════════════════════════════════════════════════════════════
+     MODAL 1: ADD / EDIT ROLE DIALOG
+     ════════════════════════════════════════════════════════════════════════ -->
+<p-dialog [(visible)]="roleModalVisible" [modal]="true" [header]="isRoleEditing ? 'Edit Application Role' : 'Create New Application Role'" [style]="{width: '90vw', maxWidth: '620px'}" appendTo="body" styleClass="p-fluid config-modal">
+  <div class="grid p-fluid form-grid p-2">
+    <div class="col-12 md:col-6 field mb-3">
+      <label class="form-lbl">Role Code <span class="req-star">*</span></label>
+      <input type="text" pInputText [(ngModel)]="currentRole.roleCode" [disabled]="isRoleEditing" placeholder="e.g. eng_lead" class="p-inputtext-sm font-mono">
+      <small class="text-xs text-slate-500">Unique code (e.g. admin, ce, eng_lead)</small>
+    </div>
+
+    <div class="col-12 md:col-6 field mb-3">
+      <label class="form-lbl">Role Name <span class="req-star">*</span></label>
+      <input type="text" pInputText [(ngModel)]="currentRole.roleName" placeholder="e.g. Engineering Lead" class="p-inputtext-sm font-semibold">
+    </div>
+
+    <div class="col-12 field mb-3">
+      <label class="form-lbl">Description</label>
+      <input type="text" pInputText [(ngModel)]="currentRole.description" placeholder="Brief summary of duties and responsibilities" class="p-inputtext-sm">
+    </div>
+
+    <div class="col-12 md:col-6 field mb-3">
+      <label class="form-lbl">Access Scope <span class="req-star">*</span></label>
+      <p-dropdown [options]="scopeOptions" [(ngModel)]="currentRole.scope" [filter]="true" filterBy="label" filterPlaceholder="Search scope (Select2)..." placeholder="Select Scope" appendTo="body"></p-dropdown>
+    </div>
+
+    <div class="col-12 md:col-6 field mb-3">
+      <label class="form-lbl">Assigned Projects (Multi-Select)</label>
+      <p-multiSelect [options]="projects" optionLabel="projectName" optionValue="projectCode" [(ngModel)]="currentRole.assignedProjects"
+        [filter]="true" filterBy="projectName" filterPlaceHolder="Search projects..." placeholder="Select Projects"
+        [maxSelectedLabels]="2" selectedItemsLabel="{0} Projects" appendTo="body">
+      </p-multiSelect>
+    </div>
+
+    <div class="col-12 field mb-2 flex align-items-center gap-2 pt-2">
+      <p-inputSwitch [(ngModel)]="currentRole.isActive"></p-inputSwitch>
+      <label class="form-lbl m-0">Role Status Active</label>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <button class="btn btn-outline-navy mr-2" (click)="roleModalVisible = false">Cancel</button>
+    <button class="btn btn-solid-navy" (click)="saveRole()"><i class="pi pi-check mr-1"></i>Save Role</button>
+  </ng-template>
+</p-dialog>
+
+<!-- ════════════════════════════════════════════════════════════════════════
+     MODAL 2: ADD / EDIT PROJECT DIALOG (Engineering, Welfare, TNCWWN, etc.)
+     ════════════════════════════════════════════════════════════════════════ -->
+<p-dialog [(visible)]="projectModalVisible" [modal]="true" [header]="isProjectEditing ? 'Edit Project Master' : 'Create New Project Name'" [style]="{width: '90vw', maxWidth: '640px'}" appendTo="body" styleClass="p-fluid config-modal">
+  <div class="grid p-fluid form-grid p-2">
+    <div class="col-12 md:col-6 field mb-3">
+      <label class="form-lbl">Project Code <span class="req-star">*</span></label>
+      <input type="text" pInputText [(ngModel)]="currentProject.projectCode" [disabled]="isProjectEditing" placeholder="e.g. ENG / WELFARE / TNCWWB" class="p-inputtext-sm font-mono font-bold">
+    </div>
+
+    <div class="col-12 md:col-6 field mb-3">
+      <label class="form-lbl">Project Name <span class="req-star">*</span></label>
+      <input type="text" pInputText [(ngModel)]="currentProject.projectName" placeholder="e.g. Engineering" class="p-inputtext-sm font-semibold">
+    </div>
+
+    <div class="col-12 md:col-6 field mb-3">
+      <label class="form-lbl">Category <span class="req-star">*</span></label>
+      <p-dropdown [options]="categoryOptions.slice(1)" [(ngModel)]="currentProject.category" [filter]="true" filterBy="label" filterPlaceholder="Search category..." placeholder="Select Category" appendTo="body"></p-dropdown>
+    </div>
+
+    <div class="col-12 md:col-6 field mb-3">
+      <label class="form-lbl">Icon</label>
+      <p-dropdown [options]="iconOptions" [(ngModel)]="currentProject.icon" [filter]="true" filterBy="label" filterPlaceholder="Search icon..." placeholder="Select Icon" appendTo="body"></p-dropdown>
+    </div>
+
+    <div class="col-12 field mb-3">
+      <label class="form-lbl">Description</label>
+      <input type="text" pInputText [(ngModel)]="currentProject.description" placeholder="Project purpose and coverage" class="p-inputtext-sm">
+    </div>
+
+    <div class="col-12 field mb-3">
+      <label class="form-lbl">API Endpoint URL</label>
+      <input type="text" pInputText [(ngModel)]="currentProject.apiEndpoint" placeholder="e.g. https://time.tahdco.com/api/Report/OneDashboard_Work_Get" class="p-inputtext-sm font-mono text-xs">
+    </div>
+
+    <div class="col-12 md:col-6 field mb-3">
+      <label class="form-lbl">Status</label>
+      <p-dropdown [options]="projectStatusOptions" [(ngModel)]="currentProject.status" placeholder="Select Status" appendTo="body"></p-dropdown>
+    </div>
+
+    <div class="col-12 md:col-6 field mb-3 flex align-items-center gap-2 pt-4">
+      <p-inputSwitch [(ngModel)]="currentProject.isActive"></p-inputSwitch>
+      <label class="form-lbl m-0">Active Project</label>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <button class="btn btn-outline-navy mr-2" (click)="projectModalVisible = false">Cancel</button>
+    <button class="btn btn-solid-navy" (click)="saveProject()"><i class="pi pi-check mr-1"></i>Save Project</button>
+  </ng-template>
+</p-dialog>
+
+<!-- ════════════════════════════════════════════════════════════════════════
+     MODAL 3: ADD / EDIT PROJECT MAPPING DIALOG
+     ════════════════════════════════════════════════════════════════════════ -->
+<p-dialog [(visible)]="mappingModalVisible" [modal]="true" [header]="isMappingEditing ? 'Edit Project Mapping & Privileges' : 'Map Entity (User / Role) to Project'" [style]="{width: '90vw', maxWidth: '660px'}" appendTo="body" styleClass="p-fluid config-modal">
+  <div class="grid p-fluid form-grid p-2">
+    <div class="col-12 md:col-6 field mb-3">
+      <label class="form-lbl">Mapping Type <span class="req-star">*</span></label>
+      <p-dropdown [options]="mappingTypeOptions.slice(1)" [(ngModel)]="currentMapping.mappingType" [disabled]="isMappingEditing" placeholder="Select Type" appendTo="body"></p-dropdown>
+    </div>
+
+    <div class="col-12 md:col-6 field mb-3">
+      <label class="form-lbl">Select {{ currentMapping.mappingType === 'ROLE' ? 'Role' : 'User' }} <span class="req-star">*</span></label>
+      <input type="text" pInputText [(ngModel)]="currentMapping.entityCode" (ngModelChange)="onEntitySelectedInMapping($event)" placeholder="e.g. admin, ce, or dm@tahdco.in" class="p-inputtext-sm font-mono">
+      <small class="text-xs text-slate-500 font-semibold" *ngIf="currentMapping.entityName">Entity Name: {{ currentMapping.entityName }}</small>
+    </div>
+
+    <div class="col-12 field mb-3">
+      <label class="form-lbl">Target Project <span class="req-star">*</span></label>
+      <p-dropdown [options]="projects" optionLabel="projectName" optionValue="projectCode" [(ngModel)]="currentMapping.projectCode"
+        [filter]="true" filterBy="projectName" filterPlaceholder="Search project (Select2)..."
+        (onChange)="onProjectSelectedInMapping($event.value)" placeholder="Select Project" appendTo="body">
+      </p-dropdown>
+    </div>
+
+    <!-- Granular CRUD Permissions Matrix -->
+    <div class="col-12 field mb-3">
+      <label class="form-lbl">Assigned Project Privileges (CRUD) <span class="req-star">*</span></label>
+      <div class="p-3 border-round bg-slate-50 border-1 border-slate-200 flex flex-wrap align-items-center justify-content-between gap-3">
+        <div class="flex align-items-center gap-2">
+          <p-checkbox [(ngModel)]="currentMapping.canView" [binary]="true" inputId="permView"></p-checkbox>
+          <label for="permView" class="text-sm font-semibold cursor-pointer m-0">VIEW (Read)</label>
+        </div>
+        <div class="flex align-items-center gap-2">
+          <p-checkbox [(ngModel)]="currentMapping.canCreate" [binary]="true" inputId="permCreate"></p-checkbox>
+          <label for="permCreate" class="text-sm font-semibold cursor-pointer m-0">CREATE (Add)</label>
+        </div>
+        <div class="flex align-items-center gap-2">
+          <p-checkbox [(ngModel)]="currentMapping.canEdit" [binary]="true" inputId="permEdit"></p-checkbox>
+          <label for="permEdit" class="text-sm font-semibold cursor-pointer m-0">EDIT (Modify)</label>
+        </div>
+        <div class="flex align-items-center gap-2">
+          <p-checkbox [(ngModel)]="currentMapping.canUpdate" [binary]="true" inputId="permUpdate"></p-checkbox>
+          <label for="permUpdate" class="text-sm font-semibold cursor-pointer m-0">UPDATE (Status)</label>
+        </div>
+        <div class="flex align-items-center gap-2">
+          <p-checkbox [(ngModel)]="currentMapping.canDelete" [binary]="true" inputId="permDelete"></p-checkbox>
+          <label for="permDelete" class="text-sm font-semibold cursor-pointer m-0">DELETE (Remove)</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 md:col-6 field mb-3">
+      <label class="form-lbl">Mapping Status</label>
+      <p-dropdown [options]="projectStatusOptions.slice(0,2)" [(ngModel)]="currentMapping.status" placeholder="Select Status" appendTo="body"></p-dropdown>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <button class="btn btn-outline-navy" (click)="mappingModalVisible = false">Cancel</button>
+    <button class="btn btn-solid-navy" (click)="saveMapping()"><i class="pi pi-check mr-1"></i>Save Mapping</button>
+  </ng-template>
+</p-dialog>
+
+<!-- ════════════════════════════════════════════════════════════════════════
+     MODAL 4: ADD / EDIT LOCAL BODY RECORD DIALOG
+     ════════════════════════════════════════════════════════════════════════ -->
 <p-dialog [(visible)]="displayModal" [modal]="true" [header]="isEditing ? 'Edit Local Body Record' : 'Add New Local Body Record'" [style]="{width: '90vw', maxWidth: '650px'}" appendTo="body" styleClass="p-fluid config-modal">
   <div class="grid p-fluid form-grid p-2">
     <div class="col-12 md:col-6 field mb-3">
@@ -195,3 +725,4 @@
     <button class="btn btn-solid-navy" (click)="saveRecord()"><i class="pi pi-check mr-1"></i>Save Record</button>
   </ng-template>
 </p-dialog>
+

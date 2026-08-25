@@ -114,3 +114,21 @@ form .btn { margin-top: 4px; }
   code { background: var(--gray-100); border: 1px solid var(--gray-200); padding: 1px 7px; border-radius: 6px; font-size: 11px; color: var(--navy); } }
 
 @media (max-width: 420px) { .roles { grid-template-columns: 1fr; } .card { padding: 26px 22px; } }
+
+::ng-deep .p-toast {
+  .p-toast-message {
+    border-radius: 12px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    border: none;
+    backdrop-filter: blur(8px);
+    .p-toast-message-content {
+      padding: 14px 18px;
+      align-items: center;
+      .p-toast-message-text {
+        margin-left: 12px;
+        .p-toast-summary { font-weight: 700; font-size: 13.5px; }
+        .p-toast-detail { font-size: 12px; margin-top: 4px; line-height: 1.4; }
+      }
+    }
+  }
+}

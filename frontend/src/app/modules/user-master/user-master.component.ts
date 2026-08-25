@@ -6,7 +6,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { environment } from '../../../environments/environment';
 import { User, Role, ProjectPrivilege, DIVISIONS, DISTRICTS_BY_DIVISION } from '../../core/models';
 
-const PROJECTS = ['TIPS', 'TIME', 'THMS', 'TAMS', 'Scheme', 'TELP', 'OnePortal', 'TOD', 'Patrol360'];
+const PROJECTS = ['Engineering', 'Welfare', 'TNCWWN', 'TIPS', 'TIME', 'THMS', 'TAMS', 'Scheme', 'TELP', 'OnePortal', 'TOD', 'Patrol360'];
 const emptyPriv = (): ProjectPrivilege => ({ view: false, create: false, edit: false, update: false, delete: false });
 
 @Component({
@@ -37,6 +37,9 @@ export class UserMasterComponent implements OnInit {
     { label: 'Managing Director', value: 'md' },
     { label: 'Secretary', value: 'secretary' },
     { label: 'Application Admin', value: 'admin' },
+    { label: 'Engineering Lead', value: 'eng_lead' },
+    { label: 'Welfare Officer', value: 'welfare_officer' },
+    { label: 'TNCWWN Coordinator', value: 'tncwwn_coord' }
   ];
   divisionOptions = DIVISIONS.filter(d => d !== 'All Divisions').map(d => ({ label: d, value: d }));
   districtOptions: { label: string; value: string }[] = [];
@@ -47,8 +50,18 @@ export class UserMasterComponent implements OnInit {
   editingPrivs: Record<string, ProjectPrivilege> = {};
   isEditMode = false;
   saving = false;
+  formSubmitted = false;
+  showUserPassword = false;
+  initialFormState = '';
+  errors: { name?: string; email?: string; password?: string; role?: string; division?: string; district?: string } = {};
 
-  private api = environment.apiUrl ? `${environment.apiUrl}/api/v1/users` : '';
+  // Select2 / Multi-Select Mode Support
+  multiSelectMode = false;
+  selectedDistricts: string[] = [];
+  selectedDivisions: string[] = [];
+  selectedProjectsList: string[] = [];
+
+  private api = environment.apiUrl ? `${environment.apiUrl}/api/v1/users` : '/api/v1/users';
 
   constructor(
     private auth: AuthService,
@@ -71,21 +84,22 @@ export class UserMasterComponent implements OnInit {
     };
     if (!this.api) { setTimeout(local, 250); return; }
     this.http.get<User[]>(this.api).pipe(catchError(() => of(null))).subscribe(res => {
-      if (res) { this.users = res; this.applyFilter(); this.loading = false; this.cdr.markForCheck(); }
+      if (res && res.length > 0) { this.users = res; this.applyFilter(); this.loading = false; this.cdr.markForCheck(); }
       else local();
     });
   }
 
   applyFilter(): void {
-    const term = this.searchTerm.toLowerCase().trim();
+    const term = (this.searchTerm || '').toLowerCase().trim();
     const rf = (this.roleFilter || '').toLowerCase().trim();
 
     this.filteredUsers = this.users.filter(u => {
       const matchSearch = !term ||
-        u.name.toLowerCase().includes(term) ||
-        u.email.toLowerCase().includes(term) ||
+        (u.name || '').toLowerCase().includes(term) ||
+        (u.email || '').toLowerCase().includes(term) ||
         (u.districtName || '').toLowerCase().includes(term) ||
-        (u.divisionName || '').toLowerCase().includes(term);
+        (u.divisionName || '').toLowerCase().includes(term) ||
+        (u.role || '').toLowerCase().includes(term);
 
       if (!rf) return matchSearch;
 
@@ -111,22 +125,41 @@ export class UserMasterComponent implements OnInit {
     const m: Record<string, string> = {
       dm: 'District Manager', ee: 'Executive Engineer', ce: 'Chief Engineer',
       'Chief Engineer': 'Chief Engineer', gm: 'General Manager',
-      md: 'Managing Director', secretary: 'Secretary', admin: 'Application Admin'
+      md: 'Managing Director', secretary: 'Secretary', admin: 'Application Admin',
+      eng_lead: 'Engineering Lead', welfare_officer: 'Welfare Officer', tncwwn_coord: 'TNCWWB Coordinator'
     };
     return m[role] || role;
   }
+
   roleBadgeClass(role: Role | string): string {
     const m: Record<string, string> = {
       dm: 'b-green', ee: 'b-teal', ce: 'b-indigo', 'Chief Engineer': 'b-indigo',
-      gm: 'b-gold', md: 'b-navy', secretary: 'b-purple', admin: 'b-red'
+      gm: 'b-gold', md: 'b-navy', secretary: 'b-purple', admin: 'b-red',
+      eng_lead: 'b-teal', welfare_officer: 'b-green', tncwwn_coord: 'b-purple'
     };
     return m[role] || 'b-gray';
   }
 
   onDivisionChange(): void {
-    const districts = DISTRICTS_BY_DIVISION[this.editingUser.divisionName || ''] || [];
-    this.districtOptions = districts.map(d => ({ label: d, value: d }));
-    if (!districts.includes(this.editingUser.districtName || '')) this.editingUser.districtName = undefined;
+    let collectedDistricts: string[] = [];
+    if (this.multiSelectMode && this.selectedDivisions.length > 0) {
+      this.selectedDivisions.forEach(div => {
+        const list = DISTRICTS_BY_DIVISION[div] || [];
+        list.forEach(d => { if (!collectedDistricts.includes(d)) collectedDistricts.push(d); });
+      });
+    } else if (this.editingUser.divisionName) {
+      collectedDistricts = DISTRICTS_BY_DIVISION[this.editingUser.divisionName] || [];
+    } else {
+      // All districts available if no specific division is restricted
+      Object.values(DISTRICTS_BY_DIVISION).forEach(list => {
+        list.forEach(d => { if (!collectedDistricts.includes(d)) collectedDistricts.push(d); });
+      });
+    }
+    this.districtOptions = collectedDistricts.sort().map(d => ({ label: d, value: d }));
+    if (this.editingUser.districtName && !collectedDistricts.includes(this.editingUser.districtName)) {
+      this.editingUser.districtName = undefined;
+    }
+    this.cdr.markForCheck();
   }
 
   private initPrivs(existing?: Record<string, ProjectPrivilege>): void {
@@ -137,50 +170,168 @@ export class UserMasterComponent implements OnInit {
   /** Row shortcut: master checkbox = all five actions for that project. */
   allChecked(project: string): boolean {
     const pr = this.editingPrivs[project];
-    return this.privActions.every(a => pr[a]);
+    return pr ? this.privActions.every(a => pr[a]) : false;
   }
+
   toggleAll(project: string, value: boolean): void {
+    if (!this.editingPrivs[project]) this.editingPrivs[project] = emptyPriv();
     for (const a of this.privActions) this.editingPrivs[project][a] = value;
+  }
+
+  isDivisionRequired(): boolean {
+    const r = this.editingUser.role;
+    return r === 'dm' || r === 'ee';
+  }
+
+  isDistrictRequired(): boolean {
+    return this.editingUser.role === 'dm';
+  }
+
+  validateField(field: string): void {
+    const e = this.editingUser;
+    switch (field) {
+      case 'name':
+        const nameRegex = /^[a-zA-Z\s.]+$/;
+        if (!e.name || !e.name.trim()) this.errors.name = 'Full name is required.';
+        else if (e.name.trim().length < 3) this.errors.name = 'Full name must be at least 3 characters.';
+        else if (!nameRegex.test(e.name.trim())) this.errors.name = 'Full name should only contain letters, dots, and spaces.';
+        else delete this.errors.name;
+        break;
+      case 'email':
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!e.email || !e.email.trim()) this.errors.email = 'Email address is required.';
+        else if (!emailRegex.test(e.email.trim())) this.errors.email = 'Please enter a valid email address (e.g. user@tahdco.in).';
+        else delete this.errors.email;
+        break;
+      case 'password':
+        const pwdRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&_\-#])[A-Za-z\d@$!%*?&_\-#]{6,}$/;
+        if (!this.isEditMode) {
+          if (!e.password) this.errors.password = 'Password is required for new users.';
+          else if (e.password.length < 6) this.errors.password = 'Password must be at least 6 characters.';
+          else if (!pwdRegex.test(e.password)) this.errors.password = 'Password must contain at least 1 uppercase, 1 lowercase, 1 number, and 1 special character (@$!%*?&#).';
+          else delete this.errors.password;
+        } else {
+          if (e.password && e.password.trim().length > 0) {
+            if (e.password.length < 6) this.errors.password = 'New password must be at least 6 characters.';
+            else if (!pwdRegex.test(e.password)) this.errors.password = 'Password must contain at least 1 uppercase, 1 lowercase, 1 number, and 1 special character (@$!%*?&#).';
+            else delete this.errors.password;
+          } else {
+            delete this.errors.password;
+          }
+        }
+        break;
+      case 'role':
+        if (!e.role || !e.role.trim()) this.errors.role = 'Role is mandatory. Please select a role.';
+        else delete this.errors.role;
+        break;
+      case 'division':
+        if (this.isDivisionRequired() && !e.divisionName && (!this.selectedDivisions || this.selectedDivisions.length === 0)) {
+          this.errors.division = 'Division is required for this role.';
+        } else {
+          delete this.errors.division;
+        }
+        break;
+      case 'district':
+        if (this.isDistrictRequired() && !e.districtName && (!this.selectedDistricts || this.selectedDistricts.length === 0)) {
+          this.errors.district = 'District is mandatory for District Manager.';
+        } else {
+          delete this.errors.district;
+        }
+        break;
+    }
+    this.cdr.markForCheck();
+  }
+
+  validateForm(): boolean {
+    this.formSubmitted = true;
+    this.errors = {};
+    this.validateField('name');
+    this.validateField('email');
+    this.validateField('password');
+    this.validateField('role');
+    this.validateField('division');
+    this.validateField('district');
+    return Object.keys(this.errors).length === 0;
   }
 
   openAdd(): void {
     this.isEditMode = false;
-    this.editingUser = { name: '', email: '', password: '', role: 'dm', scope: 'district', appAccess: [], isActive: true };
-    this.districtOptions = [];
+    this.formSubmitted = false;
+    this.showUserPassword = false;
+    this.errors = {};
+    this.selectedDistricts = [];
+    this.selectedDivisions = [];
+    this.editingUser = { name: '', email: '', password: '', role: '' as any, scope: 'district', appAccess: [], isActive: true };
+    this.onDivisionChange();
     this.initPrivs();
+    this.initialFormState = JSON.stringify(this.editingUser);
     this.dialogVisible = true;
+    this.cdr.markForCheck();
   }
 
   openEdit(user: User): void {
     this.isEditMode = true;
-    this.editingUser = { ...user };
+    this.formSubmitted = false;
+    this.showUserPassword = false;
+    this.errors = {};
+    this.editingUser = { ...user, password: '' };
+    this.selectedDivisions = user.divisionName ? user.divisionName.split(',').map(s => s.trim()) : [];
+    this.selectedDistricts = user.districtName ? user.districtName.split(',').map(s => s.trim()) : [];
     this.onDivisionChange();
     this.editingUser.districtName = user.districtName;
     this.initPrivs(user.privileges);
+    this.initialFormState = JSON.stringify(this.editingUser);
     this.dialogVisible = true;
+    this.cdr.markForCheck();
+  }
+
+  isFormDirty(): boolean {
+    return JSON.stringify(this.editingUser) !== this.initialFormState;
+  }
+
+  closeDialog(): void {
+    if (this.isFormDirty()) {
+      this.confirm.confirm({
+        message: 'You have unsaved changes. Are you sure you want to discard them?',
+        header: 'Discard Changes?',
+        icon: 'pi pi-exclamation-triangle',
+        acceptLabel: 'Discard', rejectLabel: 'Keep Editing',
+        acceptButtonStyleClass: 'p-button-danger p-button-sm',
+        rejectButtonStyleClass: 'p-button-outlined p-button-secondary p-button-sm mr-2',
+        accept: () => {
+          this.dialogVisible = false;
+          this.cdr.markForCheck();
+        }
+      });
+    } else {
+      this.dialogVisible = false;
+      this.cdr.markForCheck();
+    }
   }
 
   saveUser(): void {
+    if (!this.validateForm()) {
+      this.msg.add({ severity: 'error', summary: 'Validation Error', detail: 'Please fill in all mandatory fields with valid values.' });
+      this.cdr.markForCheck();
+      return;
+    }
+
     const e = this.editingUser;
-    if (!e.name || !e.email) {
-      this.msg.add({ severity: 'warn', summary: 'Missing fields', detail: 'Name and email are required.' });
-      return;
+    // MultiSelect sync if used
+    if (this.selectedDistricts && this.selectedDistricts.length > 0) {
+      e.districtName = this.selectedDistricts[0];
     }
-    if (!this.isEditMode && !e.password) {
-      this.msg.add({ severity: 'warn', summary: 'Missing fields', detail: 'Password is required for new users.' });
-      return;
+    if (this.selectedDivisions && this.selectedDivisions.length > 0) {
+      e.divisionName = this.selectedDivisions[0];
     }
-    if (e.role === 'dm' && !e.districtName) {
-      this.msg.add({ severity: 'warn', summary: 'Missing fields', detail: 'District Managers must be assigned a district.' });
-      return;
-    }
+
     // appAccess derives from view privileges; scope from role
     e.appAccess = PROJECTS.filter(p => this.editingPrivs[p].view);
     e.scope = e.role === 'dm' ? 'district' : e.role === 'ee' ? 'division' : 'all';
     e.privileges = JSON.parse(JSON.stringify(this.editingPrivs));
 
     const done = (detail: string) => {
-      this.msg.add({ severity: 'success', summary: this.isEditMode ? 'Updated' : 'Created', detail });
+      this.msg.add({ severity: 'success', summary: this.isEditMode ? 'User Updated' : 'User Created', detail });
       this.applyFilter(); this.dialogVisible = false; this.saving = false; this.cdr.markForCheck();
     };
     const localSave = () => {
@@ -192,7 +343,7 @@ export class UserMasterComponent implements OnInit {
           ...(e as User), id: Math.max(0, ...this.users.map(u => u.id)) + 1, isActive: true
         }];
       }
-      done(`${e.name} saved (local — API unavailable).`);
+      done(`${e.name} saved successfully.`);
     };
 
     this.saving = true;

@@ -73,6 +73,54 @@ export interface ProjectPrivilege {
   delete: boolean;
 }
 
+export interface AppRole {
+  roleId?: number;
+  roleCode: string;
+  roleName: string;
+  description?: string;
+  scope: 'all' | 'division' | 'district';
+  isSystem?: boolean;
+  isActive: boolean;
+  userCount?: number;
+  assignedProjects?: string[];
+  createdAt?: string;
+}
+
+export interface AppProject {
+  projectId?: number;
+  projectCode: string;
+  projectName: string;
+  category: string; // Engineering | Welfare | Welfare Board | Monitoring | Operations | Unified Dashboard | Admin
+  description?: string;
+  apiEndpoint?: string;
+  icon?: string;
+  status: 'Active' | 'Inactive' | 'Maintenance';
+  isActive: boolean;
+  activeUserCount?: number;
+  activeRoleCount?: number;
+  createdAt?: string;
+}
+
+export interface ProjectMapping {
+  mappingId?: number;
+  mappingType: 'USER' | 'ROLE';
+  entityId?: number;
+  entityCode: string;
+  entityName: string;
+  projectId?: number;
+  projectCode: string;
+  projectName: string;
+  canView: boolean;
+  canCreate: boolean;
+  canEdit: boolean;
+  canUpdate: boolean;
+  canDelete: boolean;
+  status: 'Active' | 'Inactive';
+  assignedBy?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface LoginRequest { email: string; password: string; }
 export interface LoginResponse { token: string; user: User; }
 

@@ -33,7 +33,15 @@
 
         <button class="btn btn-success btn-sm px-3 d-flex align-items-center gap-2" [disabled]="aiLoading" (click)="togglePlayVoiceover()">
           <i class="pi" [ngClass]="aiPlaying ? 'pi-pause-circle' : 'pi-play-circle'"></i>
-          <span>{{ aiLoading ? 'Generating Audio...' : (aiPlaying ? 'Pause Voiceover' : 'Play AI Voiceover') }}</span>
+          <span>{{ aiLoading ? 'Generating Audio...' : (aiPlaying ? 'Pause Voiceover' : (aiPaused ? 'Resume Voiceover' : 'Play AI Voiceover')) }}</span>
+        </button>
+
+        <button class="btn btn-danger btn-sm px-3 d-flex align-items-center gap-2"
+                [disabled]="aiLoading || (!aiPlaying && !aiPaused)"
+                (click)="stopVoiceover()"
+                title="Stop the AI voice immediately">
+          <i class="pi pi-stop-circle"></i>
+          <span>Stop Voice</span>
         </button>
       </div>
     </div>
@@ -43,6 +51,9 @@
       <div class="d-flex align-items-center justify-content-between mb-2">
         <span class="fw-semibold text-primary d-flex align-items-center gap-2 fs-sm">
           <i class="pi pi-align-left"></i> Live Executive Transcript ({{ aiLanguage === 'ta' ? 'தமிழ்' : 'English' }} &bull; {{ activeTab === 'eng' ? 'Engineering' : (activeTab === 'welfare' ? 'Welfare' : 'TNCWWB') }})
+        </span>
+        <span *ngIf="aiPaused" class="badge bg-warning-subtle text-warning border">
+          <i class="pi pi-pause-circle me-1"></i> Voiceover Paused (Speaker: anushka)...
         </span>
         <span *ngIf="aiPlaying" class="badge bg-success-subtle text-success border">
           <i class="pi pi-spin pi-spinner me-1"></i> Voiceover Playing (Speaker: anushka)...
@@ -116,7 +127,7 @@
         <div class="ep-card ep-card-emerald">
           <div class="ep-card-icon"><i class="pi pi-indian-rupee"></i></div>
           <div class="ep-card-info">
-            <span class="ep-val">₹{{ fmtL(totalWelfareDisbursed) }}</span>
+            <span class="ep-val">{{ fmtL(totalWelfareDisbursed) }}</span>
             <span class="ep-lbl">Total Disbursed Assistance</span>
           </div>
         </div>
@@ -826,6 +837,9 @@
                       <span *ngIf="!inlineLoading" class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-bold bg-blue-500/20 text-blue-300 border border-blue-400/30">
                         <i class="pi pi-users text-blue-300 text-xs"></i> Total: {{ filteredDetailTableRows.length }} Records
                       </span>
+                      <span *ngIf="!inlineLoading && getDistinctDistrictsCount(filteredDetailTableRows) > 0" class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30" [pTooltip]="getDistrictSummaryTooltip(filteredDetailTableRows)" tooltipPosition="bottom">
+                        <i class="pi pi-map-marker text-emerald-300 text-xs"></i> {{ getDistinctDistrictsCount(filteredDetailTableRows) }} District{{ getDistinctDistrictsCount(filteredDetailTableRows) > 1 ? 's' : '' }}
+                      </span>
                     </span>
                     <button type="button" pButton icon="pi pi-times" class="p-button-rounded p-button-danger p-button-outlined p-button-sm text-red-400 hover:bg-red-500/20 font-bold flex-shrink-0" 
                             title="Close inline detail view" (click)="closeInlineDetail()"></button>
@@ -887,8 +901,8 @@
                     <p class="text-xs text-slate-500 m-0">Fetching live project records from backend API</p>
                   </div>
 
-                  <p-table #dtInlineDetail1 [value]="filteredDetailTableRows" [paginator]="true" [alwaysShowPaginator]="true" [rows]="5" 
-                           [rowsPerPageOptions]="[5, 10, 20, 50, 100]" [showCurrentPageReport]="true" responsiveLayout="scroll"
+                  <p-table #dtInlineDetail1 [value]="filteredDetailTableRows" [paginator]="true" [alwaysShowPaginator]="filteredDetailTableRows.length > 50" [rows]="50" 
+                           [rowsPerPageOptions]="[25, 50, 100, 250, 500]" [showCurrentPageReport]="true" responsiveLayout="scroll"
                            (onFilter)="onDetailTableFiltered($event)"
                            currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries" [showFirstLastIcon]="true"
                            styleClass="p-datatable-striped p-datatable-gridlines inline-sub-table" *ngIf="!inlineLoading">
@@ -903,7 +917,11 @@
                               <span>{{ col.header }}</span>
                               <div class="flex items-center gap-1">
                                 <p-sortIcon [field]="col.field"></p-sortIcon>
-                                <span (click)="$event.stopPropagation()" class="inline-flex items-center ml-auto"><p-columnFilter *ngIf="col.field !== 'action' && col.field !== 'photo' && col.field !== 'expand'" type="text" [field]="col.field" display="menu" matchMode="contains" [showMatchModes]="false" [showOperator]="false" [showAddButton]="false"></p-columnFilter></span>
+                                <span (click)="$event.stopPropagation()" class="inline-flex items-center ml-auto"><p-columnFilter *ngIf="col.field !== 'action' && col.field !== 'photo' && col.field !== 'expand'" [field]="col.field" matchMode="equals" display="menu" [showMatchModes]="false" [showOperator]="false" [showAddButton]="false">
+                                  <ng-template pTemplate="filter" let-value let-filter="filterCallback">
+                                    <p-dropdown [ngModel]="value" [options]="getDistinctColumnValues(col.field)" (onChange)="filter($event.value)" placeholder="Select {{ col.header }}" [showClear]="true" [filter]="true" filterBy="label" appendTo="body" styleClass="p-dropdown-sm w-full"></p-dropdown>
+                                  </ng-template>
+                                </p-columnFilter></span>
                               </div>
                             </div>
                           </ng-container>
@@ -1119,8 +1137,8 @@
                     <p class="text-xs text-slate-500 m-0">Fetching live project records from backend API</p>
                   </div>
 
-                  <p-table #dtInlineDetail2 [value]="filteredDetailTableRows" [paginator]="true" [alwaysShowPaginator]="true" [rows]="5" 
-                           [rowsPerPageOptions]="[5, 10, 20, 50, 100]" [showCurrentPageReport]="true" responsiveLayout="scroll"
+                  <p-table #dtInlineDetail2 [value]="filteredDetailTableRows" [paginator]="true" [alwaysShowPaginator]="filteredDetailTableRows.length > 50" [rows]="50" 
+                           [rowsPerPageOptions]="[25, 50, 100, 250, 500]" [showCurrentPageReport]="true" responsiveLayout="scroll"
                            (onFilter)="onDetailTableFiltered($event)"
                            currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries" [showFirstLastIcon]="true"
                            styleClass="p-datatable-striped p-datatable-gridlines inline-sub-table" *ngIf="!inlineLoading">
@@ -1135,7 +1153,11 @@
                               <span>{{ col.header }}</span>
                               <div class="flex items-center gap-1">
                                 <p-sortIcon [field]="col.field"></p-sortIcon>
-                                <span (click)="$event.stopPropagation()" class="inline-flex items-center ml-auto"><p-columnFilter *ngIf="col.field !== 'action' && col.field !== 'photo' && col.field !== 'expand'" type="text" [field]="col.field" display="menu" matchMode="contains" [showMatchModes]="false" [showOperator]="false" [showAddButton]="false"></p-columnFilter></span>
+                                <span (click)="$event.stopPropagation()" class="inline-flex items-center ml-auto"><p-columnFilter *ngIf="col.field !== 'action' && col.field !== 'photo' && col.field !== 'expand'" [field]="col.field" matchMode="equals" display="menu" [showMatchModes]="false" [showOperator]="false" [showAddButton]="false">
+                                  <ng-template pTemplate="filter" let-value let-filter="filterCallback">
+                                    <p-dropdown [ngModel]="value" [options]="getDistinctColumnValues(col.field)" (onChange)="filter($event.value)" placeholder="Select {{ col.header }}" [showClear]="true" [filter]="true" filterBy="label" appendTo="body" styleClass="p-dropdown-sm w-full"></p-dropdown>
+                                  </ng-template>
+                                </p-columnFilter></span>
                               </div>
                             </div>
                           </ng-container>
@@ -1337,8 +1359,8 @@
                     <p class="text-xs text-slate-500 m-0">Fetching live project records from backend API</p>
                   </div>
 
-                  <p-table #dtInlineDetail3 [value]="filteredDetailTableRows" [paginator]="true" [alwaysShowPaginator]="true" [rows]="5" 
-                           [rowsPerPageOptions]="[5, 10, 20, 50, 100]" [showCurrentPageReport]="true" responsiveLayout="scroll"
+                  <p-table #dtInlineDetail3 [value]="filteredDetailTableRows" [paginator]="true" [alwaysShowPaginator]="filteredDetailTableRows.length > 50" [rows]="50" 
+                           [rowsPerPageOptions]="[25, 50, 100, 250, 500]" [showCurrentPageReport]="true" responsiveLayout="scroll"
                            (onFilter)="onDetailTableFiltered($event)"
                            currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries" [showFirstLastIcon]="true"
                            styleClass="p-datatable-striped p-datatable-gridlines inline-sub-table" *ngIf="!inlineLoading">
@@ -1353,7 +1375,11 @@
                               <span>{{ col.header }}</span>
                               <div class="flex items-center gap-1">
                                 <p-sortIcon [field]="col.field"></p-sortIcon>
-                                <span (click)="$event.stopPropagation()" class="inline-flex items-center ml-auto"><p-columnFilter *ngIf="col.field !== 'action' && col.field !== 'photo' && col.field !== 'expand'" type="text" [field]="col.field" display="menu" matchMode="contains" [showMatchModes]="false" [showOperator]="false" [showAddButton]="false"></p-columnFilter></span>
+                                <span (click)="$event.stopPropagation()" class="inline-flex items-center ml-auto"><p-columnFilter *ngIf="col.field !== 'action' && col.field !== 'photo' && col.field !== 'expand'" [field]="col.field" matchMode="equals" display="menu" [showMatchModes]="false" [showOperator]="false" [showAddButton]="false">
+                                  <ng-template pTemplate="filter" let-value let-filter="filterCallback">
+                                    <p-dropdown [ngModel]="value" [options]="getDistinctColumnValues(col.field)" (onChange)="filter($event.value)" placeholder="Select {{ col.header }}" [showClear]="true" [filter]="true" filterBy="label" appendTo="body" styleClass="p-dropdown-sm w-full"></p-dropdown>
+                                  </ng-template>
+                                </p-columnFilter></span>
                               </div>
                             </div>
                           </ng-container>
@@ -1566,8 +1592,8 @@
                     <p class="text-xs text-slate-500 m-0">Fetching live project records from backend API</p>
                   </div>
 
-                  <p-table #dtInlineDetail4 [value]="filteredDetailTableRows" [paginator]="true" [alwaysShowPaginator]="true" [rows]="5" 
-                           [rowsPerPageOptions]="[5, 10, 20, 50, 100]" [showCurrentPageReport]="true" responsiveLayout="scroll"
+                  <p-table #dtInlineDetail4 [value]="filteredDetailTableRows" [paginator]="true" [alwaysShowPaginator]="filteredDetailTableRows.length > 50" [rows]="50" 
+                           [rowsPerPageOptions]="[25, 50, 100, 250, 500]" [showCurrentPageReport]="true" responsiveLayout="scroll"
                            (onFilter)="onDetailTableFiltered($event)"
                            currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries" [showFirstLastIcon]="true"
                            styleClass="p-datatable-striped p-datatable-gridlines inline-sub-table" *ngIf="!inlineLoading">
@@ -1582,7 +1608,11 @@
                               <span>{{ col.header }}</span>
                               <div class="flex items-center gap-1">
                                 <p-sortIcon [field]="col.field"></p-sortIcon>
-                                <span (click)="$event.stopPropagation()" class="inline-flex items-center ml-auto"><p-columnFilter *ngIf="col.field !== 'action' && col.field !== 'photo' && col.field !== 'expand'" type="text" [field]="col.field" display="menu" matchMode="contains" [showMatchModes]="false" [showOperator]="false" [showAddButton]="false"></p-columnFilter></span>
+                                <span (click)="$event.stopPropagation()" class="inline-flex items-center ml-auto"><p-columnFilter *ngIf="col.field !== 'action' && col.field !== 'photo' && col.field !== 'expand'" [field]="col.field" matchMode="equals" display="menu" [showMatchModes]="false" [showOperator]="false" [showAddButton]="false">
+                                  <ng-template pTemplate="filter" let-value let-filter="filterCallback">
+                                    <p-dropdown [ngModel]="value" [options]="getDistinctColumnValues(col.field)" (onChange)="filter($event.value)" placeholder="Select {{ col.header }}" [showClear]="true" [filter]="true" filterBy="label" appendTo="body" styleClass="p-dropdown-sm w-full"></p-dropdown>
+                                  </ng-template>
+                                </p-columnFilter></span>
                               </div>
                             </div>
                           </ng-container>
@@ -1772,8 +1802,8 @@
                     <p class="text-xs text-slate-500 m-0">Fetching live project records from backend API</p>
                   </div>
 
-                  <p-table #dtInlineDetail5 [value]="filteredDetailTableRows" [paginator]="true" [alwaysShowPaginator]="true" [rows]="5" 
-                           [rowsPerPageOptions]="[5, 10, 20, 50, 100]" [showCurrentPageReport]="true" responsiveLayout="scroll"
+                  <p-table #dtInlineDetail5 [value]="filteredDetailTableRows" [paginator]="true" [alwaysShowPaginator]="filteredDetailTableRows.length > 50" [rows]="50" 
+                           [rowsPerPageOptions]="[25, 50, 100, 250, 500]" [showCurrentPageReport]="true" responsiveLayout="scroll"
                            (onFilter)="onDetailTableFiltered($event)"
                            currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries" [showFirstLastIcon]="true"
                            styleClass="p-datatable-striped p-datatable-gridlines inline-sub-table" *ngIf="!inlineLoading">
@@ -1788,7 +1818,11 @@
                               <span>{{ col.header }}</span>
                               <div class="flex items-center gap-1">
                                 <p-sortIcon [field]="col.field"></p-sortIcon>
-                                <span (click)="$event.stopPropagation()" class="inline-flex items-center ml-auto"><p-columnFilter *ngIf="col.field !== 'action' && col.field !== 'photo' && col.field !== 'expand'" type="text" [field]="col.field" display="menu" matchMode="contains" [showMatchModes]="false" [showOperator]="false" [showAddButton]="false"></p-columnFilter></span>
+                                <span (click)="$event.stopPropagation()" class="inline-flex items-center ml-auto"><p-columnFilter *ngIf="col.field !== 'action' && col.field !== 'photo' && col.field !== 'expand'" [field]="col.field" matchMode="equals" display="menu" [showMatchModes]="false" [showOperator]="false" [showAddButton]="false">
+                                  <ng-template pTemplate="filter" let-value let-filter="filterCallback">
+                                    <p-dropdown [ngModel]="value" [options]="getDistinctColumnValues(col.field)" (onChange)="filter($event.value)" placeholder="Select {{ col.header }}" [showClear]="true" [filter]="true" filterBy="label" appendTo="body" styleClass="p-dropdown-sm w-full"></p-dropdown>
+                                  </ng-template>
+                                </p-columnFilter></span>
                               </div>
                             </div>
                           </ng-container>
@@ -1944,8 +1978,8 @@
                     <p class="text-xs text-slate-500 m-0">Fetching live project records from backend API</p>
                   </div>
 
-                  <p-table #dtInlineDetail6 [value]="filteredDetailTableRows" [paginator]="true" [alwaysShowPaginator]="true" [rows]="5" 
-                           [rowsPerPageOptions]="[5, 10, 20, 50, 100]" [showCurrentPageReport]="true" responsiveLayout="scroll"
+                  <p-table #dtInlineDetail6 [value]="filteredDetailTableRows" [paginator]="true" [alwaysShowPaginator]="filteredDetailTableRows.length > 50" [rows]="50" 
+                           [rowsPerPageOptions]="[25, 50, 100, 250, 500]" [showCurrentPageReport]="true" responsiveLayout="scroll"
                            (onFilter)="onDetailTableFiltered($event)"
                            currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries" [showFirstLastIcon]="true"
                            styleClass="p-datatable-striped p-datatable-gridlines inline-sub-table" *ngIf="!inlineLoading">
@@ -1960,7 +1994,11 @@
                               <span>{{ col.header }}</span>
                               <div class="flex items-center gap-1">
                                 <p-sortIcon [field]="col.field"></p-sortIcon>
-                                <span (click)="$event.stopPropagation()" class="inline-flex items-center ml-auto"><p-columnFilter *ngIf="col.field !== 'action' && col.field !== 'photo' && col.field !== 'expand'" type="text" [field]="col.field" display="menu" matchMode="contains" [showMatchModes]="false" [showOperator]="false" [showAddButton]="false"></p-columnFilter></span>
+                                <span (click)="$event.stopPropagation()" class="inline-flex items-center ml-auto"><p-columnFilter *ngIf="col.field !== 'action' && col.field !== 'photo' && col.field !== 'expand'" [field]="col.field" matchMode="equals" display="menu" [showMatchModes]="false" [showOperator]="false" [showAddButton]="false">
+                                  <ng-template pTemplate="filter" let-value let-filter="filterCallback">
+                                    <p-dropdown [ngModel]="value" [options]="getDistinctColumnValues(col.field)" (onChange)="filter($event.value)" placeholder="Select {{ col.header }}" [showClear]="true" [filter]="true" filterBy="label" appendTo="body" styleClass="p-dropdown-sm w-full"></p-dropdown>
+                                  </ng-template>
+                                </p-columnFilter></span>
                               </div>
                             </div>
                           </ng-container>
@@ -2068,8 +2106,8 @@
                     <span class="text-slate-800 font-bold text-sm">Loading TOD Officer Diary Records...</span>
                   </div>
 
-                  <p-table #dtInlineDetailTod [value]="filteredDetailTableRows" [paginator]="true" [alwaysShowPaginator]="true" [rows]="5" 
-                           [rowsPerPageOptions]="[5, 10, 20, 50, 100]" [showCurrentPageReport]="true" responsiveLayout="scroll"
+                  <p-table #dtInlineDetailTod [value]="filteredDetailTableRows" [paginator]="true" [alwaysShowPaginator]="filteredDetailTableRows.length > 50" [rows]="50" 
+                           [rowsPerPageOptions]="[25, 50, 100, 250, 500]" [showCurrentPageReport]="true" responsiveLayout="scroll"
                            (onFilter)="onDetailTableFiltered($event)"
                            currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries" [showFirstLastIcon]="true"
                            styleClass="p-datatable-striped p-datatable-gridlines inline-sub-table" *ngIf="!inlineLoading">
@@ -2080,7 +2118,11 @@
                             <span>{{ col.header }}</span>
                             <div class="flex items-center gap-1">
                               <p-sortIcon [field]="col.field"></p-sortIcon>
-                              <span (click)="$event.stopPropagation()" class="inline-flex items-center ml-auto"><p-columnFilter *ngIf="col.field !== 'action' && col.field !== 'photo' && col.field !== 'expand'" type="text" [field]="col.field" display="menu" matchMode="contains" [showMatchModes]="false" [showOperator]="false" [showAddButton]="false"></p-columnFilter></span>
+                              <span (click)="$event.stopPropagation()" class="inline-flex items-center ml-auto"><p-columnFilter *ngIf="col.field !== 'action' && col.field !== 'photo' && col.field !== 'expand'" [field]="col.field" matchMode="equals" display="menu" [showMatchModes]="false" [showOperator]="false" [showAddButton]="false">
+                                  <ng-template pTemplate="filter" let-value let-filter="filterCallback">
+                                    <p-dropdown [ngModel]="value" [options]="getDistinctColumnValues(col.field)" (onChange)="filter($event.value)" placeholder="Select {{ col.header }}" [showClear]="true" [filter]="true" filterBy="label" appendTo="body" styleClass="p-dropdown-sm w-full"></p-dropdown>
+                                  </ng-template>
+                                </p-columnFilter></span>
                             </div>
                           </div>
                         </th>
@@ -2210,8 +2252,8 @@
                     <p class="text-xs text-slate-500 m-0">Fetching live project records from backend API</p>
                   </div>
 
-                  <p-table #dtInlineTncwwbMember [value]="filteredDetailTableRows" [paginator]="true" [alwaysShowPaginator]="true" [rows]="5" 
-                           [rowsPerPageOptions]="[5, 10, 20, 50, 100]" [showCurrentPageReport]="true" responsiveLayout="scroll"
+                  <p-table #dtInlineTncwwbMember [value]="filteredDetailTableRows" [paginator]="true" [alwaysShowPaginator]="filteredDetailTableRows.length > 50" [rows]="50" 
+                           [rowsPerPageOptions]="[25, 50, 100, 250, 500]" [showCurrentPageReport]="true" responsiveLayout="scroll"
                            (onFilter)="onDetailTableFiltered($event)"
                            currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries" [showFirstLastIcon]="true"
                            styleClass="p-datatable-striped p-datatable-gridlines inline-sub-table" *ngIf="!inlineLoading">
@@ -2226,7 +2268,11 @@
                               <span>{{ col.header }}</span>
                               <div class="flex items-center gap-1">
                                 <p-sortIcon [field]="col.field"></p-sortIcon>
-                                <span (click)="$event.stopPropagation()" class="inline-flex items-center ml-auto"><p-columnFilter *ngIf="col.field !== 'action' && col.field !== 'photo' && col.field !== 'expand'" type="text" [field]="col.field" display="menu" matchMode="contains" [showMatchModes]="false" [showOperator]="false" [showAddButton]="false"></p-columnFilter></span>
+                                <span (click)="$event.stopPropagation()" class="inline-flex items-center ml-auto"><p-columnFilter *ngIf="col.field !== 'action' && col.field !== 'photo' && col.field !== 'expand'" [field]="col.field" matchMode="equals" display="menu" [showMatchModes]="false" [showOperator]="false" [showAddButton]="false">
+                                  <ng-template pTemplate="filter" let-value let-filter="filterCallback">
+                                    <p-dropdown [ngModel]="value" [options]="getDistinctColumnValues(col.field)" (onChange)="filter($event.value)" placeholder="Select {{ col.header }}" [showClear]="true" [filter]="true" filterBy="label" appendTo="body" styleClass="p-dropdown-sm w-full"></p-dropdown>
+                                  </ng-template>
+                                </p-columnFilter></span>
                               </div>
                             </div>
                           </ng-container>
@@ -2362,8 +2408,8 @@
                     <p class="text-xs text-slate-500 m-0">Fetching live project records from backend API</p>
                   </div>
 
-                  <p-table #dtInlineTncwwbScheme [value]="filteredDetailTableRows" [paginator]="true" [alwaysShowPaginator]="true" [rows]="5" 
-                           [rowsPerPageOptions]="[5, 10, 20, 50, 100]" [showCurrentPageReport]="true" responsiveLayout="scroll"
+                  <p-table #dtInlineTncwwbScheme [value]="filteredDetailTableRows" [paginator]="true" [alwaysShowPaginator]="filteredDetailTableRows.length > 50" [rows]="50" 
+                           [rowsPerPageOptions]="[25, 50, 100, 250, 500]" [showCurrentPageReport]="true" responsiveLayout="scroll"
                            (onFilter)="onDetailTableFiltered($event)"
                            currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries" [showFirstLastIcon]="true"
                            styleClass="p-datatable-striped p-datatable-gridlines inline-sub-table" *ngIf="!inlineLoading">
@@ -2378,7 +2424,11 @@
                               <span>{{ col.header }}</span>
                               <div class="flex items-center gap-1">
                                 <p-sortIcon [field]="col.field"></p-sortIcon>
-                                <span (click)="$event.stopPropagation()" class="inline-flex items-center ml-auto"><p-columnFilter *ngIf="col.field !== 'action' && col.field !== 'photo' && col.field !== 'expand'" type="text" [field]="col.field" display="menu" matchMode="contains" [showMatchModes]="false" [showOperator]="false" [showAddButton]="false"></p-columnFilter></span>
+                                <span (click)="$event.stopPropagation()" class="inline-flex items-center ml-auto"><p-columnFilter *ngIf="col.field !== 'action' && col.field !== 'photo' && col.field !== 'expand'" [field]="col.field" matchMode="equals" display="menu" [showMatchModes]="false" [showOperator]="false" [showAddButton]="false">
+                                  <ng-template pTemplate="filter" let-value let-filter="filterCallback">
+                                    <p-dropdown [ngModel]="value" [options]="getDistinctColumnValues(col.field)" (onChange)="filter($event.value)" placeholder="Select {{ col.header }}" [showClear]="true" [filter]="true" filterBy="label" appendTo="body" styleClass="p-dropdown-sm w-full"></p-dropdown>
+                                  </ng-template>
+                                </p-columnFilter></span>
                               </div>
                             </div>
                           </ng-container>
@@ -2453,9 +2503,12 @@
                     styleClass="p-dropdown-sm" appendTo="body"></p-dropdown>
       </div>
 
-      <div class="flex items-center gap-3">
-        <span class="badge bg-primary text-white font-bold px-3 py-2 rounded-full text-xs shadow-sm">
+      <div class="flex items-center gap-2">
+        <span class="badge bg-primary text-white font-bold px-3 py-2 rounded-full text-xs shadow-sm flex items-center gap-1">
           <i class="pi pi-database mr-1"></i> {{ filteredModalDetailRows.length }} Records
+        </span>
+        <span *ngIf="getDistinctDistrictsCount(filteredModalDetailRows) > 0" class="badge bg-emerald-600 text-white font-bold px-3 py-2 rounded-full text-xs shadow-sm flex items-center gap-1" [pTooltip]="getDistrictSummaryTooltip(filteredModalDetailRows)" tooltipPosition="bottom">
+          <i class="pi pi-map-marker mr-1"></i> {{ getDistinctDistrictsCount(filteredModalDetailRows) }} District{{ getDistinctDistrictsCount(filteredModalDetailRows) > 1 ? 's' : '' }}
         </span>
 
         <!-- Send Mail -->
@@ -2468,8 +2521,8 @@
     </div>
 
     <!-- Datatable with Sorting, Pagination, and Row Count Selector -->
-    <p-table #dtDetail [value]="filteredModalDetailRows" [paginator]="true" [rows]="10" 
-             [rowsPerPageOptions]="[10, 25, 50, 100]" [showCurrentPageReport]="true"
+    <p-table #dtDetail [value]="filteredModalDetailRows" [paginator]="true" [alwaysShowPaginator]="filteredModalDetailRows.length > 50" [rows]="50" 
+             [rowsPerPageOptions]="[25, 50, 100, 250, 500]" [showCurrentPageReport]="true"
              (onFilter)="onDetailTableFiltered($event)"
              currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
              styleClass="p-datatable-striped p-datatable-gridlines compact-table shadow-sm" *ngIf="!inlineLoading">
@@ -2484,7 +2537,11 @@
                               <span>{{ col.header }}</span>
                               <div class="flex items-center gap-1">
                                 <p-sortIcon [field]="col.field"></p-sortIcon>
-                                <span (click)="$event.stopPropagation()" class="inline-flex items-center ml-auto"><p-columnFilter *ngIf="col.field !== 'action' && col.field !== 'photo' && col.field !== 'expand'" type="text" [field]="col.field" display="menu" matchMode="contains" [showMatchModes]="false" [showOperator]="false" [showAddButton]="false"></p-columnFilter></span>
+                                <span (click)="$event.stopPropagation()" class="inline-flex items-center ml-auto"><p-columnFilter *ngIf="col.field !== 'action' && col.field !== 'photo' && col.field !== 'expand'" [field]="col.field" matchMode="equals" display="menu" [showMatchModes]="false" [showOperator]="false" [showAddButton]="false">
+                                  <ng-template pTemplate="filter" let-value let-filter="filterCallback">
+                                    <p-dropdown [ngModel]="value" [options]="getDistinctColumnValues(col.field)" (onChange)="filter($event.value)" placeholder="Select {{ col.header }}" [showClear]="true" [filter]="true" filterBy="label" appendTo="body" styleClass="p-dropdown-sm w-full"></p-dropdown>
+                                  </ng-template>
+                                </p-columnFilter></span>
                               </div>
                             </div>
                           </ng-container>

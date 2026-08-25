@@ -186,7 +186,7 @@
 }
 
 /* ── BODY ────────────────────────────────────────────────────────────────── */
-.md-body { padding: 8px 32px 32px; display: flex; flex-direction: column; gap: 12px; }
+.md-body { padding: 8px 32px 100px; display: flex; flex-direction: column; gap: 14px; }
 .section-body { animation: fadeIn 0.35s ease; }
 
 @keyframes fadeIn {
@@ -1489,14 +1489,33 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    background: rgba(255, 255, 255, 0.02);
-    border-radius: 12px;
-    padding: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: #0b1329;
+    border-radius: 14px;
+    padding: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    min-height: 440px;
+    transition: all 0.3s ease;
+
+    &.theme-roadmap {
+      background: radial-gradient(circle at 50% 50%, #0f2042 0%, #091428 100%);
+    }
+
+    &.theme-satellite {
+      background: radial-gradient(circle at 50% 50%, #0d2238 0%, #020617 100%);
+    }
+
+    &.theme-hybrid {
+      background: radial-gradient(circle at 50% 50%, #1e1b4b 0%, #020617 100%);
+    }
+
+    &.theme-terrain {
+      background: radial-gradient(circle at 50% 50%, #064e3b 0%, #022c22 100%);
+    }
 
     .tn-map-svg {
       width: 100%;
-      max-width: 450px;
+      max-width: 480px;
       height: auto;
       max-height: 520px;
     }

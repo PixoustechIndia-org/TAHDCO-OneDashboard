@@ -11,9 +11,12 @@
       </div>
     </div>
 
-    <div class="header-actions">
-      <button class="export-btn" (click)="exportAuditLogs()">
-        <i class="pi pi-download"></i> Export Audit Logs
+    <div class="header-actions flex gap-2">
+      <button class="export-btn" (click)="exportAuditLogs('excel')">
+        <i class="pi pi-file-excel"></i> Export Excel
+      </button>
+      <button class="export-btn csv" (click)="exportAuditLogs('csv')">
+        <i class="pi pi-file"></i> Export CSV
       </button>
     </div>
   </header>

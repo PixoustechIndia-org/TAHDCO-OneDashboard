@@ -64,7 +64,24 @@ export class LoginComponent implements AfterViewInit {
       },
       error: (e) => {
         this.loading = false;
-        this.msg.add({ severity: 'error', summary: 'Sign-in failed', detail: e.message || 'Invalid credentials' });
+        const errMsg = (e.error?.message || e.error?.detail || '').toLowerCase();
+        const isInactive = errMsg.includes('inactive') || e.error?.status === 'ACCOUNT_INACTIVE' || e.error?.errorCode === 'ACCOUNT_INACTIVE' || e.status === 403;
+
+        if (isInactive) {
+          this.msg.add({
+            severity: 'warn',
+            summary: 'Account Inactive',
+            detail: 'Your account is currently inactive. Please contact the TAHDCO administrator to activate your account.',
+            life: 5000
+          });
+        } else {
+          this.msg.add({
+            severity: 'error',
+            summary: 'Sign In Failed',
+            detail: 'Invalid email or password. Please check your credentials and try again.',
+            life: 4000
+          });
+        }
       }
     });
   }

@@ -14,17 +14,25 @@ using BAL.BackgroundWorkerService;
 var builder = WebApplication.CreateBuilder(args);
 
 // ── Serilog: console + MariaDB/MySQL sink (auto-creates app_logs) ────────────
-var connectionString = builder.Configuration.GetConnectionString("Default");
-Log.Logger = new LoggerConfiguration()
+var connectionString = builder.Configuration.GetConnectionString("Default") ?? "";
+var loggerConfig = new LoggerConfiguration()
     .ReadFrom.Configuration(builder.Configuration)
     .Enrich.FromLogContext()
-    .WriteTo.Console()
-    .WriteTo.MariaDB(
-        connectionString: connectionString,
-        tableName: "app_logs",
-        autoCreateTable: true,
-        useBulkInsert: false)
-    .CreateLogger();
+    .WriteTo.Console();
+
+if (!string.IsNullOrWhiteSpace(connectionString))
+{
+    try
+    {
+        loggerConfig.WriteTo.MariaDB(
+            connectionString: connectionString,
+            tableName: "app_logs",
+            autoCreateTable: true,
+            useBulkInsert: false);
+    }
+    catch { /* Console logging remains active */ }
+}
+Log.Logger = loggerConfig.CreateLogger();
 builder.Host.UseSerilog();
 
 // ── QuestPDF community license ───────────────────────────────────────────────

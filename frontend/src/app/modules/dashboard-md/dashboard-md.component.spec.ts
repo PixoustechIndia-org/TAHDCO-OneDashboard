@@ -13,12 +13,14 @@ describe('DashboardMdComponent', () => {
   let fixture: ComponentFixture<DashboardMdComponent>;
 
   const mockDs = {
+    globalFilters$: of(), // never emits -> no filter-change side effects during tests
     getRawDataForYear: jasmine.createSpy('getRawDataForYear').and.returnValue(of([])),
     getOneDashboardWorkList: jasmine.createSpy('getOneDashboardWorkList').and.returnValue(of({ status: 'SUCCESS', data: [] })),
     getThmsBenList: jasmine.createSpy('getThmsBenList').and.returnValue(of({ status: 'SUCCESS', data: [] })),
     getTelpApplicationDetail: jasmine.createSpy('getTelpApplicationDetail').and.returnValue(of({ status: 'SUCCESS', data: [] })),
     getTncwwbGeneral: jasmine.createSpy('getTncwwbGeneral').and.returnValue(of({ status: 'SUCCESS', data: [] })),
-    getUnifiedDashboardCounts: jasmine.createSpy('getUnifiedDashboardCounts').and.returnValue(of({}))
+    getUnifiedDashboardCounts: jasmine.createSpy('getUnifiedDashboardCounts').and.returnValue(of({})),
+    getPatrolCameraStatus: jasmine.createSpy('getPatrolCameraStatus').and.returnValue(of({ status: 'SUCCESS', data: [] }))
   };
 
   const mockAuth = {
@@ -61,18 +63,18 @@ describe('DashboardMdComponent', () => {
   it('should correctly format payload for TIME status', () => {
     const dummyRow = { district: 'Chennai', division: 'Chennai', col4: 10, col5: 5, col6: 5 };
     component.openDetailList('time', dummyRow, 'Saved as Mbooknotuploaded');
-    expect(mockDs.getOneDashboardWorkList).toHaveBeenCalledWith('mbook', ['Chennai'], ['Saved as Mbooknotuploaded'], ['2026'], '', 'Chennai');
+    expect(mockDs.getOneDashboardWorkList).toHaveBeenCalledWith('mbook', ['Chennai'], ['submitted'], ['2026'], '', 'Chennai');
   });
 
   it('should correctly format payload for PATROL status', () => {
     const dummyRow = { district: 'Chennai', division: 'Chennai', col1: 10, col2: 5 };
     component.openDetailList('patrol', dummyRow, 'Live');
-    expect(mockDs.getOneDashboardWorkList).toHaveBeenCalledWith('work', ['Chennai'], [], ['2026'], 'Live', 'Chennai');
+    expect(mockDs.getOneDashboardWorkList).toHaveBeenCalledWith('work', ['Chennai'], [], ['2026', '2025', '2024', '2023'], 'Live', 'Chennai');
   });
 
   it('should correctly format payload for THMS status', () => {
     const dummyRow = { district: 'Chennai', division: 'Chennai', col1: 10, col3: 5 };
     component.openDetailList('thms', dummyRow, 'Not Started');
-    expect(mockDs.getThmsBenList).toHaveBeenCalledWith('Chennai', '', 'Not Started');
+    expect(mockDs.getThmsBenList).toHaveBeenCalledWith('Chennai', 'Not Started', '');
   });
 });

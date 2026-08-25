@@ -60,6 +60,10 @@
       &:hover {
         background: #0369a1;
       }
+      &.csv {
+        background: #059669;
+        &:hover { background: #047857; }
+      }
     }
   }
 

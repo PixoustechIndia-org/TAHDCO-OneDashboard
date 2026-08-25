@@ -1,10 +1,13 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { AuthService } from '../../core/services/auth.service';
 import { User, ROLE_META } from '../../core/models';
 import { DataService } from '../../core/services/data.service';
+
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-shell',
@@ -28,42 +31,118 @@ export class ShellComponent implements OnInit {
   notifCount = 3;
   cacheClearing = false;
 
+  // Change Password Modal State
+  changePasswordVisible = false;
+  cpLoading = false;
+  showCurrentPassword = false;
+  showNewPassword = false;
+  showConfirmPassword = false;
+  cpForm = {
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  };
+
+  openChangePasswordDialog(): void {
+    this.cpForm = { currentPassword: '', newPassword: '', confirmPassword: '' };
+    this.showCurrentPassword = false;
+    this.showNewPassword = false;
+    this.showConfirmPassword = false;
+    this.changePasswordVisible = true;
+    this.cdr.markForCheck();
+  }
+
+  submitChangePassword(): void {
+    if (!this.cpForm.currentPassword || !this.cpForm.newPassword || !this.cpForm.confirmPassword) {
+      this.msg.add({ severity: 'warn', summary: 'Required Fields', detail: 'Please fill in all password fields.' });
+      return;
+    }
+    if (this.cpForm.newPassword !== this.cpForm.confirmPassword) {
+      this.msg.add({ severity: 'error', summary: 'Mismatch', detail: 'New password and confirmation password do not match.' });
+      return;
+    }
+    if (this.cpForm.newPassword.length < 6) {
+      this.msg.add({ severity: 'warn', summary: 'Too Short', detail: 'New password must be at least 6 characters.' });
+      return;
+    }
+
+    this.cpLoading = true;
+    const url = `${environment.apiUrl || ''}/api/v1/auth/change-password`;
+    const payload = {
+      email: this.user?.email || '',
+      currentPassword: this.cpForm.currentPassword,
+      newPassword: this.cpForm.newPassword,
+      confirmPassword: this.cpForm.confirmPassword
+    };
+
+    this.http.post<any>(url, payload).subscribe({
+      next: (res) => {
+        this.cpLoading = false;
+        this.changePasswordVisible = false;
+        this.msg.add({ severity: 'success', summary: 'Password Updated', detail: res?.message || 'Your security password has been changed successfully.' });
+        this.cdr.markForCheck();
+      },
+      error: (err) => {
+        this.cpLoading = false;
+        const msgText = err.error?.message || 'Unable to update password. Please check your current password and try again.';
+        this.msg.add({ severity: 'error', summary: 'Update Failed', detail: msgText });
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
   navGroups = [
     {
       label: 'Home',
       items: [
+        { label: 'Overview', icon: 'pi-chart-pie', route: '/overview' },
         { label: 'Dashboard', icon: 'pi-compass', route: '/dashboard-md' },
       ]
     },
-
-    // {
-    //   label: 'Applications',
-    //   items: [
-    //     { label: 'Tender',     sub: 'TIPS',   icon: 'pi-file-edit',      route: '/tender',        app: 'TIPS',      roles: ['admin', 'md', 'secretary', 'dm', 'ee', 'ce', 'Chief Engineer'] },
-    //     { label: 'Housing',    sub: 'THMS',   icon: 'pi-building',       route: '/housing',       app: 'THMS',      roles: ['admin', 'md', 'secretary', 'dm', 'ee', 'ce', 'Chief Engineer'] },
-    //     { label: 'Enrollment', sub: 'TAMS',   icon: 'pi-graduation-cap', route: '/enrollment',    app: 'TAMS',      roles: ['admin', 'md', 'secretary', 'dm', 'gm'] },
-    //     { label: 'Schemes',    sub: 'Scheme', icon: 'pi-wallet',         route: '/scheme-report', apps: ['Scheme','TELP','OnePortal'], roles: ['admin', 'md', 'secretary', 'dm', 'gm'] },
-    //     { label: 'TELP Loan',  sub: 'TELP',   icon: 'pi-book',           route: '/telp',          apps: ['TELP','Scheme'], roles: ['admin', 'md', 'secretary', 'dm', 'gm'] },
-    //     { label: 'TNCWWB',     sub: 'Welfare Board', icon: 'pi-id-card', route: '/tncwwb',        apps: ['TNCWWB','OnePortal','Scheme'], roles: ['admin', 'md', 'secretary', 'dm', 'ee', 'gm'] },
-    //     { label: 'Patrol 360', sub: 'CCTV',   icon: 'pi-video',          route: '/patrol360',     app: 'Patrol360', roles: ['admin', 'md', 'secretary', 'dm', 'ee', 'ce', 'Chief Engineer'] },
-    //     { label: 'Diary',      sub: 'TOD',    icon: 'pi-calendar',       route: '/tod',           app: 'TOD',       roles: ['admin', 'md', 'secretary', 'dm', 'gm'] },
-    //   ]
-    // },
     {
-      label: 'Admin',
+      label: 'Configuration',
       roles: ['admin'],
       items: [
-        { label: 'AI Engine Analytics', icon: 'pi-sparkles', route: '/ai-analytics',          roles: ['admin'] },
+        {
+          label: 'Configuration Hub',
+          sub: 'Setup & Mappings',
+          icon: 'pi-cog',
+          route: '/configuration',
+          roles: ['admin'],
+          expanded: true,
+          children: [
+            { label: '1. Role Management', sub: 'CRUD Operation', icon: 'pi-id-card', route: '/configuration', queryParams: { tab: 'roles' }, roles: ['admin'] },
+            { label: '2. Project Details', sub: 'Eng / Welfare / TNCWWN', icon: 'pi-folder', route: '/configuration', queryParams: { tab: 'projects' }, roles: ['admin'] },
+            { label: '3. Project Mapping', sub: 'Role & Project Mapping', icon: 'pi-sliders-h', route: '/configuration', queryParams: { tab: 'mappings' }, roles: ['admin'] },
+            { label: '4. User Privileges', sub: 'CRUD Permissions', icon: 'pi-shield', route: '/configuration', queryParams: { tab: 'privileges' }, roles: ['admin'] },
+            { label: '5. Local Body Master', sub: 'TN Administrative Master', icon: 'pi-map', route: '/configuration', queryParams: { tab: 'localbody' }, roles: ['admin'] }
+          ]
+        },
+        { label: 'Change Password', sub: 'Security Settings', icon: 'pi-key', action: 'changePassword' }
+      ]
+    },
+    {
+      label: 'Admin & Operations',
+      roles: ['admin'],
+      items: [
+        { label: 'User Master',           icon: 'pi-users',  route: '/user-master',            roles: ['admin'] },
+        { label: 'AI Engine Analytics',   icon: 'pi-sparkles', route: '/ai-analytics',          roles: ['admin'] },
         { label: 'Data Ingestion Engine', icon: 'pi-sync',   route: '/ingestion',             roles: ['admin'] },
-        { label: 'User master',           icon: 'pi-users',  route: '/user-master',            roles: ['admin'] },
-        { label: 'Local Body Configuration', icon: 'pi-map', route: '/configuration', roles: ['admin', 'md'] },
         { label: 'Scheduler Control',     icon: 'pi-clock',  route: '/scheduler-management',   roles: ['admin'] },
         { label: 'Audit Log',             icon: 'pi-history',route: '/audit-log',             roles: ['admin'] }
       ]
     },
   ];
 
-  // ── Notifications Modal & Filters ──────────────────────────────────────
+  // Help & Guides Modal State
+  helpModalVisible = false;
+
+  openHelpModal(): void {
+    this.helpModalVisible = true;
+    this.cdr.markForCheck();
+  }
+
+  // Notification Modal State& Filters ──────────────────────────────────────
   notifDialogVisible = false;
   notifLoading = false;
   notificationsList: any[] = [];
@@ -112,9 +191,11 @@ export class ShellComponent implements OnInit {
   constructor(
     public auth: AuthService,
     public router: Router,
+    private http: HttpClient,
     private confirm: ConfirmationService,
     private ds: DataService,
-    private msg: MessageService
+    private msg: MessageService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   clearCache(): void {
@@ -135,7 +216,16 @@ export class ShellComponent implements OnInit {
   }
 
   // ── Navigation Bar Global Filter Controls ─────────────────────────────
-  selFY: string[] = ['FY 2025-26'];
+  getCurrentFinancialYear(): string {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth(); // 0 = Jan, 3 = Apr
+    const startYear = month >= 3 ? year : year - 1;
+    const endYear = (startYear + 1).toString().slice(-2);
+    return `FY ${startYear}-${endYear}`;
+  }
+
+  selFY: string[] = [this.getCurrentFinancialYear()];
   selDiv: string[] = [];
   viewMode: 'count' | 'cost' | 'both' = 'count';
 
@@ -178,46 +268,46 @@ export class ShellComponent implements OnInit {
       case 'ce':
         return {
           badge: 'CE',
-          title: 'CE Dashboard',
+          title: 'Dashboard',
           subtitle: 'Chief Engineer · Technical & Construction'
         };
       case 'gm':
         return {
           badge: 'GM',
-          title: 'GM Dashboard',
+          title: 'Dashboard',
           subtitle: 'General Manager · Welfare & Schemes'
         };
       case 'ee':
         const div = this.auth.currentUser?.divisionName || 'Division';
         return {
           badge: 'EE',
-          title: 'EE Dashboard',
+          title: 'Dashboard',
           subtitle: `Executive Engineer · ${div}`
         };
       case 'dm':
         const dist = this.auth.currentUser?.districtName || 'District';
         return {
           badge: 'DM',
-          title: 'DM Dashboard',
+          title: 'Dashboard',
           subtitle: `District Manager · ${dist}`
         };
       case 'secretary':
         return {
           badge: 'SEC',
-          title: 'Secretary Dashboard',
+          title: 'Dashboard',
           subtitle: 'Secretary · Executive Oversight'
         };
       case 'admin':
         return {
           badge: 'ADM',
-          title: 'Admin Dashboard',
+          title: 'Dashboard',
           subtitle: (this.auth.currentUser?.scope === 'all' ? 'Application Admin (HQ)' : 'Application Admin (District)') + ' · Master System View'
         };
       case 'md':
       default:
         return {
           badge: 'MD',
-          title: 'MD Dashboard',
+          title: 'Dashboard',
           subtitle: 'Managing Director · Strategic View'
         };
     }
@@ -249,11 +339,46 @@ export class ShellComponent implements OnInit {
     return this.visibleItems(group.items).length > 0;
   }
 
+  navigateTo(item: any): void {
+    if (window.innerWidth <= 1023) {
+      this.mobileMenuOpen = false;
+    }
+    if (item.action === 'changePassword') {
+      this.openChangePasswordDialog();
+      return;
+    }
+    if (item.queryParams) {
+      this.router.navigate([item.route], { queryParams: item.queryParams });
+    } else if (item.route) {
+      this.router.navigate([item.route]);
+    }
+  }
+
+  navigateToParent(item: any): void {
+    item.expanded = !item.expanded;
+    if (item.route) {
+      this.navigateTo(item);
+    }
+  }
+
+  toggleAccordion(item: any, event?: Event): void {
+    if (event) event.stopPropagation();
+    item.expanded = !item.expanded;
+  }
+
   isActive(item: any): boolean {
     const route = item.route;
     if (!route) return false;
     const curr = this.currentUrl;
-    if (curr === route || (route !== '/overview' && curr.startsWith(route))) return true;
+    
+    if (item.queryParams && item.queryParams.tab) {
+      return curr.includes(route) && curr.includes(`tab=${item.queryParams.tab}`);
+    }
+    if (item.children && item.children.length > 0) {
+      return item.children.some((c: any) => this.isActive(c)) || (curr.startsWith(route) && !curr.includes('tab='));
+    }
+    if (route === '/configuration' && curr.startsWith('/configuration') && !curr.includes('tab=')) return true;
+    if (curr === route || (route !== '/overview' && route !== '/configuration' && curr.startsWith(route))) return true;
     
     // Dynamic drill matches
     if (route === '/housing' && curr.includes('/drill/housing')) return true;
@@ -281,11 +406,13 @@ export class ShellComponent implements OnInit {
 
   logout() {
     this.confirm.confirm({
-      message: 'You will be returned to the sign-in screen.',
-      header: 'Sign out of TAHDCO portal?',
+      message: 'Are you sure you want to sign out? Your active session will be ended securely.',
+      header: 'Sign Out Confirmation',
       icon: 'pi pi-sign-out',
-      acceptLabel: 'Sign out', rejectLabel: 'Stay',
-      acceptButtonStyleClass: 'p-button-danger',
+      acceptLabel: 'Sign Out',
+      rejectLabel: 'Cancel',
+      acceptButtonStyleClass: 'p-button-danger p-button-sm',
+      rejectButtonStyleClass: 'p-button-outlined p-button-secondary p-button-sm mr-2',
       accept: () => this.auth.logout()
     });
   }

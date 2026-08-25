@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Model.ViewModel;
 
 using DAL;
+using Utils.Interface;
 
 namespace BAL.Service;
 
@@ -31,13 +32,19 @@ public class TipsTimeLiveService : ITipsTimeLiveService
     private readonly IHttpClientFactory _factory;
     private readonly ILogger<TipsTimeLiveService> _log;
     private readonly IDapperRepository _db;
+    private readonly ICacheService _cache;
 
-    public TipsTimeLiveService(IHttpClientFactory factory, ILogger<TipsTimeLiveService> log, IDapperRepository db)
+    public TipsTimeLiveService(IHttpClientFactory factory, ILogger<TipsTimeLiveService> log, IDapperRepository db, ICacheService cache)
     {
         _factory = factory;
         _log = log;
         _db = db;
+        _cache = cache;
     }
+
+    // Short TTL for live upstream replies: repeated dashboard loads / patrol page hits
+    // reuse the last good response instead of blocking on the slow external TIME API.
+    private static readonly TimeSpan LiveCacheTtl = TimeSpan.FromSeconds(60);
 
     // ── Public façade ──────────────────────────────────────────────────────
     public async Task<TipsTimeLiveResult?> TryFetchAsync()
@@ -45,7 +52,7 @@ public class TipsTimeLiveService : ITipsTimeLiveService
         try
         {
             var client  = _factory.CreateClient("external");
-            client.Timeout = TimeSpan.FromSeconds(120);
+            client.Timeout = TimeSpan.FromSeconds(30);
 
             using var content  = new StringContent(DefaultPayload, Encoding.UTF8, "application/json");
             using var response = await client.PostAsync(ApiUrl, content);
@@ -204,10 +211,19 @@ public class TipsTimeLiveService : ITipsTimeLiveService
 
     public async Task<object?> GetOneDashboardWorkAsync(string type, string[] divisionNames, string[] districtNames, string[] statusNames, string[] years, string cameraStatus)
     {
+        var cacheKey = $"tips:work:{type}|{Join(divisionNames)}|{Join(districtNames)}|{Join(statusNames)}|{Join(years)}|{cameraStatus ?? ""}";
+        return await _cache.GetOrCreateAsync(cacheKey, LiveCacheTtl,
+            () => GetOneDashboardWorkCoreAsync(type, divisionNames, districtNames, statusNames, years, cameraStatus));
+    }
+
+    private static string Join(string[]? values) => values == null ? "" : string.Join(",", values);
+
+    private async Task<object?> GetOneDashboardWorkCoreAsync(string type, string[] divisionNames, string[] districtNames, string[] statusNames, string[] years, string cameraStatus)
+    {
         try
         {
             var client = _factory.CreateClient("external");
-            client.Timeout = TimeSpan.FromSeconds(120);
+            client.Timeout = TimeSpan.FromSeconds(30);
 
             var effectiveYears = (years == null || years.Length == 0)
                 ? new[] { "2026", "2025", "2024", "2023" }
@@ -389,10 +405,24 @@ public class TipsTimeLiveService : ITipsTimeLiveService
         string selectionType,
         string costOrCount)
     {
+        var cacheKey = $"tips:mbts:{Join(divisionIds)}|{Join(districtIds)}|{contractorId ?? ""}|{Join(departmentIds)}|{Join(years)}|{selectionType ?? ""}|{costOrCount ?? ""}";
+        return await _cache.GetOrCreateAsync(cacheKey, LiveCacheTtl,
+            () => GetMbookTenderStatusCoreAsync(divisionIds, districtIds, contractorId, departmentIds, years, selectionType, costOrCount));
+    }
+
+    private async Task<object?> GetMbookTenderStatusCoreAsync(
+        string[]? divisionIds,
+        string[]? districtIds,
+        string contractorId,
+        string[]? departmentIds,
+        string[]? years,
+        string selectionType,
+        string costOrCount)
+    {
         try
         {
             var client = _factory.CreateClient("external");
-            client.Timeout = TimeSpan.FromSeconds(120);
+            client.Timeout = TimeSpan.FromSeconds(30);
 
             var payloadObj = new
             {

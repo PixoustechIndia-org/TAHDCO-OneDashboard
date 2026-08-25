@@ -1,9 +1,12 @@
 import { Component, OnInit, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Router, ActivatedRoute } from '@angular/router';
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { catchError, of } from 'rxjs';
 import * as XLSX from 'xlsx';
 import { environment } from '../../../environments/environment';
+import { AppRole, AppProject, ProjectMapping, Role, ROLE_META, User, ProjectPrivilege } from '../../core/models';
+import { AuthService } from '../../core/services/auth.service';
 
 export interface LocalBodyMapping {
   id?: number;
@@ -30,6 +33,118 @@ export interface LocalBodyMapping {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ConfigurationComponent implements OnInit {
+  activeTabIndex = 0;
+
+  // ── Tab 0: Role Management ────────────────────────────────────────────────
+  roles: AppRole[] = [];
+  filteredRoles: AppRole[] = [];
+  roleSearch = '';
+  roleLoading = false;
+  roleModalVisible = false;
+  isRoleEditing = false;
+  currentRole: AppRole = { roleCode: '', roleName: '', scope: 'all', isActive: true, assignedProjects: [] };
+
+  scopeOptions = [
+    { label: 'All State / Corporation Wide (all)', value: 'all' },
+    { label: 'Division Specific (division)', value: 'division' },
+    { label: 'District Specific (district)', value: 'district' }
+  ];
+
+  roleOptions = [
+    { label: 'All Roles', value: '' },
+    { label: 'Application Admin (admin)', value: 'admin' },
+    { label: 'Managing Director (md)', value: 'md' },
+    { label: 'Secretary (secretary)', value: 'secretary' },
+    { label: 'Chief Engineer (ce)', value: 'ce' },
+    { label: 'General Manager (gm)', value: 'gm' },
+    { label: 'Executive Engineer (ee)', value: 'ee' },
+    { label: 'District Manager (dm)', value: 'dm' },
+    { label: 'Engineering Lead (eng_lead)', value: 'eng_lead' },
+    { label: 'Welfare Officer (welfare_officer)', value: 'welfare_officer' },
+    { label: 'TNCWWN Coordinator (tncwwn_coord)', value: 'tncwwn_coord' }
+  ];
+
+  // ── Tab 1: Project Name Creation & Management ────────────────────────────
+  projects: AppProject[] = [];
+  filteredProjects: AppProject[] = [];
+  projectSearch = '';
+  projectCategoryFilter = 'All';
+  projectLoading = false;
+  projectModalVisible = false;
+  isProjectEditing = false;
+  currentProject: AppProject = { projectCode: '', projectName: '', category: 'Engineering', status: 'Active', isActive: true, icon: 'pi-wrench' };
+
+  categoryOptions = [
+    { label: 'All Categories', value: 'All' },
+    { label: 'Engineering', value: 'Engineering' },
+    { label: 'Welfare', value: 'Welfare' },
+    { label: 'Welfare Board', value: 'Welfare Board' },
+    { label: 'Monitoring', value: 'Monitoring' },
+    { label: 'Operations', value: 'Operations' },
+    { label: 'Unified Dashboard', value: 'Unified Dashboard' }
+  ];
+
+  projectStatusOptions = [
+    { label: 'Active', value: 'Active' },
+    { label: 'Inactive', value: 'Inactive' },
+    { label: 'Maintenance', value: 'Maintenance' }
+  ];
+
+  iconOptions = [
+    { label: 'Wrench / Engineering (pi-wrench)', value: 'pi-wrench' },
+    { label: 'Heart / Welfare (pi-heart)', value: 'pi-heart' },
+    { label: 'ID Card / TNCWWB (pi-id-card)', value: 'pi-id-card' },
+    { label: 'Tender / TIPS (pi-file-edit)', value: 'pi-file-edit' },
+    { label: 'Clock / TIME (pi-clock)', value: 'pi-clock' },
+    { label: 'Building / THMS (pi-building)', value: 'pi-building' },
+    { label: 'Graduation / TAMS (pi-graduation-cap)', value: 'pi-graduation-cap' },
+    { label: 'Wallet / Schemes (pi-wallet)', value: 'pi-wallet' },
+    { label: 'Book / Loans (pi-book)', value: 'pi-book' },
+    { label: 'Calendar / TOD (pi-calendar)', value: 'pi-calendar' },
+    { label: 'Video / Patrol 360 (pi-video)', value: 'pi-video' },
+    { label: 'Grid / One Portal (pi-th-large)', value: 'pi-th-large' },
+    { label: 'Folder / Generic (pi-folder)', value: 'pi-folder' }
+  ];
+
+  // ── Tab 2: Project Mapping (User / Role to Project) ────────────────────────
+  mappings: ProjectMapping[] = [];
+  filteredMappings: ProjectMapping[] = [];
+  mappingSearch = '';
+  mappingTypeFilter = 'ALL';
+  mappingProjectFilter = 'ALL';
+  mappingLoading = false;
+  mappingModalVisible = false;
+  isMappingEditing = false;
+  currentMapping: ProjectMapping = {
+    mappingType: 'ROLE',
+    entityCode: '',
+    entityName: '',
+    projectCode: '',
+    projectName: '',
+    canView: true,
+    canCreate: false,
+    canEdit: false,
+    canUpdate: false,
+    canDelete: false,
+    status: 'Active'
+  };
+
+  mappingTypeOptions = [
+    { label: 'All Mapping Types', value: 'ALL' },
+    { label: 'Role Mappings', value: 'ROLE' },
+    { label: 'User Mappings', value: 'USER' }
+  ];
+
+  // ── Tab 3: User Privilege Function & Permission Matrix ────────────────────
+  usersList: User[] = [];
+  filteredUsersList: User[] = [];
+  userSearch = '';
+  userRoleFilter = '';
+  userPrivilegeLoading = false;
+  privActions: (keyof ProjectPrivilege)[] = ['view', 'create', 'edit', 'update', 'delete'];
+  projectKeys: string[] = ['Engineering', 'Welfare', 'TNCWWN', 'TIPS', 'TIME', 'THMS', 'TAMS', 'Scheme', 'TELP', 'OnePortal', 'TOD', 'Patrol360'];
+
+  // ── Tab 4: Local Body Configuration ──────────────────────────────────────
   records: LocalBodyMapping[] = [];
   filteredRecords: LocalBodyMapping[] = [];
   loading = false;
@@ -386,12 +501,615 @@ export class ConfigurationComponent implements OnInit {
     private http: HttpClient,
     private msg: MessageService,
     private confirm: ConfirmationService,
+    private auth: AuthService,
+    private route: ActivatedRoute,
+    private router: Router,
     private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
+    this.loadRoles();
+    this.loadProjects();
+    this.loadMappings();
+    this.loadUsersList();
     this.loadRecords();
+
+    this.route.queryParams.subscribe(params => {
+      const tab = params['tab'];
+      if (tab === 'roles') this.activeTabIndex = 0;
+      else if (tab === 'projects') this.activeTabIndex = 1;
+      else if (tab === 'mappings') this.activeTabIndex = 2;
+      else if (tab === 'privileges') this.activeTabIndex = 3;
+      else if (tab === 'localbody') this.activeTabIndex = 4;
+      this.cdr.markForCheck();
+    });
   }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // 1. ROLE MANAGEMENT LOGIC
+  // ══════════════════════════════════════════════════════════════════════════
+
+  loadRoles(): void {
+    this.roleLoading = true;
+    const fallback = () => {
+      this.roles = this.getDefaultRoles();
+      this.applyRoleFilter();
+      this.roleLoading = false;
+      this.cdr.markForCheck();
+    };
+
+    if (!this.api) { fallback(); return; }
+    this.http.get<AppRole[]>(`${this.api}/roles`).pipe(catchError(() => of(null))).subscribe(res => {
+      if (res && res.length > 0) {
+        this.roles = res;
+        this.applyRoleFilter();
+        this.roleLoading = false;
+        this.cdr.markForCheck();
+      } else {
+        fallback();
+      }
+    });
+  }
+
+  applyRoleFilter(): void {
+    const q = this.roleSearch.trim().toLowerCase();
+    this.filteredRoles = this.roles.filter(r =>
+      !q || r.roleCode.toLowerCase().includes(q) || r.roleName.toLowerCase().includes(q) || (r.description || '').toLowerCase().includes(q)
+    );
+    this.cdr.markForCheck();
+  }
+
+  openNewRole(): void {
+    this.isRoleEditing = false;
+    this.currentRole = { roleCode: '', roleName: '', description: '', scope: 'all', isSystem: false, isActive: true, assignedProjects: [] };
+    this.roleModalVisible = true;
+  }
+
+  openEditRole(role: AppRole): void {
+    this.isRoleEditing = true;
+    this.currentRole = { ...role, assignedProjects: [...(role.assignedProjects || [])] };
+    this.roleModalVisible = true;
+  }
+
+  saveRole(): void {
+    const r = this.currentRole;
+    if (!r.roleCode || !r.roleName) {
+      this.msg.add({ severity: 'warn', summary: 'Validation Error', detail: 'Role Code and Role Name are mandatory.' });
+      return;
+    }
+
+    const cleanCode = r.roleCode.trim().toLowerCase().replace(/\s+/g, '_');
+    if (!/^[a-z0-9_]{2,30}$/.test(cleanCode)) {
+      this.msg.add({ severity: 'warn', summary: 'Validation Error', detail: 'Role Code must be 2–30 characters containing only letters, numbers, and underscores.' });
+      return;
+    }
+
+    const cleanName = r.roleName.trim().replace(/\s+/g, ' ');
+    if (cleanName.length < 3) {
+      this.msg.add({ severity: 'warn', summary: 'Validation Error', detail: 'Role Name must be at least 3 characters.' });
+      return;
+    }
+
+    const cleanDesc = (r.description || '').trim().replace(/\s+/g, ' ');
+    if (cleanDesc && cleanDesc.length > 250) {
+      this.msg.add({ severity: 'warn', summary: 'Validation Error', detail: 'Description cannot exceed 250 characters.' });
+      return;
+    }
+
+    const rolePayload = {
+      roleCode: cleanCode,
+      roleName: cleanName,
+      description: cleanDesc,
+      scope: r.scope || 'all',
+      isActive: r.isActive !== false,
+      projectCodes: r.assignedProjects || []
+    };
+
+    const done = (msg: string) => {
+      this.msg.add({ severity: 'success', summary: this.isRoleEditing ? 'Role Updated' : 'Role Created', detail: msg });
+      this.roleModalVisible = false;
+      this.loadRoles();
+      this.loadMappings();
+    };
+
+    if (!this.api) {
+      if (this.isRoleEditing) {
+        const idx = this.roles.findIndex(x => x.roleCode === r.roleCode || x.roleId === r.roleId);
+        if (idx > -1) this.roles[idx] = { ...this.roles[idx], ...rolePayload };
+      } else {
+        this.roles.push({ ...rolePayload, roleId: this.roles.length + 1, isSystem: false, userCount: 0 });
+      }
+      done(`Role '${r.roleName}' saved successfully.`);
+      return;
+    }
+
+    const req = this.isRoleEditing
+      ? this.http.put(`${this.api}/roles/${r.roleId || 0}`, rolePayload)
+      : this.http.post(`${this.api}/roles`, rolePayload);
+
+    req.pipe(catchError((err) => {
+      this.msg.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'Failed to save role.' });
+      return of(null);
+    })).subscribe(res => {
+      if (res) done(`Role '${r.roleName}' saved successfully.`);
+    });
+  }
+
+  confirmDeleteRole(role: AppRole): void {
+    if (role.isSystem) {
+      this.msg.add({ severity: 'error', summary: 'Restricted', detail: 'Core system roles cannot be deleted.' });
+      return;
+    }
+    this.confirm.confirm({
+      message: `Are you sure you want to delete role '${role.roleName}' (${role.roleCode})? All associated mappings will be cleared.`,
+      header: 'Delete Role Confirmation',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Delete Role',
+      rejectLabel: 'Cancel',
+      accept: () => {
+        if (!this.api) {
+          this.roles = this.roles.filter(r => r.roleCode !== role.roleCode);
+          this.applyRoleFilter();
+          this.msg.add({ severity: 'success', summary: 'Deleted', detail: `Role '${role.roleName}' removed.` });
+          return;
+        }
+        this.http.delete(`${this.api}/roles/${role.roleId}`).subscribe({
+          next: () => {
+            this.msg.add({ severity: 'success', summary: 'Deleted', detail: `Role '${role.roleName}' removed.` });
+            this.loadRoles();
+            this.loadMappings();
+          },
+          error: (err) => this.msg.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'Failed to delete role.' })
+        });
+      }
+    });
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // 2. PROJECT MANAGEMENT LOGIC (Engineering, Welfare, TNCWWN, etc.)
+  // ══════════════════════════════════════════════════════════════════════════
+
+  loadProjects(): void {
+    this.projectLoading = true;
+    const fallback = () => {
+      this.projects = this.getDefaultProjects();
+      this.applyProjectFilter();
+      this.projectLoading = false;
+      this.cdr.markForCheck();
+    };
+
+    if (!this.api) { fallback(); return; }
+    this.http.get<AppProject[]>(`${this.api}/projects`).pipe(catchError(() => of(null))).subscribe(res => {
+      if (res && res.length > 0) {
+        this.projects = res;
+        this.applyProjectFilter();
+        this.projectLoading = false;
+        this.cdr.markForCheck();
+      } else {
+        fallback();
+      }
+    });
+  }
+
+  applyProjectFilter(): void {
+    const q = this.projectSearch.trim().toLowerCase();
+    const cat = this.projectCategoryFilter;
+    this.filteredProjects = this.projects.filter(p => {
+      const matchQ = !q || p.projectCode.toLowerCase().includes(q) || p.projectName.toLowerCase().includes(q) || (p.description || '').toLowerCase().includes(q);
+      const matchCat = cat === 'All' || p.category.toLowerCase() === cat.toLowerCase();
+      return matchQ && matchCat;
+    });
+    this.cdr.markForCheck();
+  }
+
+  openNewProject(): void {
+    this.isProjectEditing = false;
+    this.currentProject = { projectCode: '', projectName: '', category: 'Engineering', description: '', apiEndpoint: '', icon: 'pi-wrench', status: 'Active', isActive: true };
+    this.projectModalVisible = true;
+  }
+
+  openEditProject(prj: AppProject): void {
+    this.isProjectEditing = true;
+    this.currentProject = { ...prj };
+    this.projectModalVisible = true;
+  }
+
+  saveProject(): void {
+    const p = this.currentProject;
+    if (!p.projectCode || !p.projectName) {
+      this.msg.add({ severity: 'warn', summary: 'Validation Error', detail: 'Project Code and Project Name are mandatory.' });
+      return;
+    }
+
+    const payload = {
+      projectCode: p.projectCode.trim().toUpperCase().replace(/\s+/g, '_'),
+      projectName: p.projectName.trim(),
+      category: p.category,
+      description: p.description,
+      apiEndpoint: p.apiEndpoint,
+      icon: p.icon || 'pi-folder',
+      status: p.status,
+      isActive: p.isActive
+    };
+
+    const done = (msg: string) => {
+      this.msg.add({ severity: 'success', summary: this.isProjectEditing ? 'Project Updated' : 'Project Created', detail: msg });
+      this.projectModalVisible = false;
+      this.loadProjects();
+      this.loadMappings();
+    };
+
+    if (!this.api) {
+      if (this.isProjectEditing) {
+        const idx = this.projects.findIndex(x => x.projectCode === p.projectCode || x.projectId === p.projectId);
+        if (idx > -1) this.projects[idx] = { ...this.projects[idx], ...payload };
+      } else {
+        this.projects.push({ ...payload, projectId: this.projects.length + 1, activeUserCount: 0, activeRoleCount: 0 });
+      }
+      done(`Project '${p.projectName}' saved.`);
+      return;
+    }
+
+    const req = this.isProjectEditing
+      ? this.http.put(`${this.api}/projects/${p.projectId || 0}`, payload)
+      : this.http.post(`${this.api}/projects`, payload);
+
+    req.pipe(catchError(err => {
+      this.msg.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'Failed to save project.' });
+      return of(null);
+    })).subscribe(res => {
+      if (res) done(`Project '${p.projectName}' saved successfully.`);
+    });
+  }
+
+  confirmDeleteProject(prj: AppProject): void {
+    this.confirm.confirm({
+      message: `Are you sure you want to delete project '${prj.projectName}' (${prj.projectCode})? All mapped permissions will be revoked.`,
+      header: 'Delete Project Confirmation',
+      icon: 'pi-exclamation-triangle',
+      acceptLabel: 'Delete Project',
+      rejectLabel: 'Cancel',
+      accept: () => {
+        if (!this.api) {
+          this.projects = this.projects.filter(p => p.projectCode !== prj.projectCode);
+          this.applyProjectFilter();
+          this.msg.add({ severity: 'success', summary: 'Deleted', detail: `Project '${prj.projectName}' removed.` });
+          return;
+        }
+        this.http.delete(`${this.api}/projects/${prj.projectId}`).subscribe({
+          next: () => {
+            this.msg.add({ severity: 'success', summary: 'Deleted', detail: `Project '${prj.projectName}' removed.` });
+            this.loadProjects();
+            this.loadMappings();
+          },
+          error: (err) => this.msg.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'Failed to delete project.' })
+        });
+      }
+    });
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // 3. PROJECT MAPPING LOGIC (User / Role to Project)
+  // ══════════════════════════════════════════════════════════════════════════
+
+  loadMappings(): void {
+    this.mappingLoading = true;
+    const fallback = () => {
+      this.mappings = this.getDefaultMappings();
+      this.applyMappingFilter();
+      this.mappingLoading = false;
+      this.cdr.markForCheck();
+    };
+
+    if (!this.api) { fallback(); return; }
+    this.http.get<ProjectMapping[]>(`${this.api}/project-mappings`).pipe(catchError(() => of(null))).subscribe(res => {
+      if (res && res.length > 0) {
+        this.mappings = res;
+        this.applyMappingFilter();
+        this.mappingLoading = false;
+        this.cdr.markForCheck();
+      } else {
+        fallback();
+      }
+    });
+  }
+
+  applyMappingFilter(): void {
+    const q = this.mappingSearch.trim().toLowerCase();
+    const type = this.mappingTypeFilter;
+    const prj = this.mappingProjectFilter;
+
+    this.filteredMappings = this.mappings.filter(m => {
+      const matchQ = !q || m.entityName.toLowerCase().includes(q) || m.entityCode.toLowerCase().includes(q) || m.projectName.toLowerCase().includes(q) || m.projectCode.toLowerCase().includes(q);
+      const matchType = type === 'ALL' || m.mappingType === type;
+      const matchPrj = prj === 'ALL' || m.projectCode === prj;
+      return matchQ && matchType && matchPrj;
+    });
+    this.cdr.markForCheck();
+  }
+
+  openNewMapping(): void {
+    this.isMappingEditing = false;
+    this.currentMapping = {
+      mappingType: 'ROLE',
+      entityCode: this.roles[0]?.roleCode || 'admin',
+      entityName: this.roles[0]?.roleName || 'Application Admin',
+      projectCode: this.projects[0]?.projectCode || 'ENG',
+      projectName: this.projects[0]?.projectName || 'Engineering',
+      canView: true,
+      canCreate: false,
+      canEdit: false,
+      canUpdate: false,
+      canDelete: false,
+      status: 'Active'
+    };
+    this.mappingModalVisible = true;
+  }
+
+  openEditMapping(m: ProjectMapping): void {
+    this.isMappingEditing = true;
+    this.currentMapping = { ...m };
+    this.mappingModalVisible = true;
+  }
+
+  onEntitySelectedInMapping(entityCode: string): void {
+    if (this.currentMapping.mappingType === 'ROLE') {
+      const r = this.roles.find(x => x.roleCode === entityCode);
+      if (r) this.currentMapping.entityName = r.roleName;
+    } else {
+      const u = this.auth.getAllUsers().find(x => x.email === entityCode);
+      if (u) this.currentMapping.entityName = u.name;
+    }
+  }
+
+  onProjectSelectedInMapping(projectCode: string): void {
+    const p = this.projects.find(x => x.projectCode === projectCode);
+    if (p) this.currentMapping.projectName = p.projectName;
+  }
+
+  saveMapping(): void {
+    const m = this.currentMapping;
+    if (!m.entityCode || !m.projectCode) {
+      this.msg.add({ severity: 'warn', summary: 'Validation Error', detail: 'Entity and Project selection are required.' });
+      return;
+    }
+
+    if (m.status === 'Active' && !m.canView && !m.canCreate && !m.canEdit && !m.canUpdate && !m.canDelete) {
+      this.msg.add({ severity: 'warn', summary: 'Validation Error', detail: 'Active mappings must have at least View permission granted.' });
+      return;
+    }
+
+    const isDup = this.mappings.some(x =>
+      x.mappingType === m.mappingType &&
+      x.entityCode === m.entityCode &&
+      x.projectCode === m.projectCode &&
+      (!this.isMappingEditing || x.mappingId !== m.mappingId)
+    );
+
+    if (isDup && !this.isMappingEditing) {
+      this.msg.add({ severity: 'error', summary: 'Duplicate Mapping', detail: `Mapping for ${m.entityName} -> ${m.projectCode} already exists.` });
+      return;
+    }
+
+    const payload = {
+      mappingType: m.mappingType,
+      entityCode: m.entityCode,
+      entityName: m.entityName || m.entityCode,
+      projectCode: m.projectCode,
+      projectName: m.projectName || m.projectCode,
+      canView: m.canView,
+      canCreate: m.canCreate,
+      canEdit: m.canEdit,
+      canUpdate: m.canUpdate,
+      canDelete: m.canDelete,
+      status: m.status,
+      assignedBy: this.auth.currentUser?.name || 'System Admin'
+    };
+
+    const done = (msg: string) => {
+      this.msg.add({ severity: 'success', summary: this.isMappingEditing ? 'Mapping Updated' : 'Mapping Created', detail: msg });
+      this.mappingModalVisible = false;
+      this.loadMappings();
+    };
+
+    if (!this.api) {
+      if (this.isMappingEditing) {
+        const idx = this.mappings.findIndex(x => x.mappingId === m.mappingId);
+        if (idx > -1) this.mappings[idx] = { ...this.mappings[idx], ...payload };
+      } else {
+        this.mappings.push({ ...payload, mappingId: this.mappings.length + 1 });
+      }
+      done(`Project mapped successfully.`);
+      return;
+    }
+
+    const req = this.isMappingEditing
+      ? this.http.put(`${this.api}/project-mappings/${m.mappingId || 0}`, payload)
+      : this.http.post(`${this.api}/project-mappings`, payload);
+
+    req.pipe(catchError(err => {
+      this.msg.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'Failed to save mapping.' });
+      return of(null);
+    })).subscribe(res => {
+      if (res) done(`Project mapped successfully.`);
+    });
+  }
+
+  confirmDeleteMapping(m: ProjectMapping): void {
+    this.confirm.confirm({
+      message: `Revoke project mapping for ${m.entityName} on project '${m.projectName}'?`,
+      header: 'Revoke Mapping',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Revoke',
+      rejectLabel: 'Cancel',
+      accept: () => {
+        if (!this.api) {
+          this.mappings = this.mappings.filter(x => x.mappingId !== m.mappingId);
+          this.applyMappingFilter();
+          this.msg.add({ severity: 'success', summary: 'Revoked', detail: `Mapping removed.` });
+          return;
+        }
+        this.http.delete(`${this.api}/project-mappings/${m.mappingId}`).subscribe({
+          next: () => {
+            this.msg.add({ severity: 'success', summary: 'Revoked', detail: `Mapping removed.` });
+            this.loadMappings();
+          },
+          error: (err) => this.msg.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'Failed to delete mapping.' })
+        });
+      }
+    });
+  }
+
+  // ── Seed Helpers ──────────────────────────────────────────────────────────
+  getDefaultRoles(): AppRole[] {
+    return [
+      { roleId: 1, roleCode: 'admin', roleName: 'Application Admin', description: 'Full administrative access to all configuration and security settings', scope: 'all', isSystem: true, isActive: true, userCount: 1, assignedProjects: ['ENG', 'WELFARE', 'TNCWWB', 'TIPS', 'TIME', 'THMS', 'TAMS', 'SCHEME', 'TELP', 'TOD', 'ONEPORTAL', 'PATROL360'] },
+      { roleId: 2, roleCode: 'md', roleName: 'Managing Director', description: 'Strategic oversight of corporation-wide projects and KPIs', scope: 'all', isSystem: true, isActive: true, userCount: 1, assignedProjects: ['ENG', 'WELFARE', 'TNCWWB', 'TIPS', 'TIME', 'THMS', 'TAMS', 'SCHEME', 'TELP', 'TOD', 'ONEPORTAL', 'PATROL360'] },
+      { roleId: 3, roleCode: 'secretary', roleName: 'Secretary', description: 'Government oversight and high-level performance reporting', scope: 'all', isSystem: true, isActive: true, userCount: 1, assignedProjects: ['ENG', 'WELFARE', 'TNCWWB', 'TIPS', 'TIME', 'THMS', 'TAMS', 'SCHEME', 'TELP', 'TOD', 'ONEPORTAL', 'PATROL360'] },
+      { roleId: 4, roleCode: 'ce', roleName: 'Chief Engineer', description: 'Statewide engineering, tender, housing, and surveillance monitoring', scope: 'all', isSystem: true, isActive: true, userCount: 1, assignedProjects: ['ENG', 'TIPS', 'TIME', 'PATROL360', 'THMS'] },
+      { roleId: 5, roleCode: 'gm', roleName: 'General Manager', description: 'Corporate management across welfare schemes, loans, and training', scope: 'all', isSystem: true, isActive: true, userCount: 1, assignedProjects: ['WELFARE', 'SCHEME', 'TELP', 'TAMS', 'TOD'] },
+      { roleId: 6, roleCode: 'ee', roleName: 'Executive Engineer', description: 'Division-level engineering, tender execution, and progress tracking', scope: 'division', isSystem: true, isActive: true, userCount: 9, assignedProjects: ['ENG', 'TIPS', 'TIME', 'PATROL360', 'THMS'] },
+      { roleId: 7, roleCode: 'dm', roleName: 'District Manager', description: 'District-level welfare, schemes, loans, and field operational execution', scope: 'district', isSystem: true, isActive: true, userCount: 37, assignedProjects: ['WELFARE', 'SCHEME', 'TELP', 'TAMS', 'TOD', 'TNCWWB'] },
+      { roleId: 8, roleCode: 'eng_lead', roleName: 'Engineering Project Lead', description: 'Dedicated lead for engineering and infrastructure projects', scope: 'all', isSystem: false, isActive: true, userCount: 2, assignedProjects: ['ENG', 'TIPS', 'TIME', 'PATROL360', 'THMS'] },
+      { roleId: 9, roleCode: 'welfare_officer', roleName: 'Welfare Officer', description: 'Coordinates TAHDCO welfare schemes and loan distributions', scope: 'district', isSystem: false, isActive: true, userCount: 4, assignedProjects: ['WELFARE', 'SCHEME', 'TELP'] },
+      { roleId: 10, roleCode: 'tncwwn_coord', roleName: 'TNCWWB Coordinator', description: 'Oversees Construction Workers Welfare Board integrations', scope: 'all', isSystem: false, isActive: true, userCount: 2, assignedProjects: ['TNCWWB', 'ONEPORTAL'] }
+    ];
+  }
+
+  getDefaultProjects(): AppProject[] {
+    return [
+      { projectId: 1, projectCode: 'ENG', projectName: 'Engineering', category: 'Engineering', description: 'Unified Engineering project umbrella for construction, tenders and infrastructure', apiEndpoint: 'https://time.tahdco.com/api/Report/OneDashboard_Work_Get', icon: 'pi-wrench', status: 'Active', isActive: true, activeUserCount: 12, activeRoleCount: 4 },
+      { projectId: 2, projectCode: 'WELFARE', projectName: 'Welfare', category: 'Welfare', description: 'Unified Welfare project umbrella for schemes, subsidies and community upliftment', apiEndpoint: 'https://scst.pixous.info/Report/GetSchemeSummary', icon: 'pi-heart', status: 'Active', isActive: true, activeUserCount: 42, activeRoleCount: 5 },
+      { projectId: 3, projectCode: 'TNCWWB', projectName: 'TNCWWB', category: 'Welfare Board', description: 'Tamil Nadu Construction Workers Welfare Board integrated tracking', apiEndpoint: 'https://testtncwwbv2-qa.pixoustech.app/api/OneDashboard/General', icon: 'pi-id-card', status: 'Active', isActive: true, activeUserCount: 39, activeRoleCount: 4 },
+      { projectId: 4, projectCode: 'TIPS', projectName: 'TIPS Tender System', category: 'Engineering', description: 'Tamil Nadu Infrastructure Procurement & Tender Management System', apiEndpoint: 'https://time.tahdco.com/api/Dashboard/Get_Mbook_Tender_Status', icon: 'pi-file-edit', status: 'Active', isActive: true, activeUserCount: 12, activeRoleCount: 4 },
+      { projectId: 5, projectCode: 'TIME', projectName: 'TIME Work Progress', category: 'Engineering', description: 'TAHDCO Infrastructure Monitoring & Measurement Book Execution', apiEndpoint: 'https://time.tahdco.com/api/Report/OneDashboard_Work_Get', icon: 'pi-clock', status: 'Active', isActive: true, activeUserCount: 12, activeRoleCount: 4 },
+      { projectId: 6, projectCode: 'PATROL360', projectName: 'Patrol 360 Surveillance', category: 'Engineering', description: 'Real-time CCTV & site drone patrol live streaming monitoring', apiEndpoint: 'https://time.tahdco.com/api/Report/OneDashboard_Work_Get', icon: 'pi-video', status: 'Active', isActive: true, activeUserCount: 12, activeRoleCount: 4 },
+      { projectId: 7, projectCode: 'THMS', projectName: 'THMS Housing System', category: 'Engineering', description: 'TAHDCO Housing Management System for beneficiary housing phases', apiEndpoint: 'https://thmsqa.pixoustech.in/App/api/onedashboard/count', icon: 'pi-building', status: 'Active', isActive: true, activeUserCount: 12, activeRoleCount: 4 },
+      { projectId: 8, projectCode: 'TAMS', projectName: 'TAMS Skill & Attendance', category: 'Welfare', description: 'TAHDCO Attendance & Vocational Training Management System', apiEndpoint: 'https://tamsqa.pixoustech.in/App/api/attendance/report-details', icon: 'pi-graduation-cap', status: 'Active', isActive: true, activeUserCount: 40, activeRoleCount: 4 },
+      { projectId: 9, projectCode: 'SCHEME', projectName: 'TAHDCO Special Schemes', category: 'Welfare', description: 'SC/ST Special Central Assistance & State development schemes', apiEndpoint: 'https://scst.pixous.info/Report/GetSchemeSummary', icon: 'pi-wallet', status: 'Active', isActive: true, activeUserCount: 40, activeRoleCount: 4 },
+      { projectId: 10, projectCode: 'TELP', projectName: 'TELP Financial Loans', category: 'Welfare', description: 'TAHDCO Economic & Livelihood Promotion Loan Portal', apiEndpoint: 'https://qatelp.pixous.info/api/Report/DistrictWise_ApplicationSummary', icon: 'pi-book', status: 'Active', isActive: true, activeUserCount: 40, activeRoleCount: 4 },
+      { projectId: 11, projectCode: 'TOD', projectName: 'TOD Task & Diary System', category: 'Operations', description: 'TAHDCO Officer Diary & Field Task Inspection Module', apiEndpoint: 'https://tod.tahdco.app/api/Dashboard/UserTaskStatusSummaryList', icon: 'pi-calendar', status: 'Active', isActive: true, activeUserCount: 40, activeRoleCount: 4 },
+      { projectId: 12, projectCode: 'ONEPORTAL', projectName: 'One Portal Aggregator', category: 'Unified Dashboard', description: 'Central Multi-Module Aggregator & Reporting Engine', apiEndpoint: 'https://testtncwwbv2-qa.pixoustech.app/api/OneDashboard/General', icon: 'pi-th-large', status: 'Active', isActive: true, activeUserCount: 45, activeRoleCount: 5 }
+    ];
+  }
+
+  getDefaultMappings(): ProjectMapping[] {
+    return [
+      { mappingId: 1, mappingType: 'ROLE', entityCode: 'admin', entityName: 'Application Admin', projectCode: 'ENG', projectName: 'Engineering', canView: true, canCreate: true, canEdit: true, canUpdate: true, canDelete: true, status: 'Active' },
+      { mappingId: 2, mappingType: 'ROLE', entityCode: 'admin', entityName: 'Application Admin', projectCode: 'WELFARE', projectName: 'Welfare', canView: true, canCreate: true, canEdit: true, canUpdate: true, canDelete: true, status: 'Active' },
+      { mappingId: 3, mappingType: 'ROLE', entityCode: 'admin', entityName: 'Application Admin', projectCode: 'TNCWWB', projectName: 'TNCWWB', canView: true, canCreate: true, canEdit: true, canUpdate: true, canDelete: true, status: 'Active' },
+      { mappingId: 4, mappingType: 'ROLE', entityCode: 'admin', entityName: 'Application Admin', projectCode: 'TIPS', projectName: 'TIPS Tender System', canView: true, canCreate: true, canEdit: true, canUpdate: true, canDelete: true, status: 'Active' },
+      { mappingId: 5, mappingType: 'ROLE', entityCode: 'admin', entityName: 'Application Admin', projectCode: 'TIME', projectName: 'TIME Work Progress', canView: true, canCreate: true, canEdit: true, canUpdate: true, canDelete: true, status: 'Active' },
+      { mappingId: 6, mappingType: 'ROLE', entityCode: 'admin', entityName: 'Application Admin', projectCode: 'PATROL360', projectName: 'Patrol 360 Surveillance', canView: true, canCreate: true, canEdit: true, canUpdate: true, canDelete: true, status: 'Active' },
+      { mappingId: 7, mappingType: 'ROLE', entityCode: 'admin', entityName: 'Application Admin', projectCode: 'THMS', projectName: 'THMS Housing System', canView: true, canCreate: true, canEdit: true, canUpdate: true, canDelete: true, status: 'Active' },
+      { mappingId: 8, mappingType: 'ROLE', entityCode: 'admin', entityName: 'Application Admin', projectCode: 'TAMS', projectName: 'TAMS Skill & Attendance', canView: true, canCreate: true, canEdit: true, canUpdate: true, canDelete: true, status: 'Active' },
+      { mappingId: 9, mappingType: 'ROLE', entityCode: 'admin', entityName: 'Application Admin', projectCode: 'SCHEME', projectName: 'TAHDCO Special Schemes', canView: true, canCreate: true, canEdit: true, canUpdate: true, canDelete: true, status: 'Active' },
+      { mappingId: 10, mappingType: 'ROLE', entityCode: 'admin', entityName: 'Application Admin', projectCode: 'TELP', projectName: 'TELP Financial Loans', canView: true, canCreate: true, canEdit: true, canUpdate: true, canDelete: true, status: 'Active' },
+      { mappingId: 11, mappingType: 'ROLE', entityCode: 'admin', entityName: 'Application Admin', projectCode: 'TOD', projectName: 'TOD Task & Diary System', canView: true, canCreate: true, canEdit: true, canUpdate: true, canDelete: true, status: 'Active' },
+      { mappingId: 12, mappingType: 'ROLE', entityCode: 'admin', entityName: 'Application Admin', projectCode: 'ONEPORTAL', projectName: 'One Portal Aggregator', canView: true, canCreate: true, canEdit: true, canUpdate: true, canDelete: true, status: 'Active' },
+
+      { mappingId: 13, mappingType: 'ROLE', entityCode: 'ce', entityName: 'Chief Engineer', projectCode: 'ENG', projectName: 'Engineering', canView: true, canCreate: true, canEdit: true, canUpdate: true, canDelete: false, status: 'Active' },
+      { mappingId: 14, mappingType: 'ROLE', entityCode: 'ce', entityName: 'Chief Engineer', projectCode: 'TIPS', projectName: 'TIPS Tender System', canView: true, canCreate: true, canEdit: true, canUpdate: true, canDelete: false, status: 'Active' },
+      { mappingId: 15, mappingType: 'ROLE', entityCode: 'ce', entityName: 'Chief Engineer', projectCode: 'TIME', projectName: 'TIME Work Progress', canView: true, canCreate: true, canEdit: true, canUpdate: true, canDelete: false, status: 'Active' },
+      { mappingId: 16, mappingType: 'ROLE', entityCode: 'ce', entityName: 'Chief Engineer', projectCode: 'PATROL360', projectName: 'Patrol 360 Surveillance', canView: true, canCreate: true, canEdit: true, canUpdate: true, canDelete: false, status: 'Active' },
+      { mappingId: 17, mappingType: 'ROLE', entityCode: 'ce', entityName: 'Chief Engineer', projectCode: 'THMS', projectName: 'THMS Housing System', canView: true, canCreate: true, canEdit: true, canUpdate: true, canDelete: false, status: 'Active' },
+
+      { mappingId: 18, mappingType: 'ROLE', entityCode: 'gm', entityName: 'General Manager', projectCode: 'WELFARE', projectName: 'Welfare', canView: true, canCreate: true, canEdit: true, canUpdate: true, canDelete: false, status: 'Active' },
+      { mappingId: 19, mappingType: 'ROLE', entityCode: 'gm', entityName: 'General Manager', projectCode: 'SCHEME', projectName: 'TAHDCO Special Schemes', canView: true, canCreate: true, canEdit: true, canUpdate: true, canDelete: false, status: 'Active' },
+      { mappingId: 20, mappingType: 'ROLE', entityCode: 'gm', entityName: 'General Manager', projectCode: 'TELP', projectName: 'TELP Financial Loans', canView: true, canCreate: true, canEdit: true, canUpdate: true, canDelete: false, status: 'Active' },
+      { mappingId: 21, mappingType: 'ROLE', entityCode: 'gm', entityName: 'General Manager', projectCode: 'TAMS', projectName: 'TAMS Skill & Attendance', canView: true, canCreate: true, canEdit: true, canUpdate: true, canDelete: false, status: 'Active' },
+      { mappingId: 22, mappingType: 'ROLE', entityCode: 'gm', entityName: 'General Manager', projectCode: 'TOD', projectName: 'TOD Task & Diary System', canView: true, canCreate: true, canEdit: true, canUpdate: true, canDelete: false, status: 'Active' },
+
+      { mappingId: 23, mappingType: 'ROLE', entityCode: 'tncwwn_coord', entityName: 'TNCWWB Coordinator', projectCode: 'TNCWWB', projectName: 'TNCWWB', canView: true, canCreate: true, canEdit: true, canUpdate: true, canDelete: false, status: 'Active' },
+      { mappingId: 24, mappingType: 'ROLE', entityCode: 'tncwwn_coord', entityName: 'TNCWWB Coordinator', projectCode: 'ONEPORTAL', projectName: 'One Portal Aggregator', canView: true, canCreate: true, canEdit: true, canUpdate: true, canDelete: false, status: 'Active' }
+    ];
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // 4. USER PRIVILEGES FUNCTION & MATRIX LOGIC
+  // ══════════════════════════════════════════════════════════════════════════
+
+  loadUsersList(): void {
+    this.userPrivilegeLoading = true;
+    const usersApi = environment.apiUrl ? `${environment.apiUrl}/api/v1/users` : '';
+    const fallback = () => {
+      this.usersList = this.auth.getAllUsers();
+      this.applyUserFilter();
+      this.userPrivilegeLoading = false;
+      this.cdr.markForCheck();
+    };
+
+    if (!usersApi) { fallback(); return; }
+    this.http.get<User[]>(usersApi).pipe(catchError(() => of(null))).subscribe(res => {
+      if (res && res.length > 0) {
+        this.usersList = res;
+        this.applyUserFilter();
+        this.userPrivilegeLoading = false;
+        this.cdr.markForCheck();
+      } else {
+        fallback();
+      }
+    });
+  }
+
+  applyUserFilter(): void {
+    const q = this.userSearch.trim().toLowerCase();
+    const rf = this.userRoleFilter;
+    this.filteredUsersList = this.usersList.filter(u => {
+      const matchQ = !q || u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q) || (u.districtName || '').toLowerCase().includes(q);
+      const matchR = !rf || u.role === rf;
+      return matchQ && matchR;
+    });
+    this.cdr.markForCheck();
+  }
+
+  getUserPrivilege(user: User, project: string, action: keyof ProjectPrivilege): boolean {
+    if (!user.privileges || !user.privileges[project]) return false;
+    return !!user.privileges[project][action];
+  }
+
+  toggleUserPrivilege(user: User, project: string, action: keyof ProjectPrivilege): void {
+    if (!user.privileges) user.privileges = {};
+    if (!user.privileges[project]) {
+      user.privileges[project] = { view: false, create: false, edit: false, update: false, delete: false };
+    }
+    user.privileges[project][action] = !user.privileges[project][action];
+    this.saveUserPrivileges(user);
+  }
+
+  saveUserPrivileges(user: User): void {
+    const usersApi = environment.apiUrl ? `${environment.apiUrl}/api/v1/users` : '';
+    if (!usersApi) {
+      this.msg.add({ severity: 'success', summary: 'Privileges Updated', detail: `Privileges for ${user.name} saved.` });
+      this.cdr.markForCheck();
+      return;
+    }
+
+    const payload = {
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      scope: user.scope,
+      districtId: user.districtId,
+      divisionId: user.divisionId,
+      appAccess: user.appAccess,
+      privileges: user.privileges,
+      isActive: user.isActive
+    };
+
+    this.http.put(`${usersApi}/${user.id}`, payload).pipe(catchError(err => {
+      this.msg.add({ severity: 'error', summary: 'Error', detail: 'Failed to update privileges.' });
+      return of(null);
+    })).subscribe(res => {
+      if (res) {
+        this.msg.add({ severity: 'success', summary: 'Privileges Saved', detail: `Privileges for ${user.name} updated.` });
+      }
+    });
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // 5. LOCAL BODY CONFIGURATION LOGIC
+  // ══════════════════════════════════════════════════════════════════════════
 
   loadRecords(): void {
     this.loading = true;

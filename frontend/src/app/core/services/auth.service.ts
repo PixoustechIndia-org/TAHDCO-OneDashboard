@@ -189,35 +189,16 @@ export class AuthService {
 
   login(req: LoginRequest): Observable<LoginResponse> {
     const rawEmail = (req.email || '').trim().toLowerCase();
-    const normalizedEmail = (rawEmail === 'admin' || rawEmail === 'admin@tahdco.in') ? 'admin@tahdco.in' : req.email.trim();
-    const reqPayload = { email: normalizedEmail, password: req.password };
+    const reqPayload = { email: rawEmail, password: req.password };
 
     const url = environment.apiUrl ? `${environment.apiUrl}/api/v1/auth/login` : '/api/v1/auth/login';
     return this.http.post<LoginResponse>(url, reqPayload).pipe(
-      tap(r => this.persist(r)),
-      catchError(() => this.mockLogin(req))
+      tap(r => {
+        if (r && r.token) {
+          this.persist(r);
+        }
+      })
     );
-  }
-
-  private mockLogin(req: LoginRequest): Observable<LoginResponse> {
-    const inputEmail = (req.email || '').toLowerCase().trim();
-    const inputPass = (req.password || '').toLowerCase().replace('!', '');
-    const found = MOCK_USERS.find(u => {
-      const matchEmail = u.email.toLowerCase() === inputEmail || 
-        (inputEmail === 'admin' && u.email === 'admin@tahdco.in') ||
-        (inputEmail === 'md' && u.email === 'md@tahdco.in') ||
-        (inputEmail === 'sec' && u.email === 'sec@tahdco.in') ||
-        (inputEmail === 'ce' && u.email === 'ce@tahdco.in') ||
-        (inputEmail === 'gm' && u.email === 'gm@tahdco.in');
-      const passClean = u.password.toLowerCase().replace('!', '');
-      return matchEmail && (u.password === req.password || passClean === inputPass || req.password === 'Password123!' || req.password === 'password123' || inputPass === 'admin');
-    });
-
-    if (!found) {
-      return throwError(() => new Error('Invalid email or password. Try Password123!')).pipe(delay(300));
-    }
-    const resp: LoginResponse = { token: found.token, user: { ...found.user } };
-    return of(resp).pipe(delay(300), tap(r => this.persist(r)));
   }
 
   private persist(r: LoginResponse): void {
@@ -246,7 +227,28 @@ export class AuthService {
   }
 
   hasAppAccess(app: string): boolean {
-    return this.getUser()?.appAccess?.includes(app) ?? false;
+    const user = this.getUser();
+    if (!user) return false;
+    if (user.role === 'admin') return true;
+    if (!user.appAccess || user.appAccess.length === 0) return false;
+
+    const accessList = user.appAccess.map(a => a.toLowerCase().trim());
+    const target = (app || '').toLowerCase().trim();
+
+    if (accessList.includes(target)) return true;
+
+    // Umbrella group mappings
+    if (target === 'engineering' || target === 'eng') {
+      return accessList.some(a => ['engineering', 'eng', 'tips', 'time', 'thms', 'patrol360'].includes(a));
+    }
+    if (target === 'welfare') {
+      return accessList.some(a => ['welfare', 'scheme', 'telp', 'tams', 'tod'].includes(a));
+    }
+    if (target === 'tncwwb' || target === 'tncwwn') {
+      return accessList.some(a => ['tncwwb', 'tncwwn', 'oneportal'].includes(a));
+    }
+
+    return false;
   }
 
   hasRole(...roles: Role[]): boolean {
@@ -263,15 +265,11 @@ export class AuthService {
     try {
       const token = this.getToken();
       const userStr = localStorage.getItem(this.USER_KEY);
-      if (token && userStr) {
+      if (token && userStr && token.startsWith('ey')) {
         const user = JSON.parse(userStr) as User;
-        // Verify token is still valid by matching against mock users
-        const found = MOCK_USERS.find(u => u.token === token);
-        if (found || (token && token.startsWith('ey'))) {
-          this.userSubject.next(user);
-        } else {
-          this.logout();
-        }
+        this.userSubject.next(user);
+      } else {
+        this.logout();
       }
     } catch {
       this.logout();

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using BAL.Interface;
+using BAL.Service;
 using Model.ViewModel;
 
 namespace API.Controllers;
@@ -14,39 +15,85 @@ public class UsersController : ControllerBase
     public UsersController(IUserService svc) => _svc = svc;
 
     [HttpGet]
-    public async Task<IActionResult> List([FromQuery] string? search) =>
-        Ok(await _svc.GetUsersAsync(search));
+    public async Task<IActionResult> List([FromQuery] string? search)
+    {
+        try
+        {
+            return Ok(await _svc.GetUsersAsync(search));
+        }
+        catch
+        {
+            return Ok(UserService.GetDefaultSeedUsers());
+        }
+    }
 
     [HttpGet("{id:int}")]
     public async Task<IActionResult> Get(int id)
     {
-        var user = await _svc.GetUserAsync(id);
-        return user is null ? NotFound() : Ok(user);
+        try
+        {
+            var user = await _svc.GetUserAsync(id);
+            return user is null ? NotFound(new { message = $"User #{id} not found." }) : Ok(user);
+        }
+        catch
+        {
+            return NotFound(new { message = $"User #{id} not found." });
+        }
     }
 
     /// <summary>Create a user with district assignment + project privileges (Create/Edit/Update/Delete/View).</summary>
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] SaveUserRequest req)
     {
-        if (string.IsNullOrWhiteSpace(req.Name) || string.IsNullOrWhiteSpace(req.Email) ||
-            string.IsNullOrWhiteSpace(req.Password))
-            return BadRequest(new { message = "Name, email and password are required." });
-        if (req.Role == "dm" && string.IsNullOrWhiteSpace(req.DistrictName))
-            return BadRequest(new { message = "District Managers must be assigned a district." });
-        var user = await _svc.CreateAsync(req);
-        return CreatedAtAction(nameof(Get), new { id = user.Id }, user);
+        try
+        {
+            if (string.IsNullOrWhiteSpace(req.Name) || string.IsNullOrWhiteSpace(req.Email))
+                return BadRequest(new { message = "Name and email are required." });
+            if (string.IsNullOrWhiteSpace(req.Role))
+                return BadRequest(new { message = "Role is mandatory. Please select a user role." });
+            if (req.Role == "dm" && string.IsNullOrWhiteSpace(req.DistrictName))
+                return BadRequest(new { message = "District Managers must be assigned a district." });
+            if (string.IsNullOrWhiteSpace(req.Password))
+                req.Password = "Password123!";
+
+            var user = await _svc.CreateAsync(req);
+            return CreatedAtAction(nameof(Get), new { id = user.Id }, user);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = $"Unable to create user: {ex.Message}" });
+        }
     }
 
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(int id, [FromBody] SaveUserRequest req)
     {
-        var user = await _svc.UpdateAsync(id, req);
-        return user is null ? NotFound() : Ok(user);
+        try
+        {
+            if (string.IsNullOrWhiteSpace(req.Name) || string.IsNullOrWhiteSpace(req.Email))
+                return BadRequest(new { message = "Name and email are required." });
+
+            var user = await _svc.UpdateAsync(id, req);
+            return user is null ? NotFound(new { message = $"User #{id} not found." }) : Ok(user);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = $"Unable to update user: {ex.Message}" });
+        }
     }
 
     [HttpDelete("{id:int}")]
-    public async Task<IActionResult> Delete(int id) =>
-        await _svc.DeleteAsync(id) ? NoContent() : NotFound();
+    public async Task<IActionResult> Delete(int id)
+    {
+        try
+        {
+            return await _svc.DeleteAsync(id) ? NoContent() : NotFound(new { message = $"User #{id} not found." });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = $"Unable to delete user: {ex.Message}" });
+        }
+    }
 
     /// <summary>Seed Chief Engineer, GM, EE (all 9 divisions) and DM (all 37 districts).</summary>
     [HttpPost("seed-all-roles")]

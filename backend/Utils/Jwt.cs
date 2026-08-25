@@ -27,7 +27,10 @@ public static class JwtTokenGenerator
             new Claim("district", district),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(s.Key));
+        var rawKey = !string.IsNullOrWhiteSpace(s.Key) && s.Key.Length >= 32 && !s.Key.StartsWith("${")
+            ? s.Key
+            : "TAHDCO_UDP_ENTERPRISE_JWT_SUPER_SECRET_SIGNING_KEY_2026_SECURE_AUTH!";
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(rawKey));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
         var token = new JwtSecurityToken(s.Issuer, s.Audience, claims,
             expires: DateTime.UtcNow.AddMinutes(s.ExpiryMinutes), signingCredentials: creds);

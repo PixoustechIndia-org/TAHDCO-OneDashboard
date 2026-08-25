@@ -39,7 +39,7 @@ const routes: Routes = [
       { path: 'tod',            component: TodComponent,          data: { app: 'TOD'  } },
       { path: 'patrol360',      component: Patrol360Component,    data: { app: 'Patrol360' } },
       { path: 'user-master',            component: UserMasterComponent,          data: { roles: ['admin'] } },
-      { path: 'configuration',           component: ConfigurationComponent,       data: { roles: ['admin', 'md'] } },
+      { path: 'configuration',           component: ConfigurationComponent,       data: { roles: ['admin'] } },
       { path: 'scheduler-management',    component: SchedulerManagementComponent, data: { roles: ['admin'] } },
       { path: 'audit-log',              component: AuditLogComponent,            data: { roles: ['admin'] } },
       { path: 'ai-analytics',           component: AiAnalyticsComponent,         data: { roles: ['admin'] } },

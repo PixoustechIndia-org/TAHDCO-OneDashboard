@@ -18,12 +18,15 @@ namespace BAL.Service;
 public class TamsLiveService : ITamsLiveService
 {
     // Candidate URLs - try in order and log each attempt so a path change on the
-    // TAMS side is visible in the log instead of a silent 404.
+    // TAMS side is visible in the log instead of a silent 404. report-details is the
+    // detail endpoint documented in the Postman collection (tamsqa).
     private static readonly string[] BenUrls =
     {
+        "https://tams.tahdco.com/api/attendance/report-details",
         "https://tams.tahdco.com/api/onedashboard/count-ben",
         "https://tams.tahdco.com/api/onedashboard/countben",
-        "https://tams.tahdco.com/api/onedashboard/count"
+        "https://tams.tahdco.com/api/onedashboard/count",
+        "https://tamsqa.pixoustech.in/App/api/attendance/report-details"
     };
 
     private readonly IHttpClientFactory _factory;
@@ -45,20 +48,31 @@ public class TamsLiveService : ITamsLiveService
             var client = _factory.CreateClient("external");
             client.Timeout = TimeSpan.FromSeconds(20);
 
-            var payload = new
+            var payload1 = new
             {
                 division = Array.Empty<string>(),
                 district = string.IsNullOrWhiteSpace(district) ? Array.Empty<string>() : new[] { district },
                 institute = Array.Empty<string>(),
                 status = status ?? ""
             };
-            var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+            var payload2 = new
+            {
+                Institute_Name = "",
+                Course_Name = "",
+                division = "",
+                district = district ?? "",
+                status = status ?? "",
+                From_Date = "",
+                search = ""
+            };
 
             Exception? last = null;
             foreach (var url in BenUrls)
             {
                 try
                 {
+                    var selectedPayload = url.Contains("attendance") ? (object)payload2 : (object)payload1;
+                    var content = new StringContent(JsonSerializer.Serialize(selectedPayload), Encoding.UTF8, "application/json");
                     using var resp = await client.PostAsync(url, content);
                     var body = await resp.Content.ReadAsStringAsync();
                     _log.LogInformation("TAMS candidate {Url} -> HTTP {Status} ({BodyLength} chars)",

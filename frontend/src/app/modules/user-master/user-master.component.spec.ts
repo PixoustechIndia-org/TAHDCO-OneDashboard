@@ -34,7 +34,7 @@ describe('UserMasterComponent', () => {
     // environment.apiUrl is set, so loadUsers() fetches GET /api/v1/users; flush
     // the captured request instead of waiting on a real HTTP call.
     TestBed.inject(HttpTestingController)
-      .expectOne('http://localhost:5000/api/v1/users')
+      .expectOne('https://onedashboard-v1.pixoustech.app/api/v1/users')
       .flush([{ id: 1, name: 'Arjun', email: 'arjun@tahdco.in', role: 'gm', scope: 'all', appAccess: [], privileges: {}, isActive: true }]);
     expect(component.users.length).toBeGreaterThan(0);
   });

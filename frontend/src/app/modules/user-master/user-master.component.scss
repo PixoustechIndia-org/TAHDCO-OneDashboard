@@ -177,15 +177,26 @@
     }
   }
 
-  .p-dropdown-panel {
+  .p-dropdown-panel, .p-multiselect-panel {
     border-radius: 10px !important;
     box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
     border: 1px solid #e2e8f0 !important;
     margin-top: 4px !important;
 
-    .p-dropdown-items {
+    .p-dropdown-header, .p-multiselect-header {
+      padding: 8px 12px !important;
+      background: #f8fafc !important;
+      border-bottom: 1px solid #e2e8f0 !important;
+      .p-dropdown-filter, .p-multiselect-filter {
+        border-radius: 6px !important;
+        font-size: 12px !important;
+        padding: 6px 10px 6px 30px !important;
+      }
+    }
+
+    .p-dropdown-items, .p-multiselect-items {
       padding: 6px !important;
-      .p-dropdown-item {
+      .p-dropdown-item, .p-multiselect-item {
         padding: 9px 14px !important;
         font-size: 13px !important;
         border-radius: 6px !important;
@@ -208,7 +219,118 @@
   }
 }
 
+// ── Validation & Select2 Enhancements ──────────────────────────────────────
+.form-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 5px;
+}
+
+.req-star {
+  color: #ef4444;
+  font-weight: 900;
+  margin-left: 2px;
+}
+
+.field-error-msg {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #dc2626;
+  font-size: 11px;
+  font-weight: 600;
+  margin-top: 4px;
+  animation: fadeIn 0.2s ease-in;
+}
+
+.inp-field.ng-invalid.ng-dirty {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.15) !important;
+}
+
+.select2-drop, .select2-multisel {
+  border-radius: 8px !important;
+  border: 1px solid #cbd5e1 !important;
+  transition: all 0.15s ease;
+  &:hover { border-color: #0284c7 !important; }
+}
+
+.btn-mode-toggle {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #475569;
+  padding: 2px 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+  &:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+}
+
+.highlight-core {
+  background: #f0fdf4 !important;
+}
+
+.badge-core {
+  background: #15803d;
+  color: #ffffff;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.btn-pwd-toggle {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  padding: 4px 6px;
+  font-size: 14px;
+  z-index: 10;
+  &:hover { color: #0f172a; }
+}
+
+.priv-table {
+  width: 100%;
+  border-collapse: collapse;
+  th, td {
+    padding: 8px 10px;
+    text-align: center;
+    vertical-align: middle;
+  }
+  th.priv-proj, td.priv-proj {
+    text-align: left;
+  }
+  ::ng-deep .p-checkbox {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    .p-checkbox-box {
+      border-radius: 4px;
+    }
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-2px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 
 @media (max-width: 767px) {
   .form-row-2 { grid-template-columns: 1fr !important; }
 }
+

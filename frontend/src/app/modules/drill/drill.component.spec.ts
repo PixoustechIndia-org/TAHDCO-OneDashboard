@@ -6,6 +6,10 @@ import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
 import { InputTextModule } from 'primeng/inputtext';
 import { ChartModule } from 'primeng/chart';
 import { DropdownModule } from 'primeng/dropdown';
+import { DialogModule } from 'primeng/dialog';
+import { TableModule } from 'primeng/table';
+import { TooltipModule } from 'primeng/tooltip';
+import { ButtonModule } from 'primeng/button';
 import { of } from 'rxjs';
 import { DrillComponent } from './drill.component';
 import { DataService } from '../../core/services/data.service';
@@ -37,7 +41,7 @@ describe('DrillComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       declarations: [DrillComponent],
-      imports: [FormsModule, RouterTestingModule, HttpClientTestingModule, InputTextModule, ChartModule, DropdownModule],
+      imports: [FormsModule, RouterTestingModule, HttpClientTestingModule, InputTextModule, ChartModule, DropdownModule, DialogModule, TableModule, TooltipModule, ButtonModule],
       providers: [
         { provide: DataService, useValue: mockDs },
         { provide: AuthService, useValue: mockAuth },

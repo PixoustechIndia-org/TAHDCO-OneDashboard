@@ -1,4 +1,4 @@
-<p-confirmDialog></p-confirmDialog>
+<p-confirmDialog [style]="{width: '440px', maxWidth: '92vw'}" styleClass="custom-confirm-dialog"></p-confirmDialog>
 <p-toast></p-toast>
 <div class="shell" [class.collapsed]="collapsed">
 
@@ -23,8 +23,8 @@
       </div>
     </div>
 
-    <!-- ── Center Filter Controls in Navigation Bar (Perfect Center Alignment) ── -->
-    <div class="topbar-center">
+    <!-- ── Center Filter Controls in Navigation Bar (Only on /dashboard-md) ── -->
+    <div class="topbar-center" *ngIf="currentUrl.includes('/dashboard-md') || currentUrl === '/' || currentUrl === ''">
       <div class="topbar-filters">
         <!-- Financial Year multiselect dropdown -->
         <div class="tb-filter-group">
@@ -77,7 +77,7 @@
       <button class="tb-icon" (click)="clearCache()" aria-label="Clear Cache & Refresh Data" pTooltip="Clear Cache & Refresh Data" tooltipPosition="bottom">
         <i class="pi pi-refresh" [class.pi-spin]="cacheClearing"></i>
       </button>
-      <button class="tb-icon" aria-label="Help" pTooltip="Help & guides" tooltipPosition="bottom"><i class="pi pi-question-circle"></i></button>
+      <button class="tb-icon" (click)="openHelpModal()" aria-label="Help" pTooltip="Help & guides" tooltipPosition="bottom"><i class="pi pi-question-circle"></i></button>
       <button class="tb-icon has-dot" (click)="openNotifications()" aria-label="Notifications" pTooltip="Notifications list" tooltipPosition="bottom">
         <i class="pi pi-bell"></i><span class="dot" *ngIf="notifCount">{{ notifCount }}</span>
       </button>
@@ -92,6 +92,9 @@
           <div class="u-name">{{ user?.name }}</div>
           <div class="u-role">{{ roleLabel }}</div>
         </div>
+        <button class="tb-icon" (click)="openChangePasswordDialog()" aria-label="Change Password" pTooltip="Change Password" tooltipPosition="bottom">
+          <i class="pi pi-key"></i>
+        </button>
         <button class="tb-icon signout" (click)="logout()" aria-label="Sign out" pTooltip="Sign out" tooltipPosition="bottom">
           <i class="pi pi-sign-out"></i>
         </button>
@@ -108,16 +111,51 @@
       <ng-container *ngFor="let group of navGroups">
         <div class="nav-group" *ngIf="groupVisible(group)">
           <span class="nav-label" *ngIf="!collapsed">{{ group.label }}</span>
-          <button class="nav-item" *ngFor="let item of visibleItems(group.items)"
-            [class.active]="isActive(item)"
-            (click)="router.navigate([item.route])"
-            [attr.title]="collapsed ? item.label : null">
-            <span class="nav-ico"><i class="pi {{ item.icon }}"></i></span>
-            <span class="nav-text" *ngIf="!collapsed">
-              {{ item.label }}
-              <small *ngIf="item.sub">{{ item.sub }}</small>
-            </span>
-          </button>
+          
+          <ng-container *ngFor="let item of visibleItems(group.items)">
+            <!-- Accordion Item (Has Children) -->
+            <div class="nav-accordion-item" *ngIf="item.children && item.children.length > 0" [class.is-expanded]="item.expanded">
+              <button class="nav-item nav-parent-item"
+                [class.active]="isActive(item)"
+                (click)="navigateToParent(item)"
+                [attr.title]="collapsed ? item.label : null">
+                <span class="nav-ico"><i class="pi {{ item.icon }}"></i></span>
+                <span class="nav-text" *ngIf="!collapsed">
+                  {{ item.label }}
+                  <small *ngIf="item.sub">{{ item.sub }}</small>
+                </span>
+                <span class="accordion-arrow" *ngIf="!collapsed" (click)="toggleAccordion(item, $event)">
+                  <i class="pi" [class.pi-chevron-down]="item.expanded" [class.pi-chevron-right]="!item.expanded"></i>
+                </span>
+              </button>
+
+              <!-- Submenu Children List -->
+              <div class="nav-submenu" *ngIf="item.expanded && !collapsed">
+                <button class="nav-subitem" *ngFor="let child of item.children"
+                  [class.active]="isActive(child)"
+                  (click)="navigateTo(child)"
+                  [attr.title]="child.label">
+                  <span class="nav-subico"><i class="pi {{ child.icon }}"></i></span>
+                  <span class="nav-subtext">
+                    {{ child.label }}
+                    <small *ngIf="child.sub">{{ child.sub }}</small>
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Standard Item (No Children) -->
+            <button class="nav-item" *ngIf="!item.children || item.children.length === 0"
+              [class.active]="isActive(item)"
+              (click)="navigateTo(item)"
+              [attr.title]="collapsed ? item.label : null">
+              <span class="nav-ico"><i class="pi {{ item.icon }}"></i></span>
+              <span class="nav-text" *ngIf="!collapsed">
+                {{ item.label }}
+                <small *ngIf="item.sub">{{ item.sub }}</small>
+              </span>
+            </button>
+          </ng-container>
         </div>
       </ng-container>
     </nav>
@@ -227,6 +265,117 @@
     <i class="pi pi-spin pi-spinner text-blue-600 text-2xl"></i>
     <span class="font-bold text-slate-700">Loading notifications…</span>
   </div>
+</p-dialog>
+
+<!-- ── Help & User Guides Dialog ────────────────────────────────────── -->
+<p-dialog [(visible)]="helpModalVisible" [modal]="true" [style]="{ width: '650px', maxWidth: '92vw' }"
+  header="TAHDCO UDP · User Guide & System Help" [draggable]="false" [resizable]="false" styleClass="help-dialog">
+  <div class="p-3">
+    <div class="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-xl mb-3">
+      <i class="pi pi-info-circle text-blue-600 text-2xl"></i>
+      <div>
+        <h4 class="m-0 text-sm font-bold text-slate-800">Unified Dashboard Platform (UDP) Guide</h4>
+        <p class="m-0 text-xs text-slate-600">Quick assistance on navigation, data filters, role privileges, and automated report exports.</p>
+      </div>
+    </div>
+
+    <div class="flex flex-col gap-3">
+      <div class="p-3 border border-slate-200 rounded-lg">
+        <h5 class="m-0 font-bold text-xs text-blue-800 flex items-center gap-2 mb-1">
+          <i class="pi pi-th-large"></i> 1. Executive Vertical Switching
+        </h5>
+        <p class="text-xs text-slate-600 m-0">Use the top tab navigation to switch between <strong>Engineering</strong> (TIPS, THMS, Patrol360), <strong>Welfare Schemes</strong> (TAHDCO Schemes, TELP, TAMS, TOD), and <strong>TNCWWB</strong> (Workers Welfare Board).</p>
+      </div>
+
+      <div class="p-3 border border-slate-200 rounded-lg">
+        <h5 class="m-0 font-bold text-xs text-blue-800 flex items-center gap-2 mb-1">
+          <i class="pi pi-filter"></i> 2. Global Filters & Drilldowns
+        </h5>
+        <p class="text-xs text-slate-600 m-0">Select Financial Year, Division, and District in the topbar or Geographic Map. Click on any count or status card to drill down into beneficiary and tender name lists with 50-item default pagination.</p>
+      </div>
+
+      <div class="p-3 border border-slate-200 rounded-lg">
+        <h5 class="m-0 font-bold text-xs text-blue-800 flex items-center gap-2 mb-1">
+          <i class="pi pi-file-export"></i> 3. Exporting & Email Reports
+        </h5>
+        <p class="text-xs text-slate-600 m-0">Use the <strong>Excel</strong>, <strong>PDF</strong>, and <strong>Email</strong> buttons in the table toolbar to generate and dispatch formatted executive summaries and spreadsheets directly to district managers and engineers.</p>
+      </div>
+
+      <div class="p-3 border border-slate-200 rounded-lg">
+        <h5 class="m-0 font-bold text-xs text-blue-800 flex items-center gap-2 mb-1">
+          <i class="pi pi-sparkles text-amber-500"></i> 4. AI Copilot & Voice Support
+        </h5>
+        <p class="text-xs text-slate-600 m-0">Click the bottom-right <strong>AI Copilot</strong> button or Voice Mic to ask questions about civil work status, government orders, scheme eligibility, or trigger MCP data tools in English and Tamil.</p>
+      </div>
+    </div>
+  </div>
+  <ng-template pTemplate="footer">
+    <button class="btn btn-solid-navy" (click)="helpModalVisible=false">
+      <i class="pi pi-check mr-1"></i><span>Got it</span>
+    </button>
+  </ng-template>
+</p-dialog>
+
+<!-- ── Change Password Dialog ──────────────────────────────────────── -->
+<p-dialog [(visible)]="changePasswordVisible" [modal]="true" [draggable]="false" [resizable]="false"
+  header="Change Account Password" [style]="{ width: '460px', maxWidth: '95vw' }" styleClass="custom-cp-dialog">
+  
+  <div class="cp-dialog-body pt-2">
+    <div class="user-id-badge mb-3 p-2 bg-blue-50 border-round flex align-items-center gap-2 border-1 border-blue-100">
+      <i class="pi pi-shield text-primary text-xl"></i>
+      <div>
+        <div class="font-semibold text-sm text-900">{{ user?.name }}</div>
+        <div class="text-xs text-600">{{ user?.email }} · Official Account</div>
+      </div>
+    </div>
+
+    <!-- Current Password -->
+    <div class="field mb-3">
+      <label class="block font-medium text-sm text-700 mb-1">Current Password <span class="text-red-500">*</span></label>
+      <div class="p-inputgroup">
+        <input pInputText [type]="showCurrentPassword ? 'text' : 'password'" [(ngModel)]="cpForm.currentPassword"
+          placeholder="Enter your current password" class="w-full">
+        <button type="button" pButton [icon]="showCurrentPassword ? 'pi pi-eye-slash' : 'pi pi-eye'"
+          class="p-button-secondary p-button-outlined" (click)="showCurrentPassword = !showCurrentPassword"></button>
+      </div>
+    </div>
+
+    <!-- New Password -->
+    <div class="field mb-3">
+      <label class="block font-medium text-sm text-700 mb-1">New Password <span class="text-red-500">*</span></label>
+      <div class="p-inputgroup">
+        <input pInputText [type]="showNewPassword ? 'text' : 'password'" [(ngModel)]="cpForm.newPassword"
+          placeholder="Enter new password (min. 6 characters)" class="w-full">
+        <button type="button" pButton [icon]="showNewPassword ? 'pi pi-eye-slash' : 'pi pi-eye'"
+          class="p-button-secondary p-button-outlined" (click)="showNewPassword = !showNewPassword"></button>
+      </div>
+      <small class="text-xs text-500 mt-1 block">Must contain uppercase, lowercase, number, and special symbol.</small>
+    </div>
+
+    <!-- Confirm New Password -->
+    <div class="field mb-3">
+      <label class="block font-medium text-sm text-700 mb-1">Confirm New Password <span class="text-red-500">*</span></label>
+      <div class="p-inputgroup">
+        <input pInputText [type]="showConfirmPassword ? 'text' : 'password'" [(ngModel)]="cpForm.confirmPassword"
+          placeholder="Re-enter new password" class="w-full">
+        <button type="button" pButton [icon]="showConfirmPassword ? 'pi pi-eye-slash' : 'pi pi-eye'"
+          class="p-button-secondary p-button-outlined" (click)="showConfirmPassword = !showConfirmPassword"></button>
+      </div>
+      <small class="text-xs text-red-500 mt-1 block" *ngIf="cpForm.newPassword && cpForm.confirmPassword && cpForm.newPassword !== cpForm.confirmPassword">
+        <i class="pi pi-times-circle mr-1"></i> Passwords do not match
+      </small>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <div class="flex justify-content-end gap-2">
+      <button pButton label="Cancel" icon="pi pi-times" class="p-button-outlined p-button-secondary p-button-sm"
+        (click)="changePasswordVisible = false" [disabled]="cpLoading"></button>
+      <button pButton label="Update Password" icon="pi pi-check" class="p-button-primary p-button-sm"
+        (click)="submitChangePassword()" [loading]="cpLoading"
+        [disabled]="!cpForm.currentPassword || !cpForm.newPassword || !cpForm.confirmPassword || cpForm.newPassword !== cpForm.confirmPassword"></button>
+    </div>
+  </ng-template>
 </p-dialog>
 
 <!-- TAHDCO AI Copilot Floating Assistant Widget -->

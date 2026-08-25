@@ -44,8 +44,18 @@ public class SarvamVoiceService : ISarvamVoiceService
                           $"All divisional systems are operating at optimal capacity.";
         }
 
-        // Fetch Sarvam AI configuration
-        var keys = _config.GetSection("SarvamSettings:SarvamKeys").Get<string[]>() ?? Array.Empty<string>();
+        // Fetch Sarvam AI configuration from environment variables or vault configuration
+        var envKey = Environment.GetEnvironmentVariable("SARVAM_API_KEY") ?? _config["SarvamSettings:ApiKey"];
+        var configuredKeys = _config.GetSection("SarvamSettings:SarvamKeys").Get<string[]>() ?? Array.Empty<string>();
+        
+        var keysList = new List<string>();
+        if (!string.IsNullOrWhiteSpace(envKey)) keysList.Add(envKey.Trim());
+        foreach (var k in configuredKeys)
+        {
+            if (!string.IsNullOrWhiteSpace(k) && !keysList.Contains(k.Trim()))
+                keysList.Add(k.Trim());
+        }
+
         var model = _config["SarvamSettings:SarvamTtsModel"] ?? "bulbul:v2";
         var speaker = _config["SarvamSettings:SarvamTtsSpeaker"] ?? "anushka";
 
@@ -57,7 +67,7 @@ public class SarvamVoiceService : ISarvamVoiceService
         string audioBase64 = "";
 
         // Iterate keys with fallback rotation
-        foreach (var key in keys)
+        foreach (var key in keysList)
         {
             if (string.IsNullOrWhiteSpace(key)) continue;
 

@@ -48,7 +48,7 @@
             <i class="pi pi-table text-primary" *ngIf="viewMode === 'table'"></i>
           </div>
           <div>
-            <span class="hdr-title">{{ config.valueLabel }} by {{ config.moduleId === 'housing' || config.moduleId === 'enrollment' || config.moduleId === 'tod' || config.moduleId === 'patrol' || config.moduleId === 'patrol360' ? 'District' : (config.moduleId === 'scheme' || config.moduleId === 'telp' || config.moduleId === 'oneportal' ? 'Scheme' : 'Division') }}</span>
+            <span class="hdr-title">{{ config.valueLabel }} by {{ (config.moduleId === 'scheme' || config.moduleId === 'telp' || config.moduleId === 'oneportal') ? 'Scheme' : 'District' }}</span>
             <span class="hdr-badge">{{ filteredRows.length }} Entries</span>
           </div>
         </div>
