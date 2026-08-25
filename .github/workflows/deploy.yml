@@ -148,10 +148,7 @@ jobs:
             'frontend/e2e/**',
             '**/*.min.js',
             '**/*.min.css',
-            '**/coverage/**/*.html',
-            '**/coverage/**/*.js',
-            '**/coverage/**/*.css',
-            '**/coverage/**/*.png',
+            '**/coverage/**',
             '**/TestResults/**',
             '**/.angular/**',
             '.sonarqube/**',
@@ -217,65 +214,7 @@ jobs:
         continue-on-error: true
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: |
-          $log = "${{ github.workspace }}/artifacts/sonar-end.log"
-          dotnet sonarscanner end /d:sonar.token="$env:SONAR_TOKEN" /d:sonar.verbose=true 2>&1 |
-            Tee-Object -FilePath $log | Out-Null
-          $code = $LASTEXITCODE
-          Write-Host "--- sonar end wrote $((Get-Item $log).Length) bytes; last 20 lines ---"
-          Get-Content -LiteralPath $log -Tail 20
-          exit $code
-
-      # TEMPORARY DIAGNOSTIC - remove once the frontend LCOV import is resolved.
-      # Run 32764764754 published successfully and imported C# OpenCover, but the
-      # scanner log contained zero occurrences of "lcov" and the covered-line
-      # count (999) matched backend coverage exactly, i.e. the frontend LCOV was
-      # not imported. This dumps what the scanner engine actually received.
-      - name: DIAGNOSTIC - what did the scanner receive for coverage
-        id: diag_lcov
-        if: always()
-        continue-on-error: true
-        run: |
-          $ws = "${{ github.workspace }}"
-          $gen = "$ws/.sonarqube/out/sonar-project.properties"
-          Write-Host "=== generated properties: coverage / lcov / exclusion keys ==="
-          if (Test-Path $gen) {
-            Get-Content -LiteralPath $gen |
-              Where-Object { $_ -match 'lcov|coverage|exclusions|sonar\.sources|projectBaseDir' } |
-              ForEach-Object { Write-Host "  $_" }
-          } else {
-            Write-Host "  MISSING: $gen"
-          }
-          Write-Host ""
-          Write-Host "=== SonarQubeAnalysisConfig.xml: lcov entries ==="
-          $cfg = "$ws/.sonarqube/conf/SonarQubeAnalysisConfig.xml"
-          if (Test-Path $cfg) {
-            Select-String -LiteralPath $cfg -Pattern 'lcov' -SimpleMatch |
-              ForEach-Object { Write-Host "  $($_.Line.Trim())" }
-          } else {
-            Write-Host "  MISSING: $cfg"
-          }
-          Write-Host ""
-          Write-Host "=== lcov.info on disk at end-of-analysis time ==="
-          foreach ($p in @("$ws/frontend/coverage/lcov.info", "$ws/frontend/coverage/tahdco-udp/lcov.info")) {
-            if (Test-Path $p) { Write-Host "  EXISTS $p ($((Get-Item $p).Length) bytes)" } else { Write-Host "  ABSENT $p" }
-          }
-          Write-Host ""
-          Write-Host "=== engine log: every line mentioning lcov / coverage sensors ==="
-          $el = "$ws/artifacts/sonar-end.log"
-          if (Test-Path $el) {
-            Get-Content -LiteralPath $el |
-              Where-Object { $_ -match 'lcov|Coverage|coverage' } |
-              Where-Object { $_ -notmatch 'node_modules|Excluded sources|frontend.coverage.app|\.html"' } |
-              Select-Object -First 60 |
-              ForEach-Object { Write-Host "  $_" }
-            Write-Host ""
-            Write-Host "=== engine log: sensors that executed ==="
-            Get-Content -LiteralPath $el |
-              Select-String -Pattern 'INFO: Sensor .*\[javascript\]' |
-              ForEach-Object { $_.Line.Trim() } | Sort-Object -Unique |
-              ForEach-Object { Write-Host "  $_" }
-          } else { Write-Host "  MISSING $el" }
+        run: dotnet sonarscanner end /d:sonar.token="$env:SONAR_TOKEN"
 
       # ----------------------------------------------------------------------
       # Report
