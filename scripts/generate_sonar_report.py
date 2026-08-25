@@ -125,6 +125,14 @@ METRIC_LABELS = {
     "new_coverage": "Coverage on new code",
     "new_duplicated_lines_density": "Duplicated lines on new code",
     "new_security_hotspots_reviewed": "Security hotspots reviewed on new code",
+    "new_violations": "New issues (violations) on new code",
+    "new_bugs": "Bugs on new code",
+    "new_vulnerabilities": "Vulnerabilities on new code",
+    "new_code_smells": "Code smells on new code",
+    "new_blocker_violations": "Blocker issues on new code",
+    "new_critical_violations": "Critical issues on new code",
+    "new_lines": "Lines on new code",
+    "new_technical_debt": "Technical debt on new code",
     "reliability_rating": "Reliability rating",
     "security_rating": "Security rating",
     "sqale_rating": "Maintainability rating",
@@ -514,6 +522,139 @@ def parse_language_distribution(raw: str | None) -> list[tuple[str, int]]:
     return rows
 
 
+def gate_presentation(gate: dict | None) -> tuple[str, str, str]:
+    """
+    Turn the real /api/qualitygates/project_status result into banner text.
+
+    Returns (banner_text, tone, verdict_word). Nothing is inferred: when the
+    API result is absent the banner says so rather than guessing a status.
+    """
+    if not gate:
+        return ("QUALITY GATE: NOT AVAILABLE", "unknown", NA)
+    status = (gate.get("status") or "").upper()
+    if status == "ERROR":
+        return ("QUALITY GATE: FAILED", "fail", "FAILED")
+    if status == "OK":
+        return ("QUALITY GATE: PASSED", "pass", "PASSED")
+    if status == "WARN":
+        return ("QUALITY GATE: WARNING", "warn", "WARNING")
+    if status == "NONE":
+        return ("QUALITY GATE: NOT CONFIGURED", "unknown", "NOT CONFIGURED")
+    return (f"QUALITY GATE: {status or 'NOT AVAILABLE'}", "unknown", status or NA)
+
+
+def condition_rows(gate: dict | None) -> list[list[str]]:
+    """Every Quality Gate condition, exactly as the API returned it."""
+    if not gate:
+        return []
+    rows = []
+    for cond in gate.get("conditions", []):
+        metric = cond.get("metricKey", "")
+        status = (cond.get("status") or "").upper()
+        rows.append([
+            METRIC_LABELS.get(metric, metric),
+            metric,
+            cond.get("comparator", ""),
+            cond.get("errorThreshold", NA),
+            cond.get("actualValue", NA),
+            "PASSED" if status == "OK" else (status or NA),
+        ])
+    return rows
+
+
+def coverage_scope_note(ctx: dict) -> tuple[str, str]:
+    """
+    Describe precisely what the headline coverage number covers.
+
+    Returns (short_label_suffix, long_explanation). Built from what this run can
+    actually verify: which coverage reports were produced, and - when the API
+    permits it - which languages carry imported coverage. The headline figure is
+    never described as whole-project coverage unless that is demonstrably true.
+    """
+    status = ctx["status"]
+    cov = status.get("coverage", {}) if isinstance(status, dict) else {}
+    backend = cov.get("backend_opencover_reports") or []
+    frontend = cov.get("frontend_lcov_reports") or []
+    buckets = ctx["coverage_by_language"] or {}
+
+    if buckets:
+        with_data = sorted(k for k, v in buckets.items() if v.get("lines_to_cover"))
+        without = sorted(k for k, v in buckets.items() if not v.get("lines_to_cover"))
+        if with_data:
+            label = "coverage imported for: " + ", ".join(with_data)
+            explain = (
+                "This is the coverage SonarQube actually imported for this analysis. "
+                f"Languages with imported coverage: {', '.join(with_data)}."
+            )
+            if without:
+                explain += (
+                    f" Languages with no imported coverage data: {', '.join(without)} - "
+                    "reported as unavailable, never as 0% achieved."
+                )
+            return label, explain
+        return ("no coverage imported",
+                "SonarQube imported no coverage data for this analysis.")
+
+    # Per-language detail unavailable (typically the component_tree permission
+    # error recorded under Scan Limitations). Fall back to what the pipeline
+    # itself observed about report generation.
+    generated = []
+    if backend:
+        generated.append(f"backend OpenCover ({len(backend)} file(s))")
+    if frontend:
+        generated.append(f"frontend LCOV ({len(frontend)} file(s))")
+
+    if backend and frontend:
+        label = "backend coverage imported; frontend LCOV generated but not imported"
+        explain = (
+            "This is the coverage SonarQube reported for this analysis, not a complete "
+            "frontend+backend figure. Reports produced by this run: "
+            f"{'; '.join(generated)}. The backend OpenCover report was imported by the "
+            "C# coverage sensor. The frontend LCOV report was generated and its paths "
+            "normalised, but no JavaScript/TypeScript coverage sensor ran and the "
+            "covered-line count matches the backend report alone, so the frontend "
+            "contributes nothing to this figure. It must not be read as whole-project "
+            "coverage. Per-language confirmation is unavailable because the component "
+            "tree could not be read - see Scan Limitations."
+        )
+        return label, explain
+    if backend:
+        return ("backend coverage only",
+                "Only a backend OpenCover report was produced by this run; no frontend "
+                "coverage contributes to this figure.")
+    if frontend:
+        return ("frontend coverage only",
+                "Only a frontend LCOV report was produced by this run; no backend "
+                "coverage contributes to this figure.")
+    return ("no coverage reports produced",
+            "No coverage report was produced by this run, so no coverage was imported. "
+            "No value has been substituted.")
+
+
+def assessment_rows(measures: dict, ctx: dict) -> list[list[str]]:
+    """Final-assessment lines, each traced to a real measure."""
+    cov_label, _ = coverage_scope_note(ctx)
+    return [
+        ["Dimension", "Rating", "Measure", "Reading"],
+        ["Security", fmt_rating(measures, "security_rating"),
+         f"{fmt_int(measures, 'vulnerabilities')} vulnerabilities",
+         "Rating from SonarQube security_rating"],
+        ["Security Review", fmt_rating(measures, "security_review_rating"),
+         f"{fmt_int(measures, 'security_hotspots')} hotspots",
+         "Hotspots awaiting review drive this rating"],
+        ["Reliability", fmt_rating(measures, "reliability_rating"),
+         f"{fmt_int(measures, 'bugs')} bugs",
+         "Rating from SonarQube reliability_rating"],
+        ["Maintainability", fmt_rating(measures, "sqale_rating"),
+         f"{fmt_int(measures, 'code_smells')} code smells",
+         f"Technical debt {fmt_duration_minutes(measures, 'sqale_index')}"],
+        ["Coverage", "-", fmt_pct(measures, "coverage"), cov_label],
+        ["Duplication", "-", fmt_pct(measures, "duplicated_lines_density"),
+         f"{fmt_int(measures, 'duplicated_lines')} lines in "
+         f"{fmt_int(measures, 'duplicated_blocks')} blocks"],
+    ]
+
+
 # --------------------------------------------------------------------------
 # PDF rendering
 # --------------------------------------------------------------------------
@@ -561,6 +702,44 @@ class ReportBuilder:
             HRFlowable(width="100%", thickness=1.1, color=colors.HexColor("#12324f"))
         )
         self.story.append(Spacer(1, 6))
+
+    def banner(self, status_text: str, detail: str, tone: str) -> None:
+        """
+        Full-width status banner.
+
+        `tone` selects the palette only; the caller supplies the text, which must
+        already have been derived from the real Quality Gate API result.
+        """
+        palette = {
+            "fail": ("#b3261e", "#7f1d1a"),
+            "pass": ("#1b5e20", "#124116"),
+            "warn": ("#8a6d00", "#5f4b00"),
+            "unknown": ("#5a6570", "#414951"),
+        }
+        bg, border = palette.get(tone, palette["unknown"])
+        big = ParagraphStyle(
+            "BannerBig", fontName="Helvetica-Bold", fontSize=21, leading=25,
+            textColor=colors.white, alignment=TA_LEFT,
+        )
+        small = ParagraphStyle(
+            "BannerSmall", fontName="Helvetica", fontSize=9, leading=12,
+            textColor=colors.white, alignment=TA_LEFT,
+        )
+        cells = [[Paragraph(status_text, big)]]
+        if detail:
+            cells.append([Paragraph(detail, small)])
+        table = Table(cells, colWidths=[FULL], hAlign="LEFT")
+        table.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor(bg)),
+            ("BOX", (0, 0), (-1, -1), 1.4, colors.HexColor(border)),
+            ("LEFTPADDING", (0, 0), (-1, -1), 12),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 12),
+            ("TOPPADDING", (0, 0), (0, 0), 10),
+            ("BOTTOMPADDING", (0, -1), (-1, -1), 10),
+            ("TOPPADDING", (0, 1), (-1, -1), 0),
+        ]))
+        self.story.append(table)
+        self.story.append(Spacer(1, 10))
 
     def heading(self, text: str) -> None:
         self.story.append(Paragraph(text, self.s_h1))
@@ -650,13 +829,32 @@ def build_report(args, ctx: dict) -> None:
     limitations: list[str] = ctx["limitations"]
     steps: dict = status.get("steps", {})
 
+    gate = ctx["quality_gate"]
+    banner_text, banner_tone, verdict_word = gate_presentation(gate)
+    conditions = condition_rows(gate)
+    failed_conditions = [r for r in conditions if r[5] not in ("PASSED", NA)]
+    cov_label, cov_explain = coverage_scope_note(ctx)
+
     pdf = ReportBuilder(args.output)
 
-    # ---- 1. Header / identification -------------------------------------
-    pdf.title(
-        "SonarQube Analysis Report",
-        f"{args.project_name}",
-    )
+    # ---- PAGE 1: identification + prominent Quality Gate banner ----------
+    pdf.title("SonarQube Analysis Report", args.project_name)
+
+    if gate:
+        if failed_conditions:
+            detail = (
+                f"{len(failed_conditions)} of {len(conditions)} gate conditions failed - "
+                "see the Quality Gate section for every condition."
+            )
+        elif conditions:
+            detail = f"All {len(conditions)} gate conditions passed."
+        else:
+            detail = "The gate returned a status but no conditions."
+    else:
+        detail = ("The Quality Gate could not be read from the SonarQube Web API. "
+                  "No status has been inferred - see Scan Limitations.")
+    pdf.banner(banner_text, detail, banner_tone)
+
     pdf.table(
         [
             ["Field", "Value"],
@@ -673,7 +871,6 @@ def build_report(args, ctx: dict) -> None:
         [45 * mm, FULL - 45 * mm],
     )
 
-    # ---- 2. Pipeline step status ----------------------------------------
     pdf.heading("1. Pipeline step status")
     if steps:
         pdf.table(
@@ -685,34 +882,69 @@ def build_report(args, ctx: dict) -> None:
     else:
         pdf.para(f"Pipeline step status: {NA} (CI status file was not produced).")
 
-    # ---- 3. Quality Gate -------------------------------------------------
-    pdf.heading("2. Quality Gate")
-    gate = ctx["quality_gate"]
+    pdf.page_break()
+
+    # ---- PAGE 2: Executive Summary --------------------------------------
+    pdf.heading("2. Executive summary")
+    pdf.table(
+        [
+            ["Measure", "Value", "Rating"],
+            ["Quality Gate", verdict_word, "-"],
+            ["Bugs", fmt_int(measures, "bugs"), fmt_rating(measures, "reliability_rating")],
+            ["Vulnerabilities", fmt_int(measures, "vulnerabilities"),
+             fmt_rating(measures, "security_rating")],
+            ["Security Hotspots", fmt_int(measures, "security_hotspots"),
+             fmt_rating(measures, "security_review_rating")],
+            ["Code Smells", fmt_int(measures, "code_smells"),
+             fmt_rating(measures, "sqale_rating")],
+            ["Lines of Code", fmt_int(measures, "ncloc"), "-"],
+            ["Coverage", fmt_pct(measures, "coverage"), "-"],
+            ["Duplicated Lines", fmt_int(measures, "duplicated_lines"), "-"],
+            ["Duplicated Lines (%)", fmt_pct(measures, "duplicated_lines_density"), "-"],
+            ["Technical Debt", fmt_duration_minutes(measures, "sqale_index"), "-"],
+        ],
+        [55 * mm, 45 * mm, FULL - 100 * mm],
+        align_right=[1],
+    )
+
+    pdf.para("<b>Ratings</b>")
+    pdf.table(
+        [
+            ["Dimension", "Rating", "SonarQube metric"],
+            ["Security", fmt_rating(measures, "security_rating"), "security_rating"],
+            ["Security Review", fmt_rating(measures, "security_review_rating"),
+             "security_review_rating"],
+            ["Reliability", fmt_rating(measures, "reliability_rating"), "reliability_rating"],
+            ["Maintainability", fmt_rating(measures, "sqale_rating"), "sqale_rating"],
+        ],
+        [55 * mm, 30 * mm, FULL - 85 * mm],
+    )
+    pdf.note(
+        "Ratings are A (best) to E (worst), taken directly from the SonarQube measures "
+        f"API. A dimension shown as \"{NA}\" is one this server did not return - no "
+        "rating has been inferred."
+    )
+    pdf.para(f"<b>Coverage qualifier:</b> {cov_label}. {cov_explain}")
+
+    pdf.page_break()
+
+    # ---- Quality Gate detail --------------------------------------------
+    pdf.heading("3. Quality Gate")
+    pdf.banner(banner_text, detail, banner_tone)
+
     if gate:
-        gate_status = gate.get("status", "NONE")
-        verdict = {
-            "OK": "PASSED",
-            "ERROR": "FAILED",
-            "WARN": "WARNING",
-            "NONE": "No quality gate is attached to this project",
-        }.get(gate_status, gate_status)
         pdf.table(
-            [["Quality Gate status", "Verdict"], [gate_status, verdict]],
-            [70 * mm, FULL - 70 * mm],
+            [["Overall status", "Verdict", "Failing conditions"],
+             [(gate.get("status") or NA), verdict_word,
+              str(len(failed_conditions)) if conditions else NA]],
+            [45 * mm, 45 * mm, FULL - 90 * mm],
         )
-        conditions = gate.get("conditions", [])
         if conditions:
-            rows = [["Condition", "Comparator", "Threshold", "Actual", "Result"]]
-            for cond in conditions:
-                metric = cond.get("metricKey", "")
-                rows.append([
-                    METRIC_LABELS.get(metric, metric),
-                    cond.get("comparator", ""),
-                    cond.get("errorThreshold", ""),
-                    cond.get("actualValue", NA),
-                    "PASSED" if cond.get("status") == "OK" else cond.get("status", ""),
-                ])
-            pdf.table(rows, [62 * mm, 22 * mm, 22 * mm, 27 * mm, FULL - 133 * mm])
+            pdf.table(
+                [["Condition", "Metric", "Comparator", "Threshold", "Actual", "Result"]]
+                + conditions,
+                [42 * mm, 36 * mm, 20 * mm, 19 * mm, 19 * mm, FULL - 136 * mm],
+            )
         else:
             pdf.para(f"Quality Gate conditions: {NA}.")
     else:
@@ -727,7 +959,7 @@ def build_report(args, ctx: dict) -> None:
     )
 
     # ---- 4. Size / lines of code ----------------------------------------
-    pdf.heading("3. Size and lines of code")
+    pdf.heading("4. Size and lines of code")
     pdf.table(
         [
             ["Measure", "Value"],
@@ -759,7 +991,7 @@ def build_report(args, ctx: dict) -> None:
     pdf.page_break()
 
     # ---- 5. Issues -------------------------------------------------------
-    pdf.heading("4. Issues: bugs, vulnerabilities, hotspots, code smells")
+    pdf.heading("5. Issues: bugs, vulnerabilities, hotspots, code smells")
     pdf.table(
         [
             ["Metric", "Count", "Rating"],
@@ -789,7 +1021,7 @@ def build_report(args, ctx: dict) -> None:
         pdf.para(f"Issue severity/type breakdown: {NA}.")
 
     # ---- 6. Duplications -------------------------------------------------
-    pdf.heading("5. Duplications")
+    pdf.heading("6. Duplications")
     pdf.table(
         [
             ["Measure", "Value"],
@@ -803,11 +1035,16 @@ def build_report(args, ctx: dict) -> None:
     )
 
     # ---- 7. Coverage -----------------------------------------------------
-    pdf.heading("6. Coverage")
+    pdf.heading("7. Coverage")
+    pdf.para(
+        f"<b>SonarQube reported coverage: {fmt_pct(measures, 'coverage')} "
+        f"({cov_label}).</b>"
+    )
+    pdf.para(cov_explain)
     pdf.table(
         [
             ["Measure", "Value"],
-            ["Overall coverage", fmt_pct(measures, "coverage")],
+            ["SonarQube reported coverage", fmt_pct(measures, "coverage")],
             ["Line coverage", fmt_pct(measures, "line_coverage")],
             ["Branch coverage", fmt_pct(measures, "branch_coverage")],
             ["Lines to cover", fmt_int(measures, "lines_to_cover")],
@@ -836,18 +1073,26 @@ def build_report(args, ctx: dict) -> None:
                   align_right=[1, 2, 3])
     else:
         pdf.para(f"Coverage by language: {NA}.")
-    pdf.note(
-        "SonarQube publishes no per-language coverage metric. The table above is computed "
-        "by summing the per-file <i>lines to cover</i> and <i>uncovered lines</i> measures "
-        "and grouping them by file extension. A language with zero lines to cover has no "
-        "coverage report imported - it is reported as unavailable, never as 0% achieved "
-        "and never as an estimate."
-    )
+    if buckets:
+        pdf.note(
+            "SonarQube publishes no per-language coverage metric. The table above is "
+            "computed by summing the per-file <i>lines to cover</i> and <i>uncovered "
+            "lines</i> measures and grouping them by file extension. A language with zero "
+            "lines to cover has no coverage report imported - it is reported as "
+            "unavailable, never as 0% achieved and never as an estimate."
+        )
+    else:
+        pdf.note(
+            "SonarQube publishes no per-language coverage metric; this report derives it "
+            "from per-file measures via the component tree, which could not be read for "
+            "this analysis (see Scan Limitations). No per-language figure has been "
+            "estimated in its place."
+        )
 
     pdf.page_break()
 
     # ---- 8. Test execution status ---------------------------------------
-    pdf.heading("7. Test execution status")
+    pdf.heading("8. Test execution status")
     counters = status.get("backend_test_counters")
     backend_outcome = (steps.get("backend_tests") or NA).upper()
     if counters:
@@ -893,7 +1138,7 @@ def build_report(args, ctx: dict) -> None:
     )
 
     # ---- 9. Coverage generation status ----------------------------------
-    pdf.heading("8. Coverage generation status")
+    pdf.heading("9. Coverage generation status")
     cov_status = status.get("coverage", {})
     backend_reports = cov_status.get("backend_opencover_reports") or []
     frontend_reports = cov_status.get("frontend_lcov_reports") or []
@@ -921,7 +1166,7 @@ def build_report(args, ctx: dict) -> None:
         )
 
     # ---- 10. Important findings -----------------------------------------
-    pdf.heading("9. Important findings")
+    pdf.heading("10. Important findings")
     issues = ctx["issues"]
     if issues:
         rows = [["Severity", "Type", "File", "Line", "Message"]]
@@ -960,7 +1205,7 @@ def build_report(args, ctx: dict) -> None:
         pdf.table(rows, [22 * mm, 30 * mm, 44 * mm, 11 * mm, FULL - 107 * mm])
 
     # ---- 11. Limitations -------------------------------------------------
-    pdf.heading("10. Scan limitations and errors")
+    pdf.heading("11. Scan limitations and errors")
     if limitations:
         pdf.bullets([redact(item) for item in limitations])
     else:
@@ -972,6 +1217,37 @@ def build_report(args, ctx: dict) -> None:
         "deployment, and it does not modify the committed production bundle in "
         "backend/API/wwwroot, the publish profiles, the Dockerfile or any application "
         "source file."
+    )
+
+    # ---- FINAL ASSESSMENT ------------------------------------------------
+    pdf.page_break()
+    pdf.heading("12. Final assessment")
+    pdf.banner(banner_text, detail, banner_tone)
+
+    pdf.table(
+        assessment_rows(measures, ctx),
+        [30 * mm, 18 * mm, 38 * mm, FULL - 86 * mm],
+    )
+
+    if gate and failed_conditions:
+        pdf.para("<b>Conditions that failed the gate</b>")
+        pdf.table(
+            [["Condition", "Comparator", "Threshold", "Actual"]]
+            + [[r[0], r[2], r[3], r[4]] for r in failed_conditions],
+            [62 * mm, 24 * mm, 24 * mm, FULL - 110 * mm],
+        )
+
+    pdf.note(
+        "Every figure in this assessment is taken from the SonarQube Web API result for "
+        "this analysis. Where a value could not be read it is shown as "
+        f"\"{NA}\" - nothing has been estimated or carried over from a previous run. "
+        "The coverage line is qualified above and in section 7; it is the coverage "
+        "SonarQube imported, not necessarily whole-project coverage."
+    )
+    pdf.note(
+        "Reporting only: this assessment does not gate deployment. A failed Quality Gate "
+        "is recorded here and raised as a GitHub Actions warning, and nothing in the "
+        "application or its deployment configuration is changed as a result."
     )
 
     pdf.save()
