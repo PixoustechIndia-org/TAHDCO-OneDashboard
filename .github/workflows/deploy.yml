@@ -216,6 +216,47 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: dotnet sonarscanner end /d:sonar.token="$env:SONAR_TOKEN"
 
+      # TEMPORARY DIAGNOSTIC - remove once the frontend LCOV import is resolved.
+      # Run 32764764754 published successfully and imported C# OpenCover, but the
+      # scanner log contained zero occurrences of "lcov" and the covered-line
+      # count (999) matched backend coverage exactly, i.e. the frontend LCOV was
+      # not imported. This dumps what the scanner engine actually received.
+      - name: DIAGNOSTIC - what did the scanner receive for coverage
+        id: diag_lcov
+        if: always()
+        continue-on-error: true
+        run: |
+          $ws = "${{ github.workspace }}"
+          $gen = "$ws/.sonarqube/out/sonar-project.properties"
+          Write-Host "=== generated properties: coverage / lcov / exclusion keys ==="
+          if (Test-Path $gen) {
+            Get-Content -LiteralPath $gen |
+              Where-Object { $_ -match 'lcov|coverage|exclusions|sonar\.sources|projectBaseDir' } |
+              ForEach-Object { Write-Host "  $_" }
+          } else {
+            Write-Host "  MISSING: $gen"
+          }
+          Write-Host ""
+          Write-Host "=== SonarQubeAnalysisConfig.xml: lcov entries ==="
+          $cfg = "$ws/.sonarqube/conf/SonarQubeAnalysisConfig.xml"
+          if (Test-Path $cfg) {
+            Select-String -LiteralPath $cfg -Pattern 'lcov' -SimpleMatch |
+              ForEach-Object { Write-Host "  $($_.Line.Trim())" }
+          } else {
+            Write-Host "  MISSING: $cfg"
+          }
+          Write-Host ""
+          Write-Host "=== lcov.info on disk at end-of-analysis time ==="
+          foreach ($p in @("$ws/frontend/coverage/lcov.info", "$ws/frontend/coverage/tahdco-udp/lcov.info")) {
+            if (Test-Path $p) {
+              $sf = @(Select-String -LiteralPath $p -Pattern '^SF:' | Select-Object -First 3)
+              Write-Host "  EXISTS $p  ($((Get-Item $p).Length) bytes)"
+              $sf | ForEach-Object { Write-Host "     $($_.Line)" }
+            } else {
+              Write-Host "  ABSENT $p"
+            }
+          }
+
       # ----------------------------------------------------------------------
       # Report
       # ----------------------------------------------------------------------
