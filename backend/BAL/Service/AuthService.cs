@@ -19,18 +19,46 @@ public class AuthService : IAuthService
     public async Task<LoginResponse?> LoginAsync(LoginRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
-        {
             return null;
-        }
 
         var emailInput = request.Email.Trim().ToLowerInvariant();
         var passInput = request.Password;
 
-        AppUserRow? row = null;
+        var row = await QueryUserRowAsync(emailInput);
+        if (row is null)
+        {
+            row = AuthenticateSeedUser(emailInput, passInput);
+        }
+
+        if (row is null)
+            return null;
+
         try
         {
-            // Primary query against app_user (MySQL 8.0.42 Linux compatible)
-            row = await _db.QueryFirstOrDefaultAsync<AppUserRow>(
+            VerifyPasswordAndAccountStatus(row, passInput);
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+
+        UpgradePasswordHashIfNeeded(row, passInput);
+        RecordLoginAudit(row);
+
+        var user = BuildUserVm(row);
+
+        await FillUserPrivileges(user, row.UserId);
+
+        var token = JwtTokenGenerator.Generate(_jwt, row.UserId, row.FullName, row.Email, row.Role,
+                                               row.AppAccess, row.DistrictName ?? "");
+        return new LoginResponse { Token = token, User = user };
+    }
+
+    private async Task<AppUserRow?> QueryUserRowAsync(string emailInput)
+    {
+        try
+        {
+            AppUserRow? row = await _db.QueryFirstOrDefaultAsync<AppUserRow>(
                 @"SELECT u.user_id AS UserId, u.full_name AS FullName, u.email AS Email,
                          u.password_hash AS PasswordHash, COALESCE(u.password_salt, '') AS PasswordSalt,
                          u.role AS Role, COALESCE(u.scope, 'all') AS Scope,
@@ -61,6 +89,7 @@ public class AuthService : IAuthService
                     } catch { /* Table may not exist or different case */ }
                 }
             }
+            return row;
         }
         catch (InvalidOperationException)
         {
@@ -68,106 +97,100 @@ public class AuthService : IAuthService
         }
         catch
         {
-            row = null;
+            return null;
+        }
+    }
+
+    private AppUserRow? AuthenticateSeedUser(string emailInput, string passInput)
+    {
+        var seedUser = GetSeedUser(emailInput);
+        if (seedUser == null) return null;
+
+        var isSeedVerified = passInput == "Password123!" || PasswordHasher.Verify(passInput, seedUser.PasswordHash, seedUser.PasswordSalt);
+        if (!isSeedVerified) return null;
+
+        if (!seedUser.IsActive)
+        {
+            throw new InvalidOperationException("ACCOUNT_INACTIVE: Your account is currently inactive. Please contact the TAHDCO administrator to activate your account.");
         }
 
-        // Fallback to authoritative seed directory if MySQL query returned null / table was initializing
-        if (row is null)
+        _ = Task.Run(async () =>
         {
-            var seedUser = GetSeedUser(emailInput);
-            if (seedUser != null)
+            try
             {
-                var isSeedVerified = passInput == "Password123!" || PasswordHasher.Verify(passInput, seedUser.PasswordHash, seedUser.PasswordSalt);
-                if (isSeedVerified)
-                {
-                    if (!seedUser.IsActive)
-                    {
-                        throw new InvalidOperationException("ACCOUNT_INACTIVE: Your account is currently inactive. Please contact the TAHDCO administrator to activate your account.");
-                    }
-                    row = seedUser;
+                await _db.ExecuteAsync(@"
+                    CREATE TABLE IF NOT EXISTS app_user (
+                        user_id INT AUTO_INCREMENT PRIMARY KEY,
+                        full_name VARCHAR(150) NOT NULL,
+                        email VARCHAR(150) NOT NULL UNIQUE,
+                        password_hash VARCHAR(255) NOT NULL,
+                        password_salt VARCHAR(255) DEFAULT '',
+                        role VARCHAR(50) NOT NULL,
+                        scope VARCHAR(50) DEFAULT 'all',
+                        division_id INT NULL,
+                        district_id INT NULL,
+                        app_access VARCHAR(255) DEFAULT 'ALL',
+                        is_active TINYINT(1) DEFAULT 1,
+                        last_login DATETIME NULL,
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
 
-                    // Asynchronously seed user into MySQL 8.0.42
-                    _ = Task.Run(async () =>
-                    {
-                        try
-                        {
-                            await _db.ExecuteAsync(@"
-                                CREATE TABLE IF NOT EXISTS app_user (
-                                    user_id INT AUTO_INCREMENT PRIMARY KEY,
-                                    full_name VARCHAR(150) NOT NULL,
-                                    email VARCHAR(150) NOT NULL UNIQUE,
-                                    password_hash VARCHAR(255) NOT NULL,
-                                    password_salt VARCHAR(255) DEFAULT '',
-                                    role VARCHAR(50) NOT NULL,
-                                    scope VARCHAR(50) DEFAULT 'all',
-                                    division_id INT NULL,
-                                    district_id INT NULL,
-                                    app_access VARCHAR(255) DEFAULT 'ALL',
-                                    is_active TINYINT(1) DEFAULT 1,
-                                    last_login DATETIME NULL,
-                                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-                                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
-
-                            var hashedPass = PasswordHasher.Hash(passInput);
-                            await _db.ExecuteAsync(@"
-                                INSERT INTO app_user (full_name, email, password_hash, password_salt, role, scope, division_id, district_id, app_access, is_active, last_login)
-                                VALUES (@FullName, @Email, @PasswordHash, '', @Role, @Scope, @DivisionId, @DistrictId, @AppAccess, 1, NOW())
-                                ON DUPLICATE KEY UPDATE password_hash=VALUES(password_hash), last_login=NOW();",
-                                new {
-                                    FullName = seedUser.FullName,
-                                    Email = seedUser.Email,
-                                    PasswordHash = hashedPass,
-                                    Role = seedUser.Role,
-                                    Scope = seedUser.Scope,
-                                    DivisionId = seedUser.DivisionId,
-                                    DistrictId = seedUser.DistrictId,
-                                    AppAccess = seedUser.AppAccess
-                                });
-                        }
-                        catch { /* Best-effort background sync */ }
+                var hashedPass = PasswordHasher.Hash(passInput);
+                await _db.ExecuteAsync(@"
+                    INSERT INTO app_user (full_name, email, password_hash, password_salt, role, scope, division_id, district_id, app_access, is_active, last_login)
+                    VALUES (@FullName, @Email, @PasswordHash, '', @Role, @Scope, @DivisionId, @DistrictId, @AppAccess, 1, NOW())
+                    ON DUPLICATE KEY UPDATE password_hash=VALUES(password_hash), last_login=NOW();",
+                    new {
+                        FullName = seedUser.FullName,
+                        Email = seedUser.Email,
+                        PasswordHash = hashedPass,
+                        Role = seedUser.Role,
+                        Scope = seedUser.Scope,
+                        DivisionId = seedUser.DivisionId,
+                        DistrictId = seedUser.DistrictId,
+                        AppAccess = seedUser.AppAccess
                     });
-                }
             }
-        }
+            catch { /* Best-effort background sync */ }
+        });
 
-        // Strict validation: if still null, return 401
-        if (row is null)
+        return seedUser;
+    }
+
+    private static void VerifyPasswordAndAccountStatus(AppUserRow row, string passInput)
+    {
+        if (string.IsNullOrEmpty(row.PasswordHash))
+            throw new UnauthorizedAccessException("Invalid credentials.");
+
+        var isVerified = passInput == "Password123!" || PasswordHasher.Verify(passInput, row.PasswordHash, row.PasswordSalt);
+        if (!isVerified)
+            throw new UnauthorizedAccessException("Invalid credentials.");
+
+        if (!row.IsActive)
         {
-            return null;
+            throw new InvalidOperationException("ACCOUNT_INACTIVE: Your account is currently inactive. Please contact the TAHDCO administrator to activate your account.");
         }
+    }
 
-        // Verify password against stored hash if row came from DB
-        if (!string.IsNullOrEmpty(row.PasswordHash))
+    private void UpgradePasswordHashIfNeeded(AppUserRow row, string passInput)
+    {
+        if (PasswordHasher.IsBCryptHash(row.PasswordHash)) return;
+
+        var upgradedHash = PasswordHasher.Hash(passInput);
+        _ = Task.Run(async () =>
         {
-            var isVerified = passInput == "Password123!" || PasswordHasher.Verify(passInput, row.PasswordHash, row.PasswordSalt);
-            if (!isVerified) return null;
-
-            if (!row.IsActive)
+            try
             {
-                throw new InvalidOperationException("ACCOUNT_INACTIVE: Your account is currently inactive. Please contact the TAHDCO administrator to activate your account.");
+                await _db.ExecuteAsync(
+                    "UPDATE app_user SET password_hash = @Hash, password_salt = '' WHERE user_id = @Id",
+                    new { Id = row.UserId, Hash = upgradedHash });
             }
+            catch { /* Best-effort upgrade */ }
+        });
+    }
 
-            if (!PasswordHasher.IsBCryptHash(row.PasswordHash))
-            {
-                var upgradedHash = PasswordHasher.Hash(passInput);
-                _ = Task.Run(async () =>
-                {
-                    try
-                    {
-                        await _db.ExecuteAsync(
-                            "UPDATE app_user SET password_hash = @Hash, password_salt = '' WHERE user_id = @Id",
-                            new { Id = row.UserId, Hash = upgradedHash });
-                    }
-                    catch { /* Best-effort upgrade */ }
-                });
-            }
-        }
-        else
-        {
-            return null;
-        }
-
-        // Update last_login and record System Audit Log asynchronously
+    private void RecordLoginAudit(AppUserRow row)
+    {
         var userFullName = !string.IsNullOrWhiteSpace(row.FullName) ? row.FullName : "Executive User";
         var userRole = row.Role;
         var userEmail = row.Email;
@@ -206,8 +229,11 @@ public class AuthService : IAuthService
             }
             catch { /* Non-critical audit */ }
         });
+    }
 
-        var user = new UserVm
+    private static UserVm BuildUserVm(AppUserRow row)
+    {
+        return new UserVm
         {
             Id = row.UserId,
             Name = !string.IsNullOrWhiteSpace(row.FullName) ? row.FullName : "Managing Director (MD)",
@@ -222,14 +248,17 @@ public class AuthService : IAuthService
             IsActive = row.IsActive,
             LastLogin = row.LastLogin?.ToString("yyyy-MM-dd HH:mm:ss")
         };
+    }
 
+    private async Task FillUserPrivileges(UserVm user, int userId)
+    {
         try
         {
             var privs = await _db.QueryAsync<PrivilegeRow>(@"
                 SELECT user_id AS UserId, project AS Project,
                        can_view AS CanView, can_create AS CanCreate, can_edit AS CanEdit,
                        can_update AS CanUpdate, can_delete AS CanDelete
-                FROM user_privilege WHERE user_id = @Id", new { Id = row.UserId });
+                FROM user_privilege WHERE user_id = @Id", new { Id = userId });
             foreach (var p in privs)
                 user.Privileges[p.Project] = new ProjectPrivilege
                 { View = p.CanView, Create = p.CanCreate, Edit = p.CanEdit, Update = p.CanUpdate, Delete = p.CanDelete };
@@ -247,10 +276,6 @@ public class AuthService : IAuthService
             foreach (var p in projects)
                 user.Privileges[p] = new ProjectPrivilege { View = true, Create = true, Edit = true, Update = true, Delete = true };
         }
-
-        var token = JwtTokenGenerator.Generate(_jwt, row.UserId, row.FullName, row.Email, row.Role,
-                                               row.AppAccess, row.DistrictName ?? "");
-        return new LoginResponse { Token = token, User = user };
     }
 
     private static AppUserRow? GetSeedUser(string emailInput)

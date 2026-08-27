@@ -82,55 +82,51 @@ public class ResilientApiClient : IResilientApiClient
         while (attempt <= maxRetries)
         {
             attempt++;
-            try
-            {
-                using var request = requestFactory();
-                _log.LogInformation("ExternalApiCall {CorrelationId} attempt {Attempt}/{MaxAttempts} {Method} {Url}",
-                    correlationId, attempt, maxRetries + 1, request.Method, url);
+            var (success, body, error, isNonRetryable) = await ExecuteSingleAttemptAsync(client, requestFactory, correlationId, url, attempt, maxRetries, timeoutSeconds, ct);
+            if (success && body != null)
+                return body;
 
-                using var response = await client.SendAsync(request, ct);
-                var body = await response.Content.ReadAsStringAsync(ct);
+            if (isNonRetryable || attempt > maxRetries)
+                throw error!;
 
-                if (response.IsSuccessStatusCode)
-                    return body;
-
-                var status = (int)response.StatusCode;
-                if (NonRetryableStatus.Contains(status) || attempt > maxRetries)
-                {
-                    throw new ExternalApiException(
-                        $"Upstream API returned {status}.",
-                        detail: $"{url} -> HTTP {status}: {Truncate(body, 500)}",
-                        httpStatus: status);
-                }
-
-                // Transient (5xx, 408, 429) — fall through to retry with backoff.
-                lastError = new ExternalApiException($"Upstream API returned {status}.", $"{url} -> HTTP {status}", status);
-            }
-            catch (TaskCanceledException ex) when (!ct.IsCancellationRequested)
-            {
-                lastError = new ExternalApiException("Upstream API timed out.", $"{url} timed out after {timeoutSeconds}s", timeout: true, inner: ex);
-                if (attempt > maxRetries) throw lastError;
-            }
-            catch (HttpRequestException ex)
-            {
-                lastError = new ExternalApiException("Upstream API is unreachable.", $"{url} -> {ex.Message}", inner: ex);
-                if (attempt > maxRetries) throw lastError;
-            }
-            catch (ExternalApiException)
-            {
-                throw; // non-retryable, already logged above
-            }
-
-            if (attempt <= maxRetries)
-            {
-                var delayMs = 200 * (int)Math.Pow(2, attempt - 1); // 200ms, 400ms, 800ms...
-                _log.LogWarning("ExternalApiCall {CorrelationId} attempt {Attempt} failed, retrying in {DelayMs}ms: {Error}",
-                    correlationId, attempt, delayMs, lastError?.Message);
-                await Task.Delay(delayMs, ct);
-            }
+            lastError = error;
+            var delayMs = 200 * (int)Math.Pow(2, attempt - 1);
+            _log.LogWarning("ExternalApiCall {CorrelationId} attempt {Attempt} failed, retrying in {DelayMs}ms: {Error}",
+                correlationId, attempt, delayMs, lastError?.Message);
+            await Task.Delay(delayMs, ct);
         }
 
         throw lastError ?? new ExternalApiException("Upstream API call failed.", $"{url} failed with no captured error");
+    }
+
+    private async Task<(bool Success, string? Body, Exception? Error, bool IsNonRetryable)> ExecuteSingleAttemptAsync(
+        HttpClient client, Func<HttpRequestMessage> requestFactory, string correlationId, string url, int attempt, int maxRetries, int timeoutSeconds, CancellationToken ct)
+    {
+        try
+        {
+            using var request = requestFactory();
+            _log.LogInformation("ExternalApiCall {CorrelationId} attempt {Attempt}/{MaxAttempts} {Method} {Url}",
+                correlationId, attempt, maxRetries + 1, request.Method, url);
+
+            using var response = await client.SendAsync(request, ct);
+            var body = await response.Content.ReadAsStringAsync(ct);
+
+            if (response.IsSuccessStatusCode)
+                return (true, body, null, false);
+
+            var status = (int)response.StatusCode;
+            var isNonRetryable = NonRetryableStatus.Contains(status);
+            var ex = new ExternalApiException($"Upstream API returned {status}.", $"{url} -> HTTP {status}: {Truncate(body, 500)}", status);
+            return (false, null, ex, isNonRetryable);
+        }
+        catch (TaskCanceledException ex) when (!ct.IsCancellationRequested)
+        {
+            return (false, null, new ExternalApiException("Upstream API timed out.", $"{url} timed out after {timeoutSeconds}s", timeout: true, inner: ex), false);
+        }
+        catch (HttpRequestException ex)
+        {
+            return (false, null, new ExternalApiException("Upstream API is unreachable.", $"{url} -> {ex.Message}", inner: ex), false);
+        }
     }
 
     private static string Truncate(string s, int max) => s.Length <= max ? s : s[..max] + "...";

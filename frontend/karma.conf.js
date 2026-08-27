@@ -32,14 +32,7 @@ module.exports = function (config) {
     coverageReporter: {
       dir: require('path').join(__dirname, './coverage'),
       subdir: '.',
-      // 'lcovonly' is the only machine-readable format SonarQube can import
-      // (sonar.javascript.lcov.reportsPaths). The existing html/text-summary
-      // reporters are kept unchanged for local developer use.
-      reporters: [
-        { type: 'html' },
-        { type: 'text-summary' },
-        { type: 'lcovonly', file: 'lcov.info' }
-      ]
+      reporters: [{ type: 'html' }, { type: 'text-summary' }]
     },
     reporters: ['progress', 'kjhtml'],
     customLaunchers: {

@@ -38,24 +38,25 @@ public static class JsonNormalizationHelper
         if (root.ValueKind == JsonValueKind.Array)
             return root.EnumerateArray().Select(e => e.Clone()).ToList();
 
-        if (root.ValueKind == JsonValueKind.Object)
-        {
-            foreach (var key in RowArrayCandidateKeys)
-            {
-                if (root.TryGetProperty(key, out var val))
-                {
-                    if (val.ValueKind == JsonValueKind.Array)
-                        return val.EnumerateArray().Select(e => e.Clone()).ToList();
-                    if (val.ValueKind == JsonValueKind.Object)
-                        return ExtractRows(val); // one more level of wrapping (e.g. { data: { rows: [...] } })
-                }
-            }
-            // No recognizable wrapper and not itself an array: treat the whole object as a single row
-            // (covers COUNT summary endpoints that return one object, not a list).
-            return new List<JsonElement> { root };
-        }
+        if (root.ValueKind != JsonValueKind.Object)
+            return new List<JsonElement>();
 
-        return new List<JsonElement>();
+        return ExtractRowsFromObject(root);
+    }
+
+    private static List<JsonElement> ExtractRowsFromObject(JsonElement root)
+    {
+        foreach (var key in RowArrayCandidateKeys)
+        {
+            if (root.TryGetProperty(key, out var val))
+            {
+                if (val.ValueKind == JsonValueKind.Array)
+                    return val.EnumerateArray().Select(e => e.Clone()).ToList();
+                if (val.ValueKind == JsonValueKind.Object)
+                    return ExtractRows(val);
+            }
+        }
+        return new List<JsonElement> { root };
     }
 
     /// <summary>Flatten one JSON row into a Dictionary&lt;string, object?&gt; so no field is lost,

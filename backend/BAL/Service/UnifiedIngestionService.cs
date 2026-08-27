@@ -19,6 +19,22 @@ namespace BAL.Service
         private static UnifiedIngestionSyncResultDto _lastSyncResult = new UnifiedIngestionSyncResultDto();
         private static readonly object _syncLock = new object();
 
+        private static void SetLastSyncResult(UnifiedIngestionSyncResultDto result)
+        {
+            lock (_syncLock)
+            {
+                _lastSyncResult = result;
+            }
+        }
+
+        private static UnifiedIngestionSyncResultDto GetLastSyncResult()
+        {
+            lock (_syncLock)
+            {
+                return _lastSyncResult;
+            }
+        }
+
         public UnifiedIngestionService(IHttpClientFactory httpClientFactory)
         {
             _httpClientFactory = httpClientFactory;
@@ -78,32 +94,27 @@ namespace BAL.Service
                 CompletedAt = DateTime.UtcNow
             };
 
-            lock (_syncLock)
-            {
-                _lastSyncResult = result;
-            }
-
+            SetLastSyncResult(result);
             return result;
         }
 
         public Task<UnifiedIngestionSyncResultDto> GetIngestionStatusAsync()
         {
-            lock (_syncLock)
+            var current = GetLastSyncResult();
+            if (current.ApiStatuses.Count == 0)
             {
-                if (_lastSyncResult.ApiStatuses.Count == 0)
+                current = new UnifiedIngestionSyncResultDto
                 {
-                    _lastSyncResult = new UnifiedIngestionSyncResultDto
-                    {
-                        SyncBatchId = Guid.NewGuid().ToString("N"),
-                        Success = true,
-                        TotalDurationSeconds = 0.045,
-                        TotalRecordsIngested = _storedRecords.Count,
-                        CompletedAt = DateTime.UtcNow,
-                        ApiStatuses = GetDefaultApiStatuses()
-                    };
-                }
-                return Task.FromResult(_lastSyncResult);
+                    SyncBatchId = Guid.NewGuid().ToString("N"),
+                    Success = true,
+                    TotalDurationSeconds = 0.045,
+                    TotalRecordsIngested = _storedRecords.Count,
+                    CompletedAt = DateTime.UtcNow,
+                    ApiStatuses = GetDefaultApiStatuses()
+                };
+                SetLastSyncResult(current);
             }
+            return Task.FromResult(current);
         }
 
         public Task<List<UnifiedProjectRecordDto>> GetRecordsAsync(string? projectName = null, string? district = null, string? status = null, int limit = 100)

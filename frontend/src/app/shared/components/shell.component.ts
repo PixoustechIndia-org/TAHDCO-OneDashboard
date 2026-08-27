@@ -367,30 +367,32 @@ export class ShellComponent implements OnInit {
     item.expanded = !item.expanded;
   }
 
+  private static readonly DRILL_ROUTE_MAP: Record<string, string[]> = {
+    '/housing': ['/drill/housing'],
+    '/tender': ['/drill/tender', '/drill/time'],
+    '/enrollment': ['/drill/enrollment'],
+    '/scheme-report': ['/drill/scheme', '/drill/telp', '/drill/oneportal'],
+    '/tncwwb': ['/tncwwb', '/drill/tncwwb'],
+    '/tod': ['/drill/tod'],
+    '/patrol360': ['/drill/patrol']
+  };
+
   isActive(item: any): boolean {
-    const route = item.route;
+    const route = item?.route;
     if (!route) return false;
     const curr = this.currentUrl;
-    
-    if (item.queryParams && item.queryParams.tab) {
+
+    if (item.queryParams?.tab) {
       return curr.includes(route) && curr.includes(`tab=${item.queryParams.tab}`);
     }
-    if (item.children && item.children.length > 0) {
+    if (item.children?.length) {
       return item.children.some((c: any) => this.isActive(c)) || (curr.startsWith(route) && !curr.includes('tab='));
     }
-    if (route === '/configuration' && curr.startsWith('/configuration') && !curr.includes('tab=')) return true;
-    if (curr === route || (route !== '/overview' && route !== '/configuration' && curr.startsWith(route))) return true;
-    
-    // Dynamic drill matches
-    if (route === '/housing' && curr.includes('/drill/housing')) return true;
-    if (route === '/tender' && (curr.includes('/drill/tender') || curr.includes('/drill/time'))) return true;
-    if (route === '/enrollment' && curr.includes('/drill/enrollment')) return true;
-    if (route === '/scheme-report' && (curr.includes('/drill/scheme') || curr.includes('/drill/telp') || curr.includes('/drill/oneportal'))) return true;
-    if (route === '/tncwwb' && (curr.includes('/tncwwb') || curr.includes('/drill/tncwwb'))) return true;
-    if (route === '/tod' && curr.includes('/drill/tod')) return true;
-    if (route === '/patrol360' && curr.includes('/drill/patrol')) return true;
+    if (curr === route) return true;
+    if (route !== '/overview' && route !== '/configuration' && curr.startsWith(route)) return true;
 
-    return false;
+    const drillMatches = ShellComponent.DRILL_ROUTE_MAP[route];
+    return !!drillMatches && drillMatches.some(m => curr.includes(m));
   }
 
   get roleLabel(): string { return this.user ? ROLE_META[this.user.role]?.label ?? '' : ''; }

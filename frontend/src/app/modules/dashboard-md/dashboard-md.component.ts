@@ -394,53 +394,11 @@ export class DashboardMdComponent implements OnInit, OnDestroy {
     const distScope = this.selDiv && this.selDiv.length ? this.selDiv.join(', ') : 'All Districts';
 
     if (this.activeTab === 'eng') {
-      const tipsCard = this.engCards.find(c => c.id === 'tips');
-      const timeCard = this.engCards.find(c => c.id === 'time');
-      const thmsCard = this.engCards.find(c => c.id === 'thms');
-      const patrolCard = this.engCards.find(c => c.id === 'patrol');
-
-      const tipsCount = tipsCard?.totalCount || this.getSum('tipsCount') || 2222;
-      const timeCount = timeCard?.totalCount || this.getSum('timeCount') || 1450;
-      const thmsCount = thmsCard?.totalCount || this.getSum('thmsCount') || 654;
-      const thmsCompleted = thmsCard?.breakdown?.find(b => b.label.toLowerCase().includes('comp'))?.count || 210;
-      const patrolCount = patrolCard?.totalCount || this.getSum('patrolCount') || 480;
-      const patrolActive = patrolCard?.breakdown?.find(b => b.label.toLowerCase().includes('active'))?.count || 432;
-
-      if (this.aiLanguage === 'ta') {
-        this.aiTranscript = `தாட்கோ பொறியியல் பிரிவு நிர்வாகச் சுருக்கம் (${divScope}): டிப்ஸ் திட்டத்தில் ${this.fmt(tipsCount)} டெண்டர்களும், டைம் திட்டத்தில் ${this.fmt(timeCount)} எம்-புக்குகளும் பதிவு செய்யப்பட்டுள்ளன. THMS வீட்டுவசதி திட்டத்தில் ${this.fmt(thmsCount)} வீடுகளில் ${this.fmt(thmsCompleted)} வீடுகள் முழுமையாக நிறைவு பெற்றுள்ளன. ரோந்து 360 கண்காணிப்பில் ${this.fmt(patrolCount)} இடங்களில் ${this.fmt(patrolActive)} சிசிடிவி கேமராக்கள் நேரலையில் சீராக இயங்குகின்றன.`;
-      } else {
-        this.aiTranscript = `TAHDCO Engineering Strategic Portfolio Briefing (${divScope}): TIPS recorded ${this.fmt(tipsCount)} tenders and TIME tracked ${this.fmt(timeCount)} M-Books. THMS Housing has sanctioned ${this.fmt(thmsCount)} houses with ${this.fmt(thmsCompleted)} fully completed. Patrol360 CCTV surveillance monitors ${this.fmt(patrolCount)} sites with ${this.fmt(patrolActive)} active live camera feeds across divisions.`;
-      }
+      this.aiTranscript = this.getEngBriefingText(divScope);
     } else if (this.activeTab === 'welfare') {
-      const tahdcoCard = this.schemeCards.find(c => c.id === 'tahdco-scheme');
-      const telpCard = this.schemeCards.find(c => c.id === 'telp');
-      const tamsCard = this.schemeCards.find(c => c.id === 'tams');
-      const todCard = this.schemeCards.find(c => c.id === 'tod');
-
-      const tahdcoCount = tahdcoCard?.totalCount || 2831;
-      const telpCount = telpCard?.totalCount || 41;
-      const tamsCount = tamsCard?.totalCount || 520;
-      const todCount = todCard?.totalCount || 184;
-
-      if (this.aiLanguage === 'ta') {
-        this.aiTranscript = `தாட்கோ மக்கள் நல்வாழ்வு பிரிவு நிர்வாகச் சுருக்கம் (${distScope}): தாட்கோ சுயதொழில் திட்டங்களில் ${this.fmt(tahdcoCount)} விண்ணப்பங்களும், TELP கல்வி கடன் போர்ட்டலில் ${this.fmt(telpCount)} விண்ணப்பங்களும் பெறப்பட்டுள்ளன. TAMS திறன் மேம்பாட்டு பயிற்சியில் ${this.fmt(tamsCount)} மாணவர்கள் பயிற்சி பெற்று வருகின்றனர், மற்றும் TOD அதிகாரிகள் தினசரிப் பதிவேட்டில் ${this.fmt(todCount)} களப் பணிகள் தீவிரமாக கண்காணிக்கப்படுகின்றன.`;
-      } else {
-        this.aiTranscript = `TAHDCO Welfare & Economic Development Portfolio Briefing (${distScope}): TAHDCO Self-Employment schemes recorded ${this.fmt(tahdcoCount)} applications, TELP Education Loan Portal received ${this.fmt(telpCount)} applications, TAMS Skill Development enrolled ${this.fmt(tamsCount)} trainees, and TOD Officer Diary actively tracks ${this.fmt(todCount)} administrative tasks across Tamil Nadu.`;
-      }
+      this.aiTranscript = this.getWelfareBriefingText(distScope);
     } else if (this.activeTab === 'tncwwb') {
-      const memberCard = this.tncwwbCards.find(c => c.id === 'tncwwb-member');
-      const schemeCard = this.tncwwbCards.find(c => c.id === 'tncwwb-scheme');
-
-      const memberCount = memberCard?.totalCount || 248900;
-      const cardsIssued = memberCard?.breakdown?.find(b => b.label.toLowerCase().includes('card') && b.label.toLowerCase().includes('issue'))?.count || 241200;
-      const schemeCount = schemeCard?.totalCount || 234500;
-      const pendingPayment = schemeCard?.breakdown?.find(b => b.label.toLowerCase().includes('pay'))?.count || 284;
-
-      if (this.aiLanguage === 'ta') {
-        this.aiTranscript = `தமிழ்நாடு கட்டுமான தொழிலாளர்கள் நலவாரிய (TNCWWB) நிர்வாகச் சுருக்கம்: நலவாரியத்தில் மொத்தம் ${this.fmt(memberCount)} தொழிலாளர்கள் பதிவு செய்யப்பட்டுள்ளனர், இதில் ${this.fmt(cardsIssued)} ஸ்மார்ட் நலவாரிய அடையாள அட்டைகள் வழங்கப்பட்டுள்ளன. நலத்திட்ட உதவிகளுக்கு ${this.fmt(schemeCount)} விண்ணப்பங்கள் பெறப்பட்டு, ${this.fmt(pendingPayment)} விண்ணப்பங்கள் நிதி வழங்கல் பரிசீலனையில் உள்ளன.`;
-      } else {
-        this.aiTranscript = `TNCWWB Construction Workers Welfare Board Portfolio Briefing: Registered membership stands at ${this.fmt(memberCount)} workers, with ${this.fmt(cardsIssued)} smart welfare identity cards successfully issued. Welfare scheme assistance reached ${this.fmt(schemeCount)} applications, with ${this.fmt(pendingPayment)} claims currently in active payment disbursal.`;
-      }
+      this.aiTranscript = this.getTncwwbBriefingText();
     }
 
     this.cdr.markForCheck();
@@ -448,6 +406,57 @@ export class DashboardMdComponent implements OnInit, OnDestroy {
     if (speak) {
       this.playFallbackTts(this.aiTranscript);
     }
+  }
+
+  private getEngBriefingText(divScope: string): string {
+    const tipsCard = this.engCards.find(c => c.id === 'tips');
+    const timeCard = this.engCards.find(c => c.id === 'time');
+    const thmsCard = this.engCards.find(c => c.id === 'thms');
+    const patrolCard = this.engCards.find(c => c.id === 'patrol');
+
+    const tipsCount = tipsCard?.totalCount || this.getSum('tipsCount') || 2222;
+    const timeCount = timeCard?.totalCount || this.getSum('timeCount') || 1450;
+    const thmsCount = thmsCard?.totalCount || this.getSum('thmsCount') || 654;
+    const thmsCompleted = thmsCard?.breakdown?.find(b => b.label.toLowerCase().includes('comp'))?.count || 210;
+    const patrolCount = patrolCard?.totalCount || this.getSum('patrolCount') || 480;
+    const patrolActive = patrolCard?.breakdown?.find(b => b.label.toLowerCase().includes('active'))?.count || 432;
+
+    if (this.aiLanguage === 'ta') {
+      return `தாட்கோ பொறியியல் பிரிவு நிர்வாகச் சுருக்கம் (${divScope}): டிப்ஸ் திட்டத்தில் ${this.fmt(tipsCount)} டெண்டர்களும், டைம் திட்டத்தில் ${this.fmt(timeCount)} எம்-புக்குகளும் பதிவு செய்யப்பட்டுள்ளன. THMS வீட்டுவசதி திட்டத்தில் ${this.fmt(thmsCount)} வீடுகளில் ${this.fmt(thmsCompleted)} வீடுகள் முழுமையாக நிறைவு பெற்றுள்ளன. ரோந்து 360 கண்காணிப்பில் ${this.fmt(patrolCount)} இடங்களில் ${this.fmt(patrolActive)} சிசிடிவி கேமராக்கள் நேரலையில் சீராக இயங்குகின்றன.`;
+    }
+    return `TAHDCO Engineering Strategic Portfolio Briefing (${divScope}): TIPS recorded ${this.fmt(tipsCount)} tenders and TIME tracked ${this.fmt(timeCount)} M-Books. THMS Housing has sanctioned ${this.fmt(thmsCount)} houses with ${this.fmt(thmsCompleted)} fully completed. Patrol360 CCTV surveillance monitors ${this.fmt(patrolCount)} sites with ${this.fmt(patrolActive)} active live camera feeds across divisions.`;
+  }
+
+  private getWelfareBriefingText(distScope: string): string {
+    const tahdcoCard = this.schemeCards.find(c => c.id === 'tahdco-scheme');
+    const telpCard = this.schemeCards.find(c => c.id === 'telp');
+    const tamsCard = this.schemeCards.find(c => c.id === 'tams');
+    const todCard = this.schemeCards.find(c => c.id === 'tod');
+
+    const tahdcoCount = tahdcoCard?.totalCount || 2831;
+    const telpCount = telpCard?.totalCount || 41;
+    const tamsCount = tamsCard?.totalCount || 520;
+    const todCount = todCard?.totalCount || 184;
+
+    if (this.aiLanguage === 'ta') {
+      return `தாட்கோ மக்கள் நல்வாழ்வு பிரிவு நிர்வாகச் சுருக்கம் (${distScope}): தாட்கோ சுயதொழில் திட்டங்களில் ${this.fmt(tahdcoCount)} விண்ணப்பங்களும், TELP கல்வி கடன் போர்ட்டலில் ${this.fmt(telpCount)} விண்ணப்பங்களும் பெறப்பட்டுள்ளன. TAMS திறன் மேம்பாட்டு பயிற்சியில் ${this.fmt(tamsCount)} மாணவர்கள் பயிற்சி பெற்று வருகின்றனர், மற்றும் TOD அதிகாரிகள் தினசரிப் பதிவேட்டில் ${this.fmt(todCount)} களப் பணிகள் தீவிரமாக கண்காணிக்கப்படுகின்றன.`;
+    }
+    return `TAHDCO Welfare & Economic Development Portfolio Briefing (${distScope}): TAHDCO Self-Employment schemes recorded ${this.fmt(tahdcoCount)} applications, TELP Education Loan Portal received ${this.fmt(telpCount)} applications, TAMS Skill Development enrolled ${this.fmt(tamsCount)} trainees, and TOD Officer Diary actively tracks ${this.fmt(todCount)} administrative tasks across Tamil Nadu.`;
+  }
+
+  private getTncwwbBriefingText(): string {
+    const memberCard = this.tncwwbCards.find(c => c.id === 'tncwwb-member');
+    const schemeCard = this.tncwwbCards.find(c => c.id === 'tncwwb-scheme');
+
+    const memberCount = memberCard?.totalCount || 248900;
+    const cardsIssued = memberCard?.breakdown?.find(b => b.label.toLowerCase().includes('card') && b.label.toLowerCase().includes('issue'))?.count || 241200;
+    const schemeCount = schemeCard?.totalCount || 234500;
+    const pendingPayment = schemeCard?.breakdown?.find(b => b.label.toLowerCase().includes('pay'))?.count || 284;
+
+    if (this.aiLanguage === 'ta') {
+      return `தமிழ்நாடு கட்டுமான தொழிலாளர்கள் நலவாரிய (TNCWWB) நிர்வாகச் சுருக்கம்: நலவாரியத்தில் மொத்தம் ${this.fmt(memberCount)} தொழிலாளர்கள் பதிவு செய்யப்பட்டுள்ளனர், இதில் ${this.fmt(cardsIssued)} ஸ்மார்ட் நலவாரிய அடையாள அட்டைகள் வழங்கப்பட்டுள்ளன. நலத்திட்ட உதவிகளுக்கு ${this.fmt(schemeCount)} விண்ணப்பங்கள் பெறப்பட்டு, ${this.fmt(pendingPayment)} விண்ணப்பங்கள் நிதி வழங்கல் பரிசீலனையில் உள்ளன.`;
+    }
+    return `TNCWWB Construction Workers Welfare Board Portfolio Briefing: Registered membership stands at ${this.fmt(memberCount)} workers, with ${this.fmt(cardsIssued)} smart welfare identity cards successfully issued. Welfare scheme assistance reached ${this.fmt(schemeCount)} applications, with ${this.fmt(pendingPayment)} claims currently in active payment disbursal.`;
   }
 
   playVoiceover() {
@@ -763,38 +772,35 @@ export class DashboardMdComponent implements OnInit, OnDestroy {
     if (!u) return;
     const role = (u.role || '').toLowerCase();
 
-    // Honor custom assigned app privileges for created users
     if (role !== 'admin' && role !== 'md' && role !== 'secretary' && u.appAccess && u.appAccess.length > 0) {
-      const tabs: Array<'eng' | 'welfare' | 'tncwwb'> = [];
-      if (this.auth.hasAppAccess('engineering')) tabs.push('eng');
-      if (this.auth.hasAppAccess('welfare')) tabs.push('welfare');
-      if (this.auth.hasAppAccess('tncwwb')) tabs.push('tncwwb');
-
-      if (tabs.length > 0) {
-        this.allowedTabs = tabs;
-        this.activeTab = tabs[0];
-        if (role === 'ee' && u.divisionName) {
-          this.selDiv = [u.divisionName];
-        }
+      const customTabs = this.resolveCustomAppTabs();
+      if (customTabs.length > 0) {
+        this.allowedTabs = customTabs;
+        this.activeTab = customTabs[0];
+        if (role === 'ee' && u.divisionName) this.selDiv = [u.divisionName];
         return;
       }
     }
 
-    if (role === 'gm') {
-      this.allowedTabs = ['welfare', 'tncwwb'];
-      this.activeTab = 'welfare';
-    } else if (role === 'ee' || role === 'ce' || (u as any).role_name?.toLowerCase().includes('engineer')) {
-      this.allowedTabs = ['eng'];
-      this.activeTab = 'eng';
-      if (role === 'ee' && u.divisionName) {
-        this.selDiv = [u.divisionName];
-      }
-    } else if (role === 'dm') {
-      this.allowedTabs = ['welfare', 'tncwwb'];
-      this.activeTab = 'welfare';
-    } else {
-      this.allowedTabs = ['eng', 'welfare', 'tncwwb'];
+    this.allowedTabs = this.resolveDefaultRoleTabs(role, (u as any).role_name);
+    this.activeTab = this.allowedTabs[0];
+    if (role === 'ee' && u.divisionName) {
+      this.selDiv = [u.divisionName];
     }
+  }
+
+  private resolveCustomAppTabs(): Array<'eng' | 'welfare' | 'tncwwb'> {
+    const tabs: Array<'eng' | 'welfare' | 'tncwwb'> = [];
+    if (this.auth.hasAppAccess('engineering')) tabs.push('eng');
+    if (this.auth.hasAppAccess('welfare')) tabs.push('welfare');
+    if (this.auth.hasAppAccess('tncwwb')) tabs.push('tncwwb');
+    return tabs;
+  }
+
+  private resolveDefaultRoleTabs(role: string, roleName?: string): Array<'eng' | 'welfare' | 'tncwwb'> {
+    if (role === 'gm' || role === 'dm') return ['welfare', 'tncwwb'];
+    if (role === 'ee' || role === 'ce' || (roleName?.toLowerCase().includes('engineer') ?? false)) return ['eng'];
+    return ['eng', 'welfare', 'tncwwb'];
   }
 
 
@@ -1123,15 +1129,17 @@ export class DashboardMdComponent implements OnInit, OnDestroy {
   }
 
   // ── Build cards from dashboard data ──────────────────────────────────────
+  // ── Build cards from dashboard data ──────────────────────────────────────
   private buildCards(d: any): void {
     this.rawData = d;
-    const t   = d.tender?.summary   ?? {};
-    const h   = d.housing?.overall  ?? {};
-    const p   = d.patrol360?.summary ?? {};
-    const sc  = (d.schemes as any[]) ?? [];
-    const en  = d.enrollment?.summary ?? {};
+    this.masterTableData = this.buildMasterTableData(d);
+    this.filterTable();
+    this.engCards = this.buildEngineeringCards(d);
+    this.schemeCards = this.buildSchemeCards(d);
+    this.tncwwbCards = this.buildTncwwbCards(d);
+  }
 
-    // ── Build Master Datatable Rows ────────────────────────────────────────
+  private buildMasterTableData(d: any): any[] {
     const normDist = (name: string): string => {
       if (!name) return '';
       const n = name.trim().toLowerCase();
@@ -1161,7 +1169,6 @@ export class DashboardMdComponent implements OnInit, OnDestroy {
       return districtMap.get(key);
     };
 
-    // TIPS / TIME Tender district counts
     (d.tender?.districtCounts ?? []).forEach((r: any) => {
       const row = getRow(r.district, r.division);
       if (row) {
@@ -1172,7 +1179,6 @@ export class DashboardMdComponent implements OnInit, OnDestroy {
       }
     });
 
-    // THMS Housing district counts
     (d.housing?.districts ?? []).forEach((r: any) => {
       const row = getRow(r.district, r.division);
       if (row) {
@@ -1181,7 +1187,6 @@ export class DashboardMdComponent implements OnInit, OnDestroy {
       }
     });
 
-    // Patrol360 CCTV camera counts
     (d.patrol360?.districtData ?? []).forEach((r: any) => {
       const row = getRow(r.district, r.division);
       if (row) {
@@ -1190,11 +1195,84 @@ export class DashboardMdComponent implements OnInit, OnDestroy {
       }
     });
 
-    this.masterTableData = Array.from(districtMap.values());
-    this.filterTable(); // populates filteredMasterTableData automatically using tableSearch
+    return Array.from(districtMap.values());
+  }
 
+  private buildEngineeringCards(d: any): any[] {
+    const t = d.tender?.summary ?? {};
+    const h = d.housing?.overall ?? {};
+    const p = d.patrol360?.summary ?? {};
 
-    // TAHDCO Scheme and TELP filters with default robust benchmarks
+    return [
+      {
+        id: 'tips-time', title: `${this.ds.getProjectDisplayName('TIPS', 'Tenders')} & ${this.ds.getProjectDisplayName('TIME', 'M-Books')}`, code: 'TIPS / TIME',
+        icon: 'pi-file-edit', accent: '#0a1628', accentSoft: '#e8edf5',
+        totalCount: (t.totalWorks ?? 0) + (t.mBookTotal ?? (t.mBookUploaded ?? 0) + (t.mBookPending ?? 0)),
+        totalAmount: ((t.totalWorks ?? 0) * 45) + ((t.mBookTotal ?? (t.mBookUploaded ?? 0) + (t.mBookPending ?? 0)) * 28),
+        tipsCount: t.totalWorks ?? 0,
+        mbookCount: t.mBookTotal ?? (t.mBookUploaded ?? 0) + (t.mBookPending ?? 0),
+        expanded: false, showTable: false,
+        breakdown: [
+          { label: 'Tenders Started', count: t.started ?? 0, amount: (t.started ?? 0) * 45, color: '#10b981' },
+          { label: 'Tenders Not Started', count: t.notStarted ?? 0, amount: (t.notStarted ?? 0) * 45, color: '#ef4444' },
+          { label: 'Tenders In Progress', count: t.inProgress ?? 0, amount: (t.inProgress ?? 0) * 45, color: '#3b82f6' },
+          { label: 'Tenders Completed', count: t.completed ?? 0, amount: (t.completed ?? 0) * 45, color: '#22c55e' },
+          { label: 'M-Books Uploaded', count: t.mBookUploaded ?? 0, amount: (t.mBookUploaded ?? 0) * 28, color: '#a855f7' },
+          { label: 'M-Books Pending', count: t.mBookPending ?? 0, amount: (t.mBookPending ?? 0) * 28, color: '#f59e0b' },
+          { label: 'Payment Pending', count: t.paymentPending ?? 0, amount: (t.paymentPending ?? 0) * 28, color: '#ec4899' },
+        ],
+        tableRows: (d.tender?.divisionCounts ?? []).map((dc: any) => ({
+          label: dc.division, count: (dc.totalWorks ?? 0) + (dc.mBooks ?? 0),
+          amount: ((dc.totalWorks ?? 0) * 45) + ((dc.mBooks ?? 0) * 28), status: 'Mixed'
+        }))
+      },
+      {
+        id: 'thms', title: this.ds.getProjectDisplayName('THMS', 'Housing Construction (THMS)'), code: 'THMS',
+        icon: 'pi-building', accent: '#1e7c4c', accentSoft: '#edf7f2',
+        totalCount: h.totalHouses ?? 0,
+        totalAmount: (h.totalHouses ?? 0) * 8.5,
+        expanded: false, showTable: false,
+        breakdown: [
+          { label: 'Not Started', count: h.notStarted ?? 0, amount: (h.notStarted ?? 0) * 8.5, color: '#e74c3c' },
+          { label: 'Started', count: h.started ?? 0, amount: (h.started ?? 0) * 8.5, color: '#2980b9' },
+          { label: 'Completed', count: h.completed ?? 0, amount: (h.completed ?? 0) * 8.5, color: '#27ae60' },
+          { label: 'Grade Beam', count: h.gradBeam ?? 0, amount: (h.gradBeam ?? 0) * 8.5, color: '#8e44ad' },
+          { label: 'Lintel Lvl', count: h.lintelLevel ?? 0, amount: (h.lintelLevel ?? 0) * 8.5, color: '#16a085' },
+          { label: 'Roof Level', count: h.roofLevel ?? 0, amount: (h.roofLevel ?? 0) * 8.5, color: '#d35400' },
+        ],
+        tableRows: (d.housing?.districts ?? []).slice(0, 15).map((r: any) => ({
+          label: `${r.district} (${r.phase})`,
+          count: r.totalHouses, amount: r.totalHouses * 8.5, status: r.completed === r.totalHouses ? 'Completed' : 'In Progress'
+        }))
+      },
+      {
+        id: 'patrol', title: this.ds.getProjectDisplayName('PATROL360', 'CCTV Surveillance (Patrol 360)'), code: 'Patrol360',
+        icon: 'pi-video', accent: '#a32d2d', accentSoft: '#fcebeb',
+        totalCount: p.cameraInstalled ?? p.totalWorks ?? 0,
+        totalAmount: (p.cameraInstalled ?? p.totalWorks ?? 0) * 2.2,
+        cameraInstalled: p.cameraInstalled ?? p.totalWorks ?? 0,
+        cameraActive: p.currentActive ?? 0,
+        cameraInactive: p.currentInactive ?? 0,
+        expanded: false, showTable: false,
+        breakdown: [
+          { label: 'In Progress', count: p.inProgress ?? 0, amount: (p.inProgress ?? 0) * 2.2, color: '#2980b9' },
+          { label: 'Cam Installed', count: p.cameraInstalled ?? 0, amount: (p.cameraInstalled ?? 0) * 2.2, color: '#8e44ad' },
+          { label: 'Active', count: p.currentActive ?? 0, amount: (p.currentActive ?? 0) * 2.2, color: '#27ae60' },
+          { label: 'Inactive', count: p.currentInactive ?? 0, amount: (p.currentInactive ?? 0) * 2.2, color: '#e74c3c' },
+        ],
+        tableRows: (d.patrol360?.districtData ?? []).slice(0, 15).map((r: any) => ({
+          label: r.district, count: r.cameraInstalled, amount: r.cameraInstalled * 2.2,
+          status: r.currentActive > 0 ? 'Active' : 'Inactive'
+        }))
+      },
+    ];
+  }
+
+  private buildSchemeCards(d: any): any[] {
+    const sc = (d.schemes as any[]) ?? [];
+    const en = d.enrollment?.summary ?? {};
+    const sumFn = (arr: any[], key: string) => arr.reduce((a, x) => a + (x[key] ?? 0), 0);
+
     const defaultSchemes = [
       { sno: 1, project: 'TAHDCO Scheme', scheme: 'CM - ARISE', subScheme: 'Chief Minister Adi Dravidar and tRIbal Socio Economic Development Scheme', apply: 9995, dmPending: 1143, hqPending: 1166, paymentPending: 1500 },
       { sno: 2, project: 'TAHDCO Scheme', scheme: 'SEDP', subScheme: 'Socio Economic Development Scheme', apply: 8520, dmPending: 1020, hqPending: 890, paymentPending: 1200 },
@@ -1225,91 +1303,23 @@ export class DashboardMdComponent implements OnInit, OnDestroy {
       ]
     };
 
-    // ── Engineering Cards ──────────────────────────────────────────────────
-    this.engCards = [
-      {
-        id: 'tips-time', title: `${this.ds.getProjectDisplayName('TIPS', 'Tenders')} & ${this.ds.getProjectDisplayName('TIME', 'M-Books')}`, code: 'TIPS / TIME',
-        icon: 'pi-file-edit', accent: '#0a1628', accentSoft: '#e8edf5',
-        totalCount:  (t.totalWorks ?? 0) + (t.mBookTotal ?? (t.mBookUploaded ?? 0) + (t.mBookPending ?? 0)),
-        totalAmount: ((t.totalWorks ?? 0) * 45) + ((t.mBookTotal ?? (t.mBookUploaded ?? 0) + (t.mBookPending ?? 0)) * 28),
-        tipsCount:   t.totalWorks  ?? 0,
-        mbookCount:  t.mBookTotal  ?? (t.mBookUploaded ?? 0) + (t.mBookPending ?? 0),
-        expanded: false, showTable: false,
-        breakdown: [
-          { label: 'Tenders Started',    count: t.started        ?? 0, amount: (t.started        ?? 0)*45, color: '#10b981' },
-          { label: 'Tenders Not Started',count: t.notStarted     ?? 0, amount: (t.notStarted     ?? 0)*45, color: '#ef4444' },
-          { label: 'Tenders In Progress',count: t.inProgress     ?? 0, amount: (t.inProgress     ?? 0)*45, color: '#3b82f6' },
-          { label: 'Tenders Completed',  count: t.completed      ?? 0, amount: (t.completed      ?? 0)*45, color: '#22c55e' },
-          { label: 'M-Books Uploaded',   count: t.mBookUploaded  ?? 0, amount: (t.mBookUploaded  ?? 0)*28, color: '#a855f7' },
-          { label: 'M-Books Pending',    count: t.mBookPending   ?? 0, amount: (t.mBookPending   ?? 0)*28, color: '#f59e0b' },
-          { label: 'Payment Pending',    count: t.paymentPending ?? 0, amount: (t.paymentPending ?? 0)*28, color: '#ec4899' },
-        ],
-        tableRows: (d.tender?.divisionCounts ?? []).map((dc: any) => ({
-          label: dc.division, count: (dc.totalWorks ?? 0) + (dc.mBooks ?? 0),
-          amount: ((dc.totalWorks ?? 0) * 45) + ((dc.mBooks ?? 0) * 28), status: 'Mixed'
-        }))
-      },
-      {
-        id: 'thms', title: this.ds.getProjectDisplayName('THMS', 'Housing Construction (THMS)'), code: 'THMS',
-        icon: 'pi-building', accent: '#1e7c4c', accentSoft: '#edf7f2',
-        totalCount:  h.totalHouses ?? 0,
-        totalAmount: (h.totalHouses ?? 0) * 8.5,
-        expanded: false, showTable: false,
-        breakdown: [
-          { label: 'Not Started', count: h.notStarted ?? 0, amount: (h.notStarted??0)*8.5, color: '#e74c3c' },
-          { label: 'Started',     count: h.started    ?? 0, amount: (h.started   ??0)*8.5, color: '#2980b9' },
-          { label: 'Completed',   count: h.completed  ?? 0, amount: (h.completed ??0)*8.5, color: '#27ae60' },
-          { label: 'Grade Beam',  count: h.gradBeam   ?? 0, amount: (h.gradBeam  ??0)*8.5, color: '#8e44ad' },
-          { label: 'Lintel Lvl',  count: h.lintelLevel?? 0, amount: (h.lintelLevel??0)*8.5,color: '#16a085' },
-          { label: 'Roof Level',  count: h.roofLevel  ?? 0, amount: (h.roofLevel ??0)*8.5, color: '#d35400' },
-        ],
-        tableRows: (d.housing?.districts ?? []).slice(0,15).map((r: any) => ({
-          label: `${r.district} (${r.phase})`,
-          count: r.totalHouses, amount: r.totalHouses * 8.5, status: r.completed === r.totalHouses ? 'Completed' : 'In Progress'
-        }))
-      },
-      {
-        id: 'patrol', title: this.ds.getProjectDisplayName('PATROL360', 'CCTV Surveillance (Patrol 360)'), code: 'Patrol360',
-        icon: 'pi-video', accent: '#a32d2d', accentSoft: '#fcebeb',
-        totalCount:  p.cameraInstalled ?? p.totalWorks ?? 0,
-        totalAmount: (p.cameraInstalled ?? p.totalWorks ?? 0) * 2.2,
-        cameraInstalled: p.cameraInstalled ?? p.totalWorks ?? 0,
-        cameraActive:    p.currentActive   ?? 0,
-        cameraInactive:  p.currentInactive ?? 0,
-        expanded: false, showTable: false,
-        breakdown: [
-          { label: 'In Progress',  count: p.inProgress      ?? 0, amount: (p.inProgress     ??0)*2.2, color: '#2980b9' },
-          { label: 'Cam Installed',count: p.cameraInstalled ?? 0, amount: (p.cameraInstalled??0)*2.2, color: '#8e44ad' },
-          { label: 'Active',       count: p.currentActive   ?? 0, amount: (p.currentActive  ??0)*2.2, color: '#27ae60' },
-          { label: 'Inactive',     count: p.currentInactive ?? 0, amount: (p.currentInactive??0)*2.2, color: '#e74c3c' },
-        ],
-        tableRows: (d.patrol360?.districtData ?? []).slice(0,15).map((r: any) => ({
-          label: r.district, count: r.cameraInstalled, amount: r.cameraInstalled * 2.2,
-          status: r.currentActive > 0 ? 'Active' : 'Inactive'
-        }))
-      },
-    ];
-
-    // ── Scheme Cards ──────────────────────────────────────────────────────
-    const sumFn = (arr: any[], key: string) => arr.reduce((a, x) => a + (x[key] ?? 0), 0);
-
     const tahdcoTotal = sumFn(tahdcoSchemes, 'apply') || 26355;
     const telpTotal = sumFn(telpSchemes, 'apply') || 29204;
     const tamsTotal = effectiveEn.totalStudents || 1315;
     const todTotal = effectiveTod.summary.totalTasks || 2130;
 
-    this.schemeCards = [
+    return [
       {
         id: 'tahdco-scheme', title: this.ds.getProjectDisplayName('SCHEME', 'TAHDCO Scheme'), code: 'Scheme',
         icon: 'pi-wallet', accent: '#c9a227', accentSoft: '#fdf8e8',
-        totalCount:  tahdcoTotal,
+        totalCount: tahdcoTotal,
         totalAmount: tahdcoTotal * 0.5,
         expanded: false, showTable: false,
         breakdown: [
-          { label: 'Applied',     count: sumFn(tahdcoSchemes,'apply') || 26355,          amount: (sumFn(tahdcoSchemes,'apply') || 26355)*0.5,          color: '#2980b9' },
-          { label: 'DM Pending',  count: sumFn(tahdcoSchemes,'dmPending') || 3113,      amount: (sumFn(tahdcoSchemes,'dmPending') || 3113)*0.5,      color: '#f39c12' },
-          { label: 'HQ Pending',  count: sumFn(tahdcoSchemes,'hqPending') || 2976,      amount: (sumFn(tahdcoSchemes,'hqPending') || 2976)*0.5,      color: '#e67e22' },
-          { label: 'Pay Pending', count: sumFn(tahdcoSchemes,'paymentPending') || 3650, amount: (sumFn(tahdcoSchemes,'paymentPending') || 3650)*0.5, color: '#e74c3c' },
+          { label: 'Applied', count: sumFn(tahdcoSchemes, 'apply') || 26355, amount: (sumFn(tahdcoSchemes, 'apply') || 26355) * 0.5, color: '#2980b9' },
+          { label: 'DM Pending', count: sumFn(tahdcoSchemes, 'dmPending') || 3113, amount: (sumFn(tahdcoSchemes, 'dmPending') || 3113) * 0.5, color: '#f39c12' },
+          { label: 'HQ Pending', count: sumFn(tahdcoSchemes, 'hqPending') || 2976, amount: (sumFn(tahdcoSchemes, 'hqPending') || 2976) * 0.5, color: '#e67e22' },
+          { label: 'Pay Pending', count: sumFn(tahdcoSchemes, 'paymentPending') || 3650, amount: (sumFn(tahdcoSchemes, 'paymentPending') || 3650) * 0.5, color: '#e74c3c' },
         ],
         tableRows: tahdcoSchemes.map((s: any) => ({
           label: s.subScheme || s.scheme, count: s.apply,
@@ -1319,14 +1329,14 @@ export class DashboardMdComponent implements OnInit, OnDestroy {
       {
         id: 'telp', title: this.ds.getProjectDisplayName('TELP', 'Educational Loan (TELP)'), code: 'TELP',
         icon: 'pi-book', accent: '#534ab7', accentSoft: '#eeedfe',
-        totalCount:  telpTotal,
+        totalCount: telpTotal,
         totalAmount: telpTotal * 1.2,
         expanded: false, showTable: false,
         breakdown: [
-          { label: 'Applied',     count: sumFn(telpSchemes,'apply') || 29204,          amount: (sumFn(telpSchemes,'apply') || 29204)*1.2,          color: '#534ab7' },
-          { label: 'DM Pending',  count: sumFn(telpSchemes,'dmPending') || 11418,      amount: (sumFn(telpSchemes,'dmPending') || 11418)*1.2,      color: '#f39c12' },
-          { label: 'HQ Pending',  count: sumFn(telpSchemes,'hqPending') || 10746,      amount: (sumFn(telpSchemes,'hqPending') || 10746)*1.2,      color: '#e67e22' },
-          { label: 'Pay Pending', count: sumFn(telpSchemes,'paymentPending') || 0,     amount: 0, color: '#e74c3c' },
+          { label: 'Applied', count: sumFn(telpSchemes, 'apply') || 29204, amount: (sumFn(telpSchemes, 'apply') || 29204) * 1.2, color: '#534ab7' },
+          { label: 'DM Pending', count: sumFn(telpSchemes, 'dmPending') || 11418, amount: (sumFn(telpSchemes, 'dmPending') || 11418) * 1.2, color: '#f39c12' },
+          { label: 'HQ Pending', count: sumFn(telpSchemes, 'hqPending') || 10746, amount: (sumFn(telpSchemes, 'hqPending') || 10746) * 1.2, color: '#e67e22' },
+          { label: 'Pay Pending', count: sumFn(telpSchemes, 'paymentPending') || 0, amount: 0, color: '#e74c3c' },
         ],
         tableRows: telpSchemes.map((s: any) => ({
           label: s.subScheme || s.scheme, count: s.apply,
@@ -1336,14 +1346,14 @@ export class DashboardMdComponent implements OnInit, OnDestroy {
       {
         id: 'tams', title: this.ds.getProjectDisplayName('TAMS', 'Citizens Training (TAMS)'), code: 'TAMS',
         icon: 'pi-graduation-cap', accent: '#1a5fa5', accentSoft: '#eaf2fb',
-        totalCount:  tamsTotal,
+        totalCount: tamsTotal,
         totalAmount: tamsTotal * 0.35,
         expanded: false, showTable: false,
         breakdown: [
-          { label: 'Total Students', count: effectiveEn.totalStudents  || 1315, amount: (effectiveEn.totalStudents || 1315)*0.35, color: '#1a5fa5' },
-          { label: 'New Enrolled',   count: effectiveEn.newEnrollment  || 886,  amount: (effectiveEn.newEnrollment || 886)*0.35,  color: '#27ae60' },
-          { label: 'Institutes',     count: effectiveEn.totalInstitutes|| 23,   amount: (effectiveEn.totalInstitutes|| 23)*5,     color: '#8e44ad' },
-          { label: 'Courses',        count: effectiveEn.totalCourses   || 12,   amount: 0,                                         color: '#16a085' },
+          { label: 'Total Students', count: effectiveEn.totalStudents || 1315, amount: (effectiveEn.totalStudents || 1315) * 0.35, color: '#1a5fa5' },
+          { label: 'New Enrolled', count: effectiveEn.newEnrollment || 886, amount: (effectiveEn.newEnrollment || 886) * 0.35, color: '#27ae60' },
+          { label: 'Institutes', count: effectiveEn.totalInstitutes || 23, amount: (effectiveEn.totalInstitutes || 23) * 5, color: '#8e44ad' },
+          { label: 'Courses', count: effectiveEn.totalCourses || 12, amount: 0, color: '#16a085' },
         ],
         tableRows: ((d.enrollment?.divisionSummary && d.enrollment.divisionSummary.length > 0) ? d.enrollment.divisionSummary : [
           { division: 'Chennai', total: 320, students: 320 },
@@ -1359,14 +1369,14 @@ export class DashboardMdComponent implements OnInit, OnDestroy {
       {
         id: 'tod', title: this.ds.getProjectDisplayName('TOD', 'Officer Diary (TOD)'), code: 'TOD',
         icon: 'pi-calendar', accent: '#059669', accentSoft: '#ecfdf5',
-        totalCount:  todTotal,
+        totalCount: todTotal,
         totalAmount: 0,
         expanded: false, showTable: false,
         breakdown: [
-          { label: 'Completed',   count: effectiveTod.summary.completed  || 1034, amount: 0, color: '#10b981' },
-          { label: 'In Progress', count: effectiveTod.summary.inProgress || 501,  amount: 0, color: '#3b82f6' },
-          { label: 'Not Started', count: effectiveTod.summary.notStarted || 372,  amount: 0, color: '#f59e0b' },
-          { label: 'Overdue',     count: effectiveTod.summary.overdue    || 223,  amount: 0, color: '#ef4444' },
+          { label: 'Completed', count: effectiveTod.summary.completed || 1034, amount: 0, color: '#10b981' },
+          { label: 'In Progress', count: effectiveTod.summary.inProgress || 501, amount: 0, color: '#3b82f6' },
+          { label: 'Not Started', count: effectiveTod.summary.notStarted || 372, amount: 0, color: '#f59e0b' },
+          { label: 'Overdue', count: effectiveTod.summary.overdue || 223, amount: 0, color: '#ef4444' },
         ],
         tableRows: (effectiveTod.districtData ?? []).slice(0, 15).map((r: any) => ({
           label: `${r.district} - ${r.taskType || 'Task'}`, count: r.taskCount ?? 0,
@@ -1374,11 +1384,12 @@ export class DashboardMdComponent implements OnInit, OnDestroy {
         }))
       },
     ];
+  }
 
-    // ── TNCWWB Cards ─────────────────────────────────────────────────────────
+  private buildTncwwbCards(d: any): any[] {
+    const sc = (d.schemes as any[]) ?? [];
     const op = d.onePortal ?? {};
     const opMem = op.memberSummary ?? {};
-    const opSch = op.schemeSummary ?? {};
     const onoSchemes = sc.filter((s: any) => s.project === 'ONO PORTAL');
 
     const defaultMemberDistricts = [
@@ -1426,15 +1437,13 @@ export class DashboardMdComponent implements OnInit, OnDestroy {
     }
 
     const memberDistList = this.rawData.onePortal.memberDistricts;
-
     const totalMemberApps = (opMem.totalWorks && opMem.totalWorks > 10000) ? opMem.totalWorks : 251483;
     const cardsPrinted = (opMem.cardIssued && opMem.cardIssued > 10000) ? opMem.cardIssued : 243062;
     const approvedHq = opMem.approvedHq || 243997;
     const hqPending = opMem.hqPending || 2969;
     const dmPending = opMem.dmPending || 4458;
-    const schemeApps = (opSch.totalApply && opSch.totalApply > 100) ? opSch.totalApply : 2062;
 
-    this.tncwwbCards = [
+    return [
       {
         id: 'tncwwb-member', title: this.ds.getProjectDisplayName('TNCWWB', 'Member Registration (TNCWWB)'), code: 'TNCWWB Member',
         icon: 'pi-user-plus', accent: '#0f5b9b', accentSoft: '#eef6fc',
@@ -1444,8 +1453,8 @@ export class DashboardMdComponent implements OnInit, OnDestroy {
         breakdown: [
           { label: 'DM Pending Approval', count: dmPending, amount: 0, color: '#0284c7' },
           { label: 'HQ Pending Approval', count: hqPending, amount: 0, color: '#f59e0b' },
-          { label: 'Approved By HQ',     count: approvedHq, amount: 0, color: '#16a34a' },
-          { label: 'Card Printed',       count: cardsPrinted, amount: 0, color: '#d97706' },
+          { label: 'Approved By HQ', count: approvedHq, amount: 0, color: '#16a34a' },
+          { label: 'Card Printed', count: cardsPrinted, amount: 0, color: '#d97706' },
         ],
         tableRows: memberDistList.map((r: any) => ({
           label: r.district, count: r.cardIssued ?? Math.round((r.totalWorks || 0) * 0.96),
@@ -1460,9 +1469,9 @@ export class DashboardMdComponent implements OnInit, OnDestroy {
         expanded: true, showTable: false,
         breakdown: [
           { label: 'Scheme Applications', count: 2798, amount: 2798 * 0.4, color: '#2563eb' },
-          { label: 'DM Approved',          count: 718,  amount: 718 * 0.4,  color: '#16a34a' },
-          { label: 'DM Pending',           count: 1280, amount: 1280 * 0.4, color: '#f59e0b' },
-          { label: 'HQ Pending',           count: 800,  amount: 800 * 0.4,  color: '#d97706' },
+          { label: 'DM Approved', count: 718, amount: 718 * 0.4, color: '#16a34a' },
+          { label: 'DM Pending', count: 1280, amount: 1280 * 0.4, color: '#f59e0b' },
+          { label: 'HQ Pending', count: 800, amount: 800 * 0.4, color: '#d97706' },
         ],
         tableRows: onoSchemes.map((s: any) => ({
           label: s.subScheme || s.scheme, count: s.apply,
@@ -2336,89 +2345,23 @@ export class DashboardMdComponent implements OnInit, OnDestroy {
       this.detailTableRows = [];
       this.filteredDetailTableRows = [];
 
-      let expectedCount = row.col6 || row.col1 || row.cardIssued || row.totalWorks || 10;
       const queryType = (programId === 'tncwwb-scheme' || (milestoneName && milestoneName.toLowerCase().includes('scheme'))) ? 'Scheme' : 'MEMBER';
       const targetDistrict = distName && distName !== 'All Districts' ? distName : '';
       const distObj = TAMIL_NADU_DISTRICTS.find(d => d.name.toLowerCase() === (distName || '').toLowerCase());
       const distCode = distObj?.code || (distName ? distName.substring(0, 3).toUpperCase() : 'TN');
+      const expCount = row.col6 || row.col1 || row.cardIssued || row.totalWorks || 10;
 
       this.ds.getTncwwbGeneral(queryType, 'LIST', '', '2026', targetDistrict).subscribe({
         next: (res) => {
           let items: any[] = [];
           if (res && (res.status === 'SUCCESS' || res.status === true) && Array.isArray(res.data) && res.data.length > 0) {
-            let matched = res.data;
-            if (targetDistrict) {
-              const tdLower = targetDistrict.toLowerCase().trim();
-              const filtered = matched.filter((x: any) => {
-                const d = (x.district || x.District || '').toLowerCase().trim();
-                return d === tdLower || d.includes(tdLower) || tdLower.includes(d);
-              });
-              if (filtered.length > 0) {
-                matched = filtered;
-              }
-            }
-
-            items = matched.map((item: any, idx: number) => {
-              const rawStatus = item.status || item.submissionStatus || item.statusName || (milestoneName || 'Card Issued');
-              let cleanStatus = rawStatus;
-              if (rawStatus === 'DmPending' || rawStatus === 'dmPending') cleanStatus = 'DM Pending';
-              else if (rawStatus === 'HqPending' || rawStatus === 'hqPending') cleanStatus = 'HQ Pending';
-              else if (rawStatus === 'Submitted') cleanStatus = 'Submitted (DM Review)';
-              else if (rawStatus === 'Saved') cleanStatus = 'Saved Draft';
-              else if (rawStatus === 'Approved') cleanStatus = 'Approved by HQ';
-              else if (rawStatus === 'CardPrinted' || rawStatus === 'Card Printed') cleanStatus = 'Card Printed';
-
-              const memberId = (item.member_Id && item.member_Id.trim().length > 3)
-                ? item.member_Id
-                : `RP/GOV/${distCode}/U/MUN/${100000 + idx + 1}`;
-
-              const name = (item.name && item.name.trim().length > 2)
-                ? item.name
-                : ['Kavitha R.', 'Murugan S.', 'Anandakumar M.', 'Selvi P.', 'Dhanalakshmi K.', 'Karthik N.', 'Saravanan T.', 'Priya D.'][idx % 8];
-
-              const phone = (item.phone_Number && item.phone_Number.trim().length >= 8)
-                ? item.phone_Number
-                : `9840${(idx * 137) % 90000 + 10000}`;
-
-              return {
-                memberId,
-                name,
-                phone,
-                district: item.district || distName || 'Kancheepuram',
-                scheme: item.subScheme || item.scheme || (programId === 'tncwwb-scheme' ? 'Welfare Scheme Assistance' : 'Construction Worker Membership'),
-                status: cleanStatus,
-                createdDate: item.createdDate ? this.formatDateString(item.createdDate) : `2026-0${(idx % 6) + 1}-1${(idx % 8) + 1}`
-              };
-            });
+            items = this.mapTncwwbApiResponseItems(res.data, targetDistrict, distCode, distName, programId, milestoneName);
           }
-
           if (items.length === 0) {
-            const countToGen = Math.min(Math.max(expectedCount || 10, 5), 50);
-            const sampleNames = [
-              'Kavitha R.', 'Murugan S.', 'Anandakumar M.', 'Selvi P.', 'Dhanalakshmi K.',
-              'Karthik N.', 'Saravanan T.', 'Priya D.', 'Venkatesan R.', 'Deepa G.',
-              'Manikandan V.', 'Gayathri S.', 'Ramesh K.', 'Lakshmi M.', 'Balamurugan P.'
-            ];
-            const sampleSchemes = programId === 'tncwwb-scheme'
-              ? [row.col_scheme || '10th Std Passed Assistance', 'Marriage Assistance', 'Maternity Assistance', 'Natural Death & Funeral Assistance', 'Spectacles Assistance']
-              : ['Construction Worker Membership', 'Welfare Smart Card Issuance', 'Annual Renewal Assistance'];
-
-            const currentStatus = milestoneName || (programId === 'tncwwb-scheme' ? 'DM Approved' : 'Card Issued');
-
-            for (let k = 0; k < countToGen; k++) {
-              items.push({
-                memberId: `RP/GOV/${distCode}/U/MUN/${100000 + k + 1}`,
-                name: sampleNames[k % sampleNames.length],
-                phone: `9840${(k * 137) % 90000 + 10000}`,
-                district: distName !== 'All Districts' ? distName : 'Kancheepuram',
-                scheme: row.col_schemename || sampleSchemes[k % sampleSchemes.length],
-                status: currentStatus,
-                createdDate: `2026-0${(k % 6) + 1}-1${(k % 8) + 1}`
-              });
-            }
+            items = this.generateFallbackTncwwbItems(expCount, distCode, distName, programId, milestoneName, row);
           }
 
-          this.detailTableRows = items.map((item, idx) => ({ ...item, sno: idx + 1 }));
+          this.detailTableRows = items.map((item: any, idx: number) => ({ ...item, sno: idx + 1 }));
           this.filteredDetailTableRows = [...this.detailTableRows];
           this.buildModalFilterOptions();
           this.inlineDetailCache.set(cacheKey, { headers: [...this.detailTableHeaders], fields: [...this.detailTableFields], rows: [...this.detailTableRows] });
@@ -2426,22 +2369,8 @@ export class DashboardMdComponent implements OnInit, OnDestroy {
           this.cdr.markForCheck();
         },
         error: () => {
-          const countToGen = Math.min(Math.max(expectedCount || 10, 5), 50);
-          const sampleNames = ['Kavitha R.', 'Murugan S.', 'Anandakumar M.', 'Selvi P.', 'Dhanalakshmi K.', 'Karthik N.', 'Saravanan T.', 'Priya D.'];
-          const sampleSchemes = programId === 'tncwwb-scheme' ? ['10th Std Passed Assistance', 'Marriage Assistance', 'Maternity Assistance'] : ['Construction Worker Membership', 'Welfare Smart Card Issuance'];
-          const items: any[] = [];
-          for (let k = 0; k < countToGen; k++) {
-            items.push({
-              memberId: `RP/GOV/${distCode}/U/MUN/${100000 + k + 1}`,
-              name: sampleNames[k % sampleNames.length],
-              phone: `9840${(k * 137) % 90000 + 10000}`,
-              district: distName !== 'All Districts' ? distName : 'Kancheepuram',
-              scheme: row.col_schemename || sampleSchemes[k % sampleSchemes.length],
-              status: milestoneName || 'Card Issued',
-              createdDate: `2026-0${(k % 6) + 1}-1${(k % 8) + 1}`
-            });
-          }
-          this.detailTableRows = items.map((item, idx) => ({ ...item, sno: idx + 1 }));
+          const items = this.generateFallbackTncwwbItems(expCount, distCode, distName, programId, milestoneName, row);
+          this.detailTableRows = items.map((item: any, idx: number) => ({ ...item, sno: idx + 1 }));
           this.filteredDetailTableRows = [...this.detailTableRows];
           this.buildModalFilterOptions();
           this.inlineLoading = false;
@@ -2451,7 +2380,6 @@ export class DashboardMdComponent implements OnInit, OnDestroy {
     }
     else if (programId === 'tams') {
       const targetDistrict = distName && distName !== 'All Districts' ? distName : '';
-      let expectedCount = row.col1 ?? row.students ?? row.total ?? 8;
       this.detailTableRows = [];
       this.filteredDetailTableRows = [];
 
@@ -2466,36 +2394,7 @@ export class DashboardMdComponent implements OnInit, OnDestroy {
               ? ['sno', 'institute', 'district', 'course', 'status', 'total', 'attendance', 'grade']
               : ['sno', 'name', 'comm', 'mbook', 'status'];
 
-            let items: any[] = [];
-            if (fromDb) {
-              items = res.data.map((item: any, i: number) => ({
-                sno: i + 1,
-                institute: item.institute || '',
-                district: item.district || '',
-                course: item.course || '',
-                status: item.status || '',
-                total: item.totalStudents ?? 0,
-                attendance: item.attendancePct != null ? `${item.attendancePct}%` : '',
-                grade: item.grade || ''
-              }));
-            } else {
-              const tdLower = targetDistrict.toLowerCase().trim();
-              let matched = res.data;
-              if (targetDistrict) {
-                const filtered = matched.filter((x: any) => {
-                  const d = (x.District || x.districtName || x.district || '').toLowerCase().trim();
-                  return d === tdLower || d.includes(tdLower) || tdLower.includes(d);
-                });
-                if (filtered.length > 0) matched = filtered;
-              }
-              items = matched.map((item: any, i: number) => ({
-                sno: i + 1,
-                name: item.StudentName || item.BeneficiaryName || item.Name || item.name || '',
-                comm: item.Institute || item.InstituteName || item.AssignedInstitute || '',
-                mbook: item.Course || item.CourseName || item.Program || '',
-                status: item.AttendanceStatus || item.Status || item.status || ''
-              }));
-            }
+            const items = this.mapTamsApiResponseItems(res.data, fromDb, targetDistrict);
             this.detailTableRows = items;
             this.filteredDetailTableRows = [...items];
             this.buildModalFilterOptions();
@@ -2504,18 +2403,11 @@ export class DashboardMdComponent implements OnInit, OnDestroy {
               fields: [...this.detailTableFields],
               rows: [...this.detailTableRows]
             });
-            this.inlineLoading = false;
-            this.cdr.markForCheck();
-          } else {
-            this.detailTableRows = [];
-            this.filteredDetailTableRows = [];
-            this.inlineLoading = false;
-            this.cdr.markForCheck();
           }
+          this.inlineLoading = false;
+          this.cdr.markForCheck();
         },
         error: () => {
-          this.detailTableRows = [];
-          this.filteredDetailTableRows = [];
           this.inlineLoading = false;
           this.cdr.markForCheck();
         }
@@ -2548,6 +2440,112 @@ export class DashboardMdComponent implements OnInit, OnDestroy {
     this.filteredDetailTableRows = [...this.detailTableRows];
     this.detailDialogVisible = false;
     this.cdr.markForCheck();
+  }
+
+  private mapTncwwbApiResponseItems(data: any[], targetDistrict: string, distCode: string, distName: string, programId: string, milestoneName?: string): any[] {
+    let matched = data;
+    if (targetDistrict) {
+      const tdLower = targetDistrict.toLowerCase().trim();
+      const filtered = matched.filter((x: any) => {
+        const d = (x.district || x.District || '').toLowerCase().trim();
+        return d === tdLower || d.includes(tdLower) || tdLower.includes(d);
+      });
+      if (filtered.length > 0) matched = filtered;
+    }
+
+    return matched.map((item: any, idx: number) => {
+      const rawStatus = item.status || item.submissionStatus || item.statusName || (milestoneName || 'Card Issued');
+      let cleanStatus = rawStatus;
+      if (rawStatus === 'DmPending' || rawStatus === 'dmPending') cleanStatus = 'DM Pending';
+      else if (rawStatus === 'HqPending' || rawStatus === 'hqPending') cleanStatus = 'HQ Pending';
+      else if (rawStatus === 'Submitted') cleanStatus = 'Submitted (DM Review)';
+      else if (rawStatus === 'Saved') cleanStatus = 'Saved Draft';
+      else if (rawStatus === 'Approved') cleanStatus = 'Approved by HQ';
+      else if (rawStatus === 'CardPrinted' || rawStatus === 'Card Printed') cleanStatus = 'Card Printed';
+
+      const memberId = (item.member_Id && item.member_Id.trim().length > 3)
+        ? item.member_Id
+        : `RP/GOV/${distCode}/U/MUN/${100000 + idx + 1}`;
+
+      const name = (item.name && item.name.trim().length > 2)
+        ? item.name
+        : ['Kavitha R.', 'Murugan S.', 'Anandakumar M.', 'Selvi P.', 'Dhanalakshmi K.', 'Karthik N.', 'Saravanan T.', 'Priya D.'][idx % 8];
+
+      const phone = (item.phone_Number && item.phone_Number.trim().length >= 8)
+        ? item.phone_Number
+        : `9840${(idx * 137) % 90000 + 10000}`;
+
+      return {
+        memberId,
+        name,
+        phone,
+        district: item.district || distName || 'Kancheepuram',
+        scheme: item.subScheme || item.scheme || (programId === 'tncwwb-scheme' ? 'Welfare Scheme Assistance' : 'Construction Worker Membership'),
+        status: cleanStatus,
+        createdDate: item.createdDate ? this.formatDateString(item.createdDate) : `2026-0${(idx % 6) + 1}-1${(idx % 8) + 1}`
+      };
+    });
+  }
+
+  private generateFallbackTncwwbItems(expectedCount: number, distCode: string, distName: string, programId: string, milestoneName?: string, row?: any): any[] {
+    const countToGen = Math.min(Math.max(expectedCount || 10, 5), 50);
+    const sampleNames = [
+      'Kavitha R.', 'Murugan S.', 'Anandakumar M.', 'Selvi P.', 'Dhanalakshmi K.',
+      'Karthik N.', 'Saravanan T.', 'Priya D.', 'Venkatesan R.', 'Deepa G.',
+      'Manikandan V.', 'Gayathri S.', 'Ramesh K.', 'Lakshmi M.', 'Balamurugan P.'
+    ];
+    const sampleSchemes = programId === 'tncwwb-scheme'
+      ? [(row && row.col_scheme) || '10th Std Passed Assistance', 'Marriage Assistance', 'Maternity Assistance', 'Natural Death & Funeral Assistance', 'Spectacles Assistance']
+      : ['Construction Worker Membership', 'Welfare Smart Card Issuance', 'Annual Renewal Assistance'];
+
+    const currentStatus = milestoneName || (programId === 'tncwwb-scheme' ? 'DM Approved' : 'Card Issued');
+    const items: any[] = [];
+
+    for (let k = 0; k < countToGen; k++) {
+      items.push({
+        memberId: `RP/GOV/${distCode}/U/MUN/${100000 + k + 1}`,
+        name: sampleNames[k % sampleNames.length],
+        phone: `9840${(k * 137) % 90000 + 10000}`,
+        district: distName !== 'All Districts' ? distName : 'Kancheepuram',
+        scheme: (row && row.col_schemename) || sampleSchemes[k % sampleSchemes.length],
+        status: currentStatus,
+        createdDate: `2026-0${(k % 6) + 1}-1${(k % 8) + 1}`
+      });
+    }
+    return items;
+  }
+
+  private mapTamsApiResponseItems(data: any[], fromDb: boolean, targetDistrict: string): any[] {
+    if (fromDb) {
+      return data.map((item: any, i: number) => ({
+        sno: i + 1,
+        institute: item.institute || '',
+        district: item.district || '',
+        course: item.course || '',
+        status: item.status || '',
+        total: item.totalStudents ?? 0,
+        attendance: item.attendancePct != null ? `${item.attendancePct}%` : '',
+        grade: item.grade || ''
+      }));
+    }
+
+    const tdLower = targetDistrict.toLowerCase().trim();
+    let matched = data;
+    if (targetDistrict) {
+      const filtered = matched.filter((x: any) => {
+        const d = (x.District || x.districtName || x.district || '').toLowerCase().trim();
+        return d === tdLower || d.includes(tdLower) || tdLower.includes(d);
+      });
+      if (filtered.length > 0) matched = filtered;
+    }
+
+    return matched.map((item: any, i: number) => ({
+      sno: i + 1,
+      name: item.StudentName || item.BeneficiaryName || item.Name || item.name || '',
+      comm: item.Institute || item.InstituteName || item.AssignedInstitute || '',
+      mbook: item.Course || item.CourseName || item.Program || '',
+      status: item.AttendanceStatus || item.Status || item.status || ''
+    }));
   }
 
   showPhotoModal: boolean = false;

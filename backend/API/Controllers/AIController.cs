@@ -107,39 +107,9 @@ namespace API.Controllers
 
             try
             {
-                var sentences = SplitIntoChunks(text, 160);
-                var audioList = new List<byte[]>();
-
-                foreach (var s in sentences)
+                var combined = await SynthesizeSpeechChunksAsync(text, targetLang);
+                if (combined != null && combined.Length > 0)
                 {
-                    if (string.IsNullOrWhiteSpace(s)) continue;
-                    var encoded = Uri.EscapeDataString(s.Trim());
-                    var url = $"https://translate.google.com/translate_tts?ie=UTF-8&tl={targetLang}&client=tw-ob&q={encoded}";
-
-                    var req = new System.Net.Http.HttpRequestMessage(System.Net.Http.HttpMethod.Get, url);
-                    req.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36");
-                    req.Headers.Add("Referer", "https://translate.google.com/");
-
-                    var resp = await _ttsClient.SendAsync(req);
-                    if (resp.IsSuccessStatusCode)
-                    {
-                        var bytes = await resp.Content.ReadAsByteArrayAsync();
-                        if (bytes.Length > 0)
-                            audioList.Add(bytes);
-                    }
-                }
-
-                if (audioList.Count > 0)
-                {
-                    var totalLength = audioList.Sum(b => b.Length);
-                    var combined = new byte[totalLength];
-                    var offset = 0;
-                    foreach (var b in audioList)
-                    {
-                        Buffer.BlockCopy(b, 0, combined, offset, b.Length);
-                        offset += b.Length;
-                    }
-
                     _ttsCache[cacheKey] = combined;
                     return File(combined, "audio/mpeg", enableRangeProcessing: true);
                 }
@@ -150,6 +120,54 @@ namespace API.Controllers
             }
 
             return StatusCode(503, new { message = "TTS audio synthesis unavailable." });
+        }
+
+        private static async Task<byte[]?> SynthesizeSpeechChunksAsync(string text, string targetLang)
+        {
+            var sentences = SplitIntoChunks(text, 160);
+            var audioList = new List<byte[]>();
+
+            foreach (var s in sentences)
+            {
+                if (string.IsNullOrWhiteSpace(s)) continue;
+                var bytes = await FetchTtsChunkAsync(s.Trim(), targetLang);
+                if (bytes != null && bytes.Length > 0)
+                {
+                    audioList.Add(bytes);
+                }
+            }
+
+            return audioList.Count > 0 ? CombineAudioChunks(audioList) : null;
+        }
+
+        private static async Task<byte[]?> FetchTtsChunkAsync(string textChunk, string targetLang)
+        {
+            var encoded = Uri.EscapeDataString(textChunk);
+            var url = $"https://translate.google.com/translate_tts?ie=UTF-8&tl={targetLang}&client=tw-ob&q={encoded}";
+
+            using var req = new System.Net.Http.HttpRequestMessage(System.Net.Http.HttpMethod.Get, url);
+            req.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36");
+            req.Headers.Add("Referer", "https://translate.google.com/");
+
+            using var resp = await _ttsClient.SendAsync(req);
+            if (resp.IsSuccessStatusCode)
+            {
+                return await resp.Content.ReadAsByteArrayAsync();
+            }
+            return null;
+        }
+
+        private static byte[] CombineAudioChunks(List<byte[]> audioList)
+        {
+            var totalLength = audioList.Sum(b => b.Length);
+            var combined = new byte[totalLength];
+            var offset = 0;
+            foreach (var b in audioList)
+            {
+                Buffer.BlockCopy(b, 0, combined, offset, b.Length);
+                offset += b.Length;
+            }
+            return combined;
         }
 
         private static List<string> SplitIntoChunks(string text, int maxLen)

@@ -572,7 +572,7 @@ export class DataService {
     return this.data$.pipe(map(d => {
       let rows: any[] = d.housing?.rows ?? [];
       if (division && division !== 'All Divisions') rows = rows.filter(r => r.division === division);
-      return Array.from(new Set(rows.map(r => r.district as string))).sort();
+      return Array.from(new Set(rows.map(r => r.district as string))).sort((a, b) => (a || '').localeCompare(b || ''));
     }));
   }
 

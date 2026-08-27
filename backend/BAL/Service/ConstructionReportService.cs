@@ -17,6 +17,9 @@ namespace BAL.Service
         private static int _nextScheduleId = 1;
         private static readonly object _lock = new();
 
+        private static int GetNextWorkId() => System.Threading.Interlocked.Increment(ref _nextWorkId);
+        private static int GetNextScheduleId() => System.Threading.Interlocked.Increment(ref _nextScheduleId);
+
         static ConstructionReportService()
         {
             InitializeSeedData();
@@ -381,7 +384,7 @@ namespace BAL.Service
         {
             lock (_lock)
             {
-                work.Id = _nextWorkId++;
+                work.Id = GetNextWorkId();
                 work.LastUpdated = DateTime.Now.ToString("yyyy-MM-dd HH:mm");
                 _works[work.Id] = work;
 
@@ -400,7 +403,7 @@ namespace BAL.Service
 
                 _schedules[work.Id] = new ConstructionScheduleDto
                 {
-                    Id = _nextScheduleId++,
+                    Id = GetNextScheduleId(),
                     WorkId = work.Id,
                     WorkName = work.NameOfPremises,
                     District = work.District,

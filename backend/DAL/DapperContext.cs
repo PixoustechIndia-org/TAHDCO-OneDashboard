@@ -11,21 +11,20 @@ public class DapperContext
 
     public DapperContext(IConfiguration config)
     {
-        var envVal = Environment.GetEnvironmentVariable("DB_CONNECTION_STRING");
+        var envVal = Environment.GetEnvironmentVariable("DB_CONNECTION_STRING") ?? Environment.GetEnvironmentVariable("ConnectionStrings__Default");
         var raw = !string.IsNullOrWhiteSpace(envVal) ? envVal : (config.GetConnectionString("Default") ?? "");
 
         if (string.IsNullOrWhiteSpace(raw) || raw.StartsWith("${"))
         {
-            raw = "server=pixous-qa-instance.cj0oky48i38w.ap-south-1.rds.amazonaws.com;port=3306;database=tahdco_udp;user=web_user;password=M5sQx9zDp7Vb;";
+            var host = Environment.GetEnvironmentVariable("DB_HOST") ?? "localhost";
+            var port = Environment.GetEnvironmentVariable("DB_PORT") ?? "3306";
+            var db = Environment.GetEnvironmentVariable("DB_NAME") ?? "tahdco_udp";
+            var user = Environment.GetEnvironmentVariable("DB_USER") ?? "root";
+            var pass = Environment.GetEnvironmentVariable("DB_PASSWORD") ?? "";
+            raw = $"server={host};port={port};database={db};user={user};password={pass};";
         }
 
         raw = raw.Trim().Trim('"', '\'');
-
-        // Handle unquoted complex passwords containing semicolon or unsupported keys
-        if (raw.Contains("Password=A}-578mD&5U#;PKS=oiXC4T|+3_%j?Ut") && !raw.Contains("Password=\"A}-578mD&5U#;PKS=oiXC4T|+3_%j?Ut\"") && !raw.Contains("Password='A}-578mD&5U#;PKS=oiXC4T|+3_%j?Ut'"))
-        {
-            raw = raw.Replace("Password=A}-578mD&5U#;PKS=oiXC4T|+3_%j?Ut", "Password=\"A}-578mD&5U#;PKS=oiXC4T|+3_%j?Ut\"");
-        }
 
         try
         {
