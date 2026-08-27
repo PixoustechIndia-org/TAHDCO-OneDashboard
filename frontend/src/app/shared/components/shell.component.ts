@@ -97,6 +97,7 @@ export class ShellComponent implements OnInit {
       items: [
         { label: 'Overview', icon: 'pi-chart-pie', route: '/overview' },
         { label: 'Dashboard', icon: 'pi-compass', route: '/dashboard-md' },
+        { label: 'ConstructionWork Report', sub: 'Civil Projects & Progress', icon: 'pi-building', route: '/construction-work-report' },
       ]
     },
     {

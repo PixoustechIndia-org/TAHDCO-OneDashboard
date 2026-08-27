@@ -252,19 +252,19 @@
                 <!-- Engineering Stats Grid -->
                 <div class="stats-grid" *ngIf="activeTab === 'eng'">
                   <div class="stats-item">
-                    <span class="stats-label">TIPS Works</span>
+                    <span class="stats-label">{{ ds.getProjectDisplayName('TIPS', 'TIPS Works') }}</span>
                     <span class="stats-value">{{ fmt((getMapDistrictStats(selectedMapDistrict || hoveredMapDistrict))?.tipsCount) }}</span>
                   </div>
                   <div class="stats-item">
-                    <span class="stats-label">THMS Houses</span>
+                    <span class="stats-label">{{ ds.getProjectDisplayName('THMS', 'THMS Houses') }}</span>
                     <span class="stats-value">{{ fmt((getMapDistrictStats(selectedMapDistrict || hoveredMapDistrict))?.thmsCount) }}</span>
                   </div>
                   <div class="stats-item">
-                    <span class="stats-label">CCTV Cameras</span>
+                    <span class="stats-label">{{ ds.getProjectDisplayName('PATROL360', 'CCTV Cameras') }}</span>
                     <span class="stats-value">{{ fmt((getMapDistrictStats(selectedMapDistrict || hoveredMapDistrict))?.patrolCount) }}</span>
                   </div>
                   <div class="stats-item">
-                    <span class="stats-label">Pending M-Books</span>
+                    <span class="stats-label">{{ ds.getProjectDisplayName('TIME', 'Pending M-Books') }}</span>
                     <span class="stats-value warning-val" [class.danger-val]="((getMapDistrictStats(selectedMapDistrict || hoveredMapDistrict))?.mbookPending || 0) > 10">
                       {{ fmt((getMapDistrictStats(selectedMapDistrict || hoveredMapDistrict))?.mbookPending) }}
                     </span>
@@ -286,15 +286,15 @@
                 <!-- Welfare Stats Grid -->
                 <div class="stats-grid" *ngIf="activeTab === 'welfare'">
                   <div class="stats-item">
-                    <span class="stats-label">TAHDCO Schemes</span>
+                    <span class="stats-label">{{ ds.getProjectDisplayName('SCHEME', 'TAHDCO Schemes') }}</span>
                     <span class="stats-value">{{ fmt((getMapDistrictStats(selectedMapDistrict || hoveredMapDistrict))?.tahdcoCount) }}</span>
                   </div>
                   <div class="stats-item">
-                    <span class="stats-label">TELP Loans</span>
+                    <span class="stats-label">{{ ds.getProjectDisplayName('TELP', 'TELP Loans') }}</span>
                     <span class="stats-value">{{ fmt((getMapDistrictStats(selectedMapDistrict || hoveredMapDistrict))?.telpCount) }}</span>
                   </div>
                   <div class="stats-item">
-                    <span class="stats-label">TAMS Students</span>
+                    <span class="stats-label">{{ ds.getProjectDisplayName('TAMS', 'TAMS Students') }}</span>
                     <span class="stats-value">{{ fmt((getMapDistrictStats(selectedMapDistrict || hoveredMapDistrict))?.tamsStudents) }}</span>
                   </div>
                   <div class="stats-item">
@@ -320,7 +320,7 @@
                 <!-- TNCWWB Stats Grid -->
                 <div class="stats-grid" *ngIf="activeTab === 'tncwwb'">
                   <div class="stats-item">
-                    <span class="stats-label">Total Members</span>
+                    <span class="stats-label">{{ ds.getProjectDisplayName('TNCWWB', 'Total Members') }}</span>
                     <span class="stats-value">{{ fmt((getMapDistrictStats(selectedMapDistrict || hoveredMapDistrict))?.totalMembers) }}</span>
                   </div>
                   <div class="stats-item">
@@ -328,7 +328,7 @@
                     <span class="stats-value text-emerald-400">{{ fmt((getMapDistrictStats(selectedMapDistrict || hoveredMapDistrict))?.cardIssued) }}</span>
                   </div>
                   <div class="stats-item">
-                    <span class="stats-label">Scheme Applications</span>
+                    <span class="stats-label">{{ ds.getProjectDisplayName('ONEPORTAL', 'Scheme Applications') }}</span>
                     <span class="stats-value">{{ fmt((getMapDistrictStats(selectedMapDistrict || hoveredMapDistrict))?.schemeApps) }}</span>
                   </div>
                   <div class="stats-item">
@@ -393,7 +393,6 @@
           <div class="card-head">
             <div class="card-icon"><i class="pi {{ card.icon }}"></i></div>
             <div class="card-meta">
-              <span class="card-code">{{ card.code }}</span>
               <span class="card-title">{{ card.title }}</span>
             </div>
             <button class="report-btn" (click)="navigateToReport(card.id); $event.stopPropagation()" title="Open detailed report">
@@ -516,7 +515,6 @@
           <div class="card-head">
             <div class="card-icon"><i class="pi {{ card.icon }}"></i></div>
             <div class="card-meta">
-              <span class="card-code">{{ card.code }}</span>
               <span class="card-title">{{ card.title }}</span>
             </div>
             <button class="report-btn" (click)="navigateToReport(card.id); $event.stopPropagation()" title="Open detailed report">
@@ -602,7 +600,6 @@
           <div class="card-head">
             <div class="card-icon"><i class="pi {{ card.icon }}"></i></div>
             <div class="card-meta">
-              <span class="card-code">{{ card.code }}</span>
               <span class="card-title">{{ card.title }}</span>
             </div>
           </div>

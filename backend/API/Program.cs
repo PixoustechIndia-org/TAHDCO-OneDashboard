@@ -97,6 +97,8 @@ app.UseSwaggerUI(c =>
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseMiddleware<RequestLoggingMiddleware>();
 
+app.UseCors("ng");
+
 app.UseRequestLocalization(new RequestLocalizationOptions
 {
     DefaultRequestCulture = new RequestCulture("en-IN"),
@@ -104,9 +106,10 @@ app.UseRequestLocalization(new RequestLocalizationOptions
     SupportedUICultures = supportedCultures
 });
 
-app.UseHttpsRedirection();
-
-app.UseCors("ng");
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
 app.UseSession();
 

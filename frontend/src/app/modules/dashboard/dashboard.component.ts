@@ -169,17 +169,17 @@ export class DashboardComponent implements OnInit, OnDestroy {
       { label: 'Citizens trained', value: this.formatNum(e.totalStudents), sub: `${this.formatNum(e.newEnrollment)} new this month` },
     ];
     this.rings = [
-      { key: 'housing', label: 'Housing delivery', pct: housingPct, value: h.completed, target: h.totalHouses, color: PALETTE.success, icon: 'pi-building' },
-      { key: 'tender',  label: 'Works commenced',  pct: commencedPct, value: t.started, target: t.totalWorks, color: PALETTE.navy, icon: 'pi-file-edit' },
-      { key: 'scheme',  label: 'Scheme approvals', pct: schemePct, value: approved, target: applied, color: PALETTE.gold, icon: 'pi-wallet' },
-      { key: 'enroll',  label: 'Skill training',   pct: enrollPct, value: e.totalStudents, target: enrollTarget, color: PALETTE.info, icon: 'pi-graduation-cap' },
+      { key: 'housing', label: this.ds.getProjectDisplayName('THMS', 'Housing delivery'), pct: housingPct, value: h.completed, target: h.totalHouses, color: PALETTE.success, icon: 'pi-building' },
+      { key: 'tender',  label: this.ds.getProjectDisplayName('TIPS', 'Works commenced'),  pct: commencedPct, value: t.started, target: t.totalWorks, color: PALETTE.navy, icon: 'pi-file-edit' },
+      { key: 'scheme',  label: this.ds.getProjectDisplayName('SCHEME', 'Scheme approvals'), pct: schemePct, value: approved, target: applied, color: PALETTE.gold, icon: 'pi-wallet' },
+      { key: 'enroll',  label: this.ds.getProjectDisplayName('TAMS', 'Skill training'),   pct: enrollPct, value: e.totalStudents, target: enrollTarget, color: PALETTE.info, icon: 'pi-graduation-cap' },
     ];
     this.targets = [
-      { label: 'Housing delivery', value: h.completed, target: h.totalHouses, pct: housingPct, color: PALETTE.success },
-      { label: 'Works commenced', value: t.started, target: t.totalWorks, pct: commencedPct, color: PALETTE.navy },
-      { label: 'Scheme approvals', value: approved, target: applied, pct: schemePct, color: PALETTE.gold },
-      { label: 'Skill training', value: e.totalStudents, target: enrollTarget, pct: enrollPct, color: PALETTE.info },
-      { label: 'CCTV coverage', value: p.cameraInstalled, target: p.totalWorks, pct: cameraCoveragePct, color: TEAL },
+      { label: this.ds.getProjectDisplayName('THMS', 'Housing delivery'), value: h.completed, target: h.totalHouses, pct: housingPct, color: PALETTE.success },
+      { label: this.ds.getProjectDisplayName('TIPS', 'Works commenced'), value: t.started, target: t.totalWorks, pct: commencedPct, color: PALETTE.navy },
+      { label: this.ds.getProjectDisplayName('SCHEME', 'Scheme approvals'), value: approved, target: applied, pct: schemePct, color: PALETTE.gold },
+      { label: this.ds.getProjectDisplayName('TAMS', 'Skill training'), value: e.totalStudents, target: enrollTarget, pct: enrollPct, color: PALETTE.info },
+      { label: this.ds.getProjectDisplayName('PATROL360', 'CCTV coverage'), value: p.cameraInstalled, target: p.totalWorks, pct: cameraCoveragePct, color: TEAL },
     ];
     this.leaderboard = [...d.tenderDivs]
       .map((c: any) => ({

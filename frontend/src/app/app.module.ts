@@ -60,6 +60,7 @@ import { AiAnalyticsComponent }    from './modules/ai-analytics/ai-analytics.com
 import { IngestionDashboardComponent } from './modules/ingestion-dashboard/ingestion-dashboard.component';
 import { AuditLogComponent }          from './modules/audit-log/audit-log.component';
 import { MultiDashboardComponent }    from './modules/multi-dashboard/multi-dashboard.component';
+import { ConstructionReportComponent } from './modules/construction-report/construction-report.component';
 
 const PRIMENG_MODULES = [
   ButtonModule, InputTextModule, DropdownModule, TableModule, CardModule,
@@ -76,7 +77,7 @@ const PRIMENG_MODULES = [
     HousingComponent, TenderComponent, EnrollmentComponent,
     SchemeReportComponent, TodComponent, Patrol360Component, UserMasterComponent,
     ConfigurationComponent, SchedulerManagementComponent,
-    DashboardMdComponent, TncwwbComponent, MultiDashboardComponent,
+    DashboardMdComponent, TncwwbComponent, MultiDashboardComponent, ConstructionReportComponent,
   ],
   imports: [
     BrowserModule, BrowserAnimationsModule, HttpClientModule,

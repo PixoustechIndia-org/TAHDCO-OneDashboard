@@ -672,7 +672,21 @@ export class ConfigurationComponent implements OnInit {
   loadProjects(): void {
     this.projectLoading = true;
     const fallback = () => {
+      const stored = localStorage.getItem('udp_projects');
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            this.projects = parsed;
+            this.applyProjectFilter();
+            this.projectLoading = false;
+            this.cdr.markForCheck();
+            return;
+          }
+        } catch {}
+      }
       this.projects = this.getDefaultProjects();
+      localStorage.setItem('udp_projects', JSON.stringify(this.projects));
       this.applyProjectFilter();
       this.projectLoading = false;
       this.cdr.markForCheck();
@@ -682,6 +696,7 @@ export class ConfigurationComponent implements OnInit {
     this.http.get<AppProject[]>(`${this.api}/projects`).pipe(catchError(() => of(null))).subscribe(res => {
       if (res && res.length > 0) {
         this.projects = res;
+        localStorage.setItem('udp_projects', JSON.stringify(this.projects));
         this.applyProjectFilter();
         this.projectLoading = false;
         this.cdr.markForCheck();
@@ -700,6 +715,24 @@ export class ConfigurationComponent implements OnInit {
       return matchQ && matchCat;
     });
     this.cdr.markForCheck();
+  }
+
+  isCoreProject(p: AppProject): boolean {
+    if (!p) return false;
+    const code = (p.projectCode || '').trim().toUpperCase();
+    const name = (p.projectName || '').trim().toLowerCase();
+    return (
+      code === 'ENG' ||
+      code === 'WELFARE' ||
+      code === 'TNCWW' ||
+      code === 'TNCWWN' ||
+      code === 'TNCWWB' ||
+      name === 'engineering' ||
+      name === 'welfare' ||
+      name === 'tncwwn' ||
+      name === 'tncwwb' ||
+      name === 'tncww'
+    );
   }
 
   openNewProject(): void {
@@ -733,6 +766,8 @@ export class ConfigurationComponent implements OnInit {
     };
 
     const done = (msg: string) => {
+      localStorage.setItem('udp_projects', JSON.stringify(this.projects));
+      window.dispatchEvent(new Event('projects_updated'));
       this.msg.add({ severity: 'success', summary: this.isProjectEditing ? 'Project Updated' : 'Project Created', detail: msg });
       this.projectModalVisible = false;
       this.loadProjects();
@@ -772,6 +807,8 @@ export class ConfigurationComponent implements OnInit {
       accept: () => {
         if (!this.api) {
           this.projects = this.projects.filter(p => p.projectCode !== prj.projectCode);
+          localStorage.setItem('udp_projects', JSON.stringify(this.projects));
+          window.dispatchEvent(new Event('projects_updated'));
           this.applyProjectFilter();
           this.msg.add({ severity: 'success', summary: 'Deleted', detail: `Project '${prj.projectName}' removed.` });
           return;
@@ -1315,7 +1352,27 @@ export class ConfigurationComponent implements OnInit {
     });
   }
 
+  private extractRowValue(r: any, patterns: string[]): string {
+    const keys = Object.keys(r);
+    for (const p of patterns) {
+      const target = p.toLowerCase().replace(/[\s_-]/g, '');
+      for (const k of keys) {
+        if (k.toLowerCase().replace(/[\s_-]/g, '') === target) {
+          const val = r[k];
+          if (val !== undefined && val !== null) {
+            return String(val).trim();
+          }
+        }
+      }
+    }
+    return '-';
+  }
+
   onFileChange(event: any): void {
+    this.onExcelSelected(event);
+  }
+
+  onExcelSelected(event: any): void {
     const file = event.target.files[0];
     if (!file) return;
 
@@ -1333,36 +1390,22 @@ export class ConfigurationComponent implements OnInit {
         const rows: any[] = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
 
         if (rows && rows.length > 0) {
-          const parsedRecords: LocalBodyMapping[] = rows.map((r, idx) => {
-            const getVal = (patterns: string[]) => {
-              for (const p of patterns) {
-                const foundKey = Object.keys(r).find(k => 
-                  k.toLowerCase().replace(/[\s_-]/g, '') === p.toLowerCase().replace(/[\s_-]/g, '')
-                );
-                if (foundKey && r[foundKey] !== undefined && r[foundKey] !== null) {
-                  return String(r[foundKey]).trim();
-                }
-              }
-              return '-';
-            };
-
-            return {
-              id: Date.now() + idx,
-              sno: idx + 1,
-              state: getVal(['state', 'state_name']) || 'Tamil Nadu',
-              division: getVal(['division', 'div']),
-              district: getVal(['district', 'dist']),
-              localBody: getVal(['local_body', 'localbody', 'type']),
-              localBodyName: getVal(['local_body_name', 'name of the localbody', 'name', 'localbodyname']),
-              block: getVal(['block', 'taluk']),
-              villagePanchayat: getVal(['village_panchayat', 'village pancayet', 'panchayat']),
-              corporation: getVal(['corporation', 'corrpration']),
-              townPanchayat: getVal(['town_panchayat', 'townpanyptet']),
-              municipality: getVal(['municipality', 'muncipality']),
-              gcc: getVal(['gcc']),
-              cmwssb: getVal(['cmwssb', 'cmws'])
-            };
-          });
+          const parsedRecords: LocalBodyMapping[] = rows.map((r, idx) => ({
+            id: Date.now() + idx,
+            sno: idx + 1,
+            state: this.extractRowValue(r, ['state', 'state_name']) || 'Tamil Nadu',
+            division: this.extractRowValue(r, ['division', 'div']),
+            district: this.extractRowValue(r, ['district', 'dist']),
+            localBody: this.extractRowValue(r, ['local_body', 'localbody', 'type']),
+            localBodyName: this.extractRowValue(r, ['local_body_name', 'name of the localbody', 'name', 'localbodyname']),
+            block: this.extractRowValue(r, ['block', 'taluk']),
+            villagePanchayat: this.extractRowValue(r, ['village_panchayat', 'village pancayet', 'panchayat']),
+            corporation: this.extractRowValue(r, ['corporation', 'corrpration']),
+            townPanchayat: this.extractRowValue(r, ['town_panchayat', 'townpanyptet']),
+            municipality: this.extractRowValue(r, ['municipality', 'muncipality']),
+            gcc: this.extractRowValue(r, ['gcc']),
+            cmwssb: this.extractRowValue(r, ['cmwssb', 'cmws'])
+          }));
 
           this.records = parsedRecords;
           this.saveToStorage(this.records);

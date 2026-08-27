@@ -150,17 +150,17 @@
           <p-table [value]="filteredProjects" [loading]="projectLoading" [paginator]="true" [rows]="10" responsiveLayout="scroll" styleClass="p-datatable-sm p-datatable-striped config-table">
             <ng-template pTemplate="header">
               <tr>
-                <th style="width: 60px" class="text-center">S.No</th>
+                <th style="width: 50px" class="text-center">S.No</th>
                 <th style="width: 50px" class="text-center">Icon</th>
-                <th style="width: 140px">Project Code</th>
-                <th style="width: 220px">Project Name</th>
-                <th style="width: 150px">Category</th>
+                <th style="width: 120px">Project Code</th>
+                <th style="width: 200px">Project Name</th>
+                <th style="width: 130px">Category</th>
                 <th>Description</th>
-                <th style="width: 180px">API Endpoint</th>
-                <th style="width: 90px" class="text-center">Active Roles</th>
-                <th style="width: 90px" class="text-center">Active Users</th>
-                <th style="width: 100px" class="text-center">Status</th>
-                <th style="width: 100px" class="text-center">Actions</th>
+                <th style="width: 220px">API Endpoint</th>
+                <th style="width: 100px" class="text-center">Active Roles</th>
+                <th style="width: 100px" class="text-center">Active Users</th>
+                <th style="width: 90px" class="text-center">Status</th>
+                <th style="width: 110px" class="text-center">Actions</th>
               </tr>
             </ng-template>
             <ng-template pTemplate="body" let-p let-i="rowIndex">
@@ -170,7 +170,7 @@
                 <td><span class="font-mono font-bold text-slate-900">{{ p.projectCode }}</span></td>
                 <td class="font-semibold text-slate-900">
                   {{ p.projectName }}
-                  <span *ngIf="p.projectCode === 'ENG' || p.projectCode === 'WELFARE' || p.projectCode === 'TNCWWB'" class="ml-1 text-xs text-primary font-bold">(Required)</span>
+                  <span *ngIf="isCoreProject(p)" class="ml-1 text-xs text-primary font-bold">(Required)</span>
                 </td>
                 <td>
                   <span class="category-badge" [class.cat-eng]="p.category==='Engineering'" [class.cat-welfare]="p.category==='Welfare'" [class.cat-tncwwb]="p.category==='Welfare Board'" [class.cat-other]="p.category!=='Engineering' && p.category!=='Welfare' && p.category!=='Welfare Board'">
@@ -178,7 +178,11 @@
                   </span>
                 </td>
                 <td class="text-slate-600 text-sm">{{ p.description || '-' }}</td>
-                <td><span class="font-mono text-xs text-slate-500 truncate block" style="max-width: 170px;" [pTooltip]="p.apiEndpoint">{{ p.apiEndpoint || '-' }}</span></td>
+                <td style="max-width: 220px;">
+                  <span class="font-mono text-xs text-slate-600 block" style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" [pTooltip]="p.apiEndpoint" tooltipPosition="top">
+                    {{ p.apiEndpoint || '-' }}
+                  </span>
+                </td>
                 <td class="text-center font-semibold text-slate-700">{{ p.activeRoleCount || 0 }}</td>
                 <td class="text-center font-semibold text-slate-700">{{ p.activeUserCount || 0 }}</td>
                 <td class="text-center">
@@ -187,12 +191,15 @@
                   </span>
                 </td>
                 <td class="text-center">
-                  <button class="action-btn edit-btn mr-1" (click)="openEditProject(p)" pTooltip="Edit Project" tooltipPosition="top">
-                    <i class="pi pi-pencil"></i>
-                  </button>
-                  <button class="action-btn del-btn" (click)="confirmDeleteProject(p)" pTooltip="Delete Project" tooltipPosition="top">
-                    <i class="pi pi-trash"></i>
-                  </button>
+                  <ng-container *ngIf="!isCoreProject(p)">
+                    <button class="action-btn edit-btn mr-1" (click)="openEditProject(p)" pTooltip="Edit Project" tooltipPosition="top">
+                      <i class="pi pi-pencil"></i>
+                    </button>
+                    <button class="action-btn del-btn" (click)="confirmDeleteProject(p)" pTooltip="Delete Project" tooltipPosition="top">
+                      <i class="pi pi-trash"></i>
+                    </button>
+                  </ng-container>
+                  <span *ngIf="isCoreProject(p)" class="text-xs font-semibold text-slate-400">Core</span>
                 </td>
               </tr>
             </ng-template>

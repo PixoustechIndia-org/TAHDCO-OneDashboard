@@ -73,7 +73,7 @@ namespace API.Tests
         {
             // Arrange
             var req = new LoginRequest("admin@tahdco.in", "Password123!");
-            var mockUser = new AppUserRow { UserId = 1, Email = "admin@tahdco.in", Role = "admin", FullName = "Admin", PasswordHash = "c2f7199e45e2629bafce665b01d3269df1da68c1d13d133aa01d72e94a6a095e", PasswordSalt = "salt123" };
+            var mockUser = new AppUserRow { UserId = 1, Email = "admin@tahdco.in", Role = "admin", FullName = "Admin", PasswordHash = "c2f7199e45e2629bafce665b01d3269df1da68c1d13d133aa01d72e94a6a095e", PasswordSalt = "salt123", IsActive = true };
             
             _mockDb.Setup(db => db.QueryFirstOrDefaultAsync<AppUserRow>(It.IsAny<string>(), It.IsAny<object>()))
                    .ReturnsAsync(mockUser);

@@ -334,9 +334,10 @@ export class DataService {
       let idx = 1;
       const targetFY = fy && fy !== 'All Years' ? fy : 'FY 2025-26';
 
-      Object.entries(divisionsMap).forEach(([divName, dists]) => {
-        dists.forEach(distName => {
-          schemeTypes.forEach((sch, sIdx) => {
+      for (const [divName, dists] of Object.entries(divisionsMap)) {
+        for (const distName of dists) {
+          for (let sIdx = 0; sIdx < schemeTypes.length; sIdx++) {
+            const sch = schemeTypes[sIdx];
             const apply = Math.floor(100 + (idx * 17) % 250);
             const pending = Math.floor(5 + (idx * 3) % 20);
             const completed = Math.max(0, apply - pending);
@@ -356,9 +357,9 @@ export class DataService {
               sanctionedMonth: monthsList[(idx + sIdx) % monthsList.length]
             });
             idx++;
-          });
-        });
-      });
+          }
+        }
+      }
 
       let filtered = rows;
       if (division && division !== 'All Divisions') filtered = filtered.filter(r => r.division === division);
@@ -603,7 +604,35 @@ export class DataService {
     return out;
   }
 
-  // ── Unified overview landing tiles (all 9 modules) ────────────
+  getCustomProjectNames(): Record<string, string> {
+    const customProjectNames: Record<string, string> = {};
+    try {
+      const storedProjects = localStorage.getItem('udp_projects');
+      if (storedProjects) {
+        const parsed = JSON.parse(storedProjects);
+        if (Array.isArray(parsed)) {
+          parsed.forEach((p: any) => {
+            if (p.projectCode && p.projectName) {
+              const rawCode = p.projectCode.trim().toUpperCase();
+              const cleanCode = rawCode.replace(/[\s\-_]/g, '');
+              customProjectNames[rawCode] = p.projectName;
+              customProjectNames[cleanCode] = p.projectName;
+            }
+          });
+        }
+      }
+    } catch {}
+    return customProjectNames;
+  }
+
+  getProjectDisplayName(code: string, fallback: string): string {
+    const map = this.getCustomProjectNames();
+    const raw = (code || '').trim().toUpperCase();
+    const clean = raw.replace(/[\s\-_]/g, '');
+    return map[raw] || map[clean] || fallback;
+  }
+
+  // ── Executive Overview Tiles (home dashboard) ────────────────
   getOverviewTiles(): Observable<ModuleTile[]> {
     return this.data$.pipe(map(d => {
       const t   = d?.tender?.summary   ?? {};
@@ -620,7 +649,7 @@ export class DataService {
 
       const tiles: ModuleTile[] = [
         {
-          id: 'tender', code: 'TIPS', name: 'Tender Integrated Process System', route: '/tender', app: 'TIPS',
+          id: 'tender', code: 'TIPS', name: this.getProjectDisplayName('TIPS', 'Tender Integrated Process System'), route: '/tender', app: 'TIPS',
           icon: 'pi-file-edit', accent: '#0a1628', accentSoft: '#e8edf5',
           primaryValue: t.totalWorks ?? 0, primaryLabel: 'Total works',
           stats: [
@@ -630,7 +659,7 @@ export class DataService {
           ]
         },
         {
-          id: 'housing', code: 'THMS', name: 'Housing Management System', route: '/housing', app: 'THMS',
+          id: 'housing', code: 'THMS', name: this.getProjectDisplayName('THMS', 'Housing Management System'), route: '/housing', app: 'THMS',
           icon: 'pi-building', accent: '#1e7c4c', accentSoft: '#edf7f2',
           primaryValue: h.totalHouses ?? 0, primaryLabel: 'Total houses',
           stats: [
@@ -640,7 +669,7 @@ export class DataService {
           ]
         },
         {
-          id: 'enrollment', code: 'TAMS', name: 'Attendance Management System', route: '/enrollment', app: 'TAMS',
+          id: 'enrollment', code: 'TAMS', name: this.getProjectDisplayName('TAMS', 'Attendance Management System'), route: '/enrollment', app: 'TAMS',
           icon: 'pi-graduation-cap', accent: '#1a5fa5', accentSoft: '#eaf2fb',
           primaryValue: e.totalStudents ?? 0, primaryLabel: 'Total students',
           stats: [
@@ -650,7 +679,7 @@ export class DataService {
           ]
         },
         {
-          id: 'scheme', code: 'Scheme', name: 'Scheme Management', route: '/scheme-report', app: 'Scheme',
+          id: 'scheme', code: 'Scheme', name: this.getProjectDisplayName('SCHEME', 'Scheme Management'), route: '/scheme-report', app: 'Scheme',
           icon: 'pi-wallet', accent: '#c9a227', accentSoft: '#fdf8e8',
           primaryValue: schemeApply, primaryLabel: 'Applications',
           stats: [
@@ -660,13 +689,13 @@ export class DataService {
           ]
         },
         {
-          id: 'telp', code: 'TELP', name: 'Educational Loan Portal', route: '/scheme-report', app: 'TELP',
+          id: 'telp', code: 'TELP', name: this.getProjectDisplayName('TELP', 'Educational Loan Portal'), route: '/scheme-report', app: 'TELP',
           icon: 'pi-book', accent: '#534ab7', accentSoft: '#eeedfe',
           primaryValue: telpApply, primaryLabel: 'Loan applications',
           stats: (d?.telp?.agencies || []).map((a: any) => ({ label: a.agency, value: a.apply ?? 0, tone: 'neutral' as const }))
         },
         {
-          id: 'oneportal', code: 'One Portal', name: 'One Portal — Member & Scheme', route: '/scheme-report', app: 'OnePortal',
+          id: 'oneportal', code: 'One Portal', name: this.getProjectDisplayName('ONEPORTAL', 'One Portal — Member & Scheme'), route: '/scheme-report', app: 'OnePortal',
           icon: 'pi-id-card', accent: '#0f6e56', accentSoft: '#e1f5ee',
           primaryValue: opm.totalWorks ?? 0, primaryLabel: 'Total members',
           stats: [
@@ -676,7 +705,7 @@ export class DataService {
           ]
         },
         {
-          id: 'tod', code: 'TOD', name: 'Online Diary Portal', route: '/tod', app: 'TOD',
+          id: 'tod', code: 'TOD', name: this.getProjectDisplayName('TOD', 'Online Diary Portal'), route: '/tod', app: 'TOD',
           icon: 'pi-calendar', accent: '#c47a0a', accentSoft: '#fef8e7',
           primaryValue: od.totalTasks ?? 0, primaryLabel: 'Total tasks',
           stats: [
@@ -686,7 +715,7 @@ export class DataService {
           ]
         },
         {
-          id: 'time', code: 'TIME', name: 'Tender Monitoring & Evaluation', route: '/tender', app: 'TIME',
+          id: 'time', code: 'TIME', name: this.getProjectDisplayName('TIME', 'Tender Monitoring & Evaluation'), route: '/tender', app: 'TIME',
           icon: 'pi-clipboard', accent: '#1a3461', accentSoft: '#e8edf5',
           primaryValue: t.mBookTotal ?? 0, primaryLabel: 'M-Books',
           stats: [
@@ -696,7 +725,7 @@ export class DataService {
           ]
         },
         {
-          id: 'patrol', code: 'Patrol 360', name: 'CCTV & Monitoring System', route: '/patrol360', app: 'Patrol360',
+          id: 'patrol', code: 'Patrol 360', name: this.getProjectDisplayName('PATROL360', 'CCTV & Monitoring System'), route: '/patrol360', app: 'Patrol360',
           icon: 'pi-video', accent: '#a32d2d', accentSoft: '#fcebeb',
           primaryValue: p.currentActive ?? 0, primaryLabel: 'Cameras online',
           stats: [

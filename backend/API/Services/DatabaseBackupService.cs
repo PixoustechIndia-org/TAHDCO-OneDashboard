@@ -55,7 +55,29 @@ public class DatabaseBackupService : BackgroundService
         var fileName = $"tahdco_backup_{DateTime.Now:yyyyMMdd_HHmm}.sql";
         var fullPath = Path.Combine(backupFolder, fileName);
 
-        var args = $"-u root -pPassword123! tahdco_db -r \"{fullPath}\""; // Replace with parsed credentials in prod
+        string args;
+        if (!string.IsNullOrWhiteSpace(_connectionString))
+        {
+            try
+            {
+                var csb = new MySqlConnector.MySqlConnectionStringBuilder(_connectionString);
+                var host = string.IsNullOrWhiteSpace(csb.Server) ? "localhost" : csb.Server;
+                var port = csb.Port > 0 ? csb.Port : 3306;
+                var user = string.IsNullOrWhiteSpace(csb.UserID) ? "root" : csb.UserID;
+                var db = string.IsNullOrWhiteSpace(csb.Database) ? "tahdco_udp" : csb.Database;
+                var passArg = string.IsNullOrWhiteSpace(csb.Password) ? "" : $"-p\"{csb.Password}\"";
+
+                args = $"-h {host} -P {port} -u {user} {passArg} {db} -r \"{fullPath}\"";
+            }
+            catch
+            {
+                args = $"-u root tahdco_udp -r \"{fullPath}\"";
+            }
+        }
+        else
+        {
+            args = $"-u root tahdco_udp -r \"{fullPath}\"";
+        }
 
         var psi = new ProcessStartInfo
         {

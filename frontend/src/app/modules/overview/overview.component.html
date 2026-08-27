@@ -36,7 +36,7 @@
 
       <div class="tile-head">
         <div class="tile-icon"><i class="pi {{ tile.icon }}"></i></div>
-        <div class="tile-code">{{ tile.code }}</div>
+        <div class="tile-title-main">{{ tile.name }}</div>
         <i class="pi pi-arrow-up-right tile-arrow"></i>
       </div>
 
@@ -44,8 +44,6 @@
         <span class="tp-value">{{ formatNum(tile.primaryValue) }}</span>
         <span class="tp-label">{{ tile.primaryLabel }}</span>
       </div>
-
-      <div class="tile-name">{{ tile.name }}</div>
 
       <div class="tile-stats">
         <div class="ts-item" *ngFor="let s of tile.stats; let si = index; trackBy: trackByStatIndex">

@@ -42,6 +42,10 @@ export class MultiDashboardComponent implements OnInit {
   constructor(private ds: DataService, private auth: AuthService) {}
 
   ngOnInit(): void {
+    this.allModules = DASHBOARD_MODULES.map(m => ({
+      ...m,
+      label: this.ds.getProjectDisplayName(m.code, m.label)
+    }));
     this.visibleModules = this.allModules.filter(m => this.auth.hasAppAccess(m.app));
     if (this.visibleModules.length === 0) this.visibleModules = this.allModules; // admin/no appAccess set -> show all rather than a blank page
     this.selected = this.visibleModules[0];

@@ -69,24 +69,24 @@
 /* Custom Capsule Styling for PrimeNG Multiselect */
 ::ng-deep .md-multisel .p-multiselect {
   background: #ffffff !important;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border: 1.5px solid #cbd5e1 !important;
   border-radius: 99px !important;
-  min-width: 190px;
+  min-width: 175px;
   height: 38px;
   display: flex;
   align-items: center;
-  padding: 0 8px;
+  padding: 0 10px 0 16px !important;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 ::ng-deep .md-multisel .p-multiselect-label {
   color: #1e293b !important;
   font-size: 13px;
   font-weight: 600;
-  padding-left: 12px !important;
+  padding: 0 8px 0 4px !important;
 }
 ::ng-deep .md-multisel .p-multiselect-trigger {
   color: #64748b !important;
-  padding-right: 8px !important;
+  padding-right: 6px !important;
 }
 
 /* ── View Toggle (Mockup 1 style) ────────────────────────────────────────── */

@@ -58,6 +58,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IReportService, ReportService>();
         services.AddScoped<ILLMProviderService, LLMProviderService>();
         services.AddScoped<IRAGService, RAGService>();
+        services.AddScoped<IConstructionReportService, ConstructionReportService>();
         services.AddScoped<IMCPToolService, MCPToolService>();
         services.AddScoped<IAIService, AIService>();
         services.AddSingleton<IUnifiedIngestionService, UnifiedIngestionService>();
@@ -184,10 +185,19 @@ public static class ServiceCollectionExtensions
 
     public static IServiceCollection AddCorsForAngular(this IServiceCollection services, IConfiguration config)
     {
-        var origins = config.GetSection("Cors:AllowedOrigins").Get<string[]>()
-                      ?? new[] { "http://localhost:4200" };
-        services.AddCors(o => o.AddPolicy("ng", p =>
-            p.WithOrigins(origins).AllowAnyHeader().AllowAnyMethod()));
+        services.AddCors(o =>
+        {
+            o.AddPolicy("ng", p =>
+                p.SetIsOriginAllowed(_ => true)
+                 .AllowAnyHeader()
+                 .AllowAnyMethod()
+                 .AllowCredentials());
+            o.AddDefaultPolicy(p =>
+                p.SetIsOriginAllowed(_ => true)
+                 .AllowAnyHeader()
+                 .AllowAnyMethod()
+                 .AllowCredentials());
+        });
         return services;
     }
 }

@@ -83,7 +83,7 @@ export class DrillComponent implements OnInit, OnDestroy {
         const dVal = r.extra ? (r.extra['Division'] || r.extra['division']) : null;
         if (dVal) divs.add(dVal.toString());
       });
-      this.divisionOptions = [{ label: 'All Divisions', value: '' }, ...Array.from(divs).sort().map(d => ({ label: d, value: d }))];
+      this.divisionOptions = [{ label: 'All Divisions', value: '' }, ...Array.from(divs).sort((a, b) => a.localeCompare(b)).map(d => ({ label: d, value: d }))];
       this.hasDivisions = divs.size > 0;
 
       // Extract unique phases
@@ -92,7 +92,7 @@ export class DrillComponent implements OnInit, OnDestroy {
         const pVal = r.extra ? (r.extra['Phase'] || r.extra['phase']) : null;
         if (pVal) phs.add(pVal.toString());
       });
-      this.phaseOptions = [{ label: 'All Phases', value: '' }, ...Array.from(phs).sort().map(p => ({ label: p, value: p }))];
+      this.phaseOptions = [{ label: 'All Phases', value: '' }, ...Array.from(phs).sort((a, b) => a.localeCompare(b)).map(p => ({ label: p, value: p }))];
       this.hasPhases = phs.size > 0;
 
       this.filteredRows = [...cfg.rows];

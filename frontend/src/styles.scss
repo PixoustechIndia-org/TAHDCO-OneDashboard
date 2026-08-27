@@ -201,6 +201,56 @@ body {
 .p-button.btn-outline:enabled:hover { border-color: var(--navy) !important; color: var(--navy) !important; }
 
 .p-dropdown, .p-multiselect { border-radius: 10px !important; border-color: var(--gray-250) !important; }
+/* â”€â”€ Global PrimeNG Dropdown & MultiSelect Checkbox Padding & Spacing â”€â”€ */
+.p-multiselect-panel {
+  .p-multiselect-header {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.75rem !important;
+    padding: 0.625rem 0.85rem !important;
+
+    .p-checkbox {
+      margin-right: 0.75rem !important;
+      flex-shrink: 0 !important;
+    }
+
+    .p-multiselect-filter-container {
+      flex: 1 !important;
+    }
+  }
+
+  .p-multiselect-items {
+    padding: 0.35rem 0 !important;
+
+    .p-multiselect-item {
+      display: flex !important;
+      align-items: center !important;
+      gap: 0.75rem !important;
+      padding: 0.55rem 0.85rem !important;
+
+      .p-checkbox {
+        margin-right: 0.75rem !important;
+        flex-shrink: 0 !important;
+      }
+
+      span {
+        padding-left: 0.25rem !important;
+      }
+    }
+  }
+}
+
+.p-checkbox {
+  .p-checkbox-label {
+    margin-left: 0.75rem !important;
+    padding-left: 0.25rem !important;
+  }
+}
+
+.p-dropdown-panel .p-dropdown-items .p-dropdown-item {
+  padding: 0.55rem 0.85rem !important;
+}
+
 .p-dropdown:not(.p-disabled).p-focus, .p-dropdown:not(.p-disabled):hover,
 .p-multiselect:not(.p-disabled):hover { border-color: var(--navy-400) !important; }
 .p-inputtext { border-radius: 10px !important; border-color: var(--gray-250) !important; }
@@ -578,7 +628,7 @@ button:active, .p-button:active {
 }
 
 
-/* â €â€ Responsive Breakpoints â€â€ */
+/* ï¿½ ï¿½ï¿½ Responsive Breakpoints ï¿½ï¿½ */
 :root {
   --breakpoint-mobile: 767px;
   --breakpoint-tablet: 1023px;

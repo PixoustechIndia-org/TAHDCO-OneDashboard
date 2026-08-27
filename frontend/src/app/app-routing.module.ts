@@ -21,6 +21,7 @@ import { AiAnalyticsComponent } from './modules/ai-analytics/ai-analytics.compon
 import { IngestionDashboardComponent } from './modules/ingestion-dashboard/ingestion-dashboard.component';
 import { AuditLogComponent } from './modules/audit-log/audit-log.component';
 import { MultiDashboardComponent } from './modules/multi-dashboard/multi-dashboard.component';
+import { ConstructionReportComponent } from './modules/construction-report/construction-report.component';
 
 const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -31,6 +32,8 @@ const routes: Routes = [
       { path: 'overview',       component: OverviewComponent },
       { path: 'drill/:moduleId', component: DrillComponent },
       { path: 'dashboard',      component: DashboardComponent },
+      { path: 'construction-work-report', component: ConstructionReportComponent },
+      { path: 'construction-report',      redirectTo: 'construction-work-report' },
       { path: 'housing',        component: HousingComponent,      data: { app: 'THMS' } },
       { path: 'tender',         component: TenderComponent,       data: { app: 'TIPS' } },
       { path: 'enrollment',     component: EnrollmentComponent,   data: { app: 'TAMS' } },

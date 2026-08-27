@@ -1,0 +1,827 @@
+<div class="construction-container p-3 sm:p-4 lg:p-5">
+
+  <!-- ── Executive Header Banner ──────────────────────────────────────── -->
+  <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-5 mb-4">
+    <div class="flex flex-column md:flex-row md:align-items-center justify-content-between gap-3">
+      <div class="flex align-items-center gap-3">
+        <div class="w-3.5rem h-3.5rem rounded-xl bg-blue-600 text-white flex align-items-center justify-content-center text-2xl font-bold shadow-sm">
+          <i class="pi pi-building"></i>
+        </div>
+        <div>
+          <h1 class="text-2xl font-extrabold text-slate-900 m-0 tracking-tight">ConstructionWork Report</h1>
+          <p class="text-sm font-medium text-slate-600 mt-1 mb-0">Civil Works, Milestone Schedules, Progress & Expenditure Control</p>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap align-items-center gap-2.5">
+        <button *ngIf="canCreate" class="btn-action-primary" (click)="openAddWork()">
+          <i class="pi pi-plus font-bold"></i>
+          <span>Add Construction Work</span>
+        </button>
+        <button class="btn-action-excel" (click)="exportExcel()">
+          <i class="pi pi-file-excel"></i>
+          <span>Export Excel</span>
+        </button>
+        <button class="btn-action-pdf" (click)="exportPdf()">
+          <i class="pi pi-file-pdf"></i>
+          <span>Export PDF</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Active Navigation & View Options -->
+    <div class="flex flex-wrap align-items-center justify-content-between gap-3 mt-4 pt-3 border-top-1 border-slate-100">
+      <div class="flex align-items-center gap-2">
+        <button class="tab-btn active">
+          <i class="pi pi-chart-bar"></i>
+          <span>Executive Construction Report</span>
+        </button>
+      </div>
+      <div class="flex flex-wrap align-items-center gap-2">
+        <button class="btn-toggle-pill" [class.active]="showMatrixSection" (click)="showMatrixSection = !showMatrixSection">
+          <i [class]="showMatrixSection ? 'pi pi-eye-slash' : 'pi pi-eye'"></i>
+          <span>{{ showMatrixSection ? 'Hide Matrix' : 'Show Matrix' }}</span>
+        </button>
+        <button class="btn-toggle-pill" [class.active]="showAnalyticsSection" (click)="showAnalyticsSection = !showAnalyticsSection">
+          <i class="pi pi-chart-pie"></i>
+          <span>{{ showAnalyticsSection ? 'Hide Analytics' : 'Show Analytics' }}</span>
+        </button>
+        <button class="btn-toggle-pill" [class.active]="showWorksSection" (click)="showWorksSection = !showWorksSection">
+          <i class="pi pi-list"></i>
+          <span>{{ showWorksSection ? 'Hide Works List' : 'Show Works List' }}</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MultiSelect & Select2 Search Filter Bar (Including Financial Year) ─────────────────────── -->
+  <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 mb-4">
+    <div class="filter-header mb-3 flex align-items-center justify-content-between">
+      <div class="text-sm font-bold text-slate-800 flex align-items-center gap-2">
+        <i class="pi pi-filter text-blue-600"></i> Search & Multi-Select Filters
+      </div>
+      <button pButton label="Clear All Filters" icon="pi pi-filter-slash" class="p-button-text p-button-secondary p-button-sm text-xs font-semibold"
+        (click)="resetFilters()"></button>
+    </div>
+
+    <div class="grid grid-nogutter gap-3">
+      <!-- Quick Search -->
+      <div class="col-12 md:col-6 lg:col-3">
+        <label class="filter-label">Quick Search</label>
+        <span class="p-input-icon-left w-full">
+          <i class="pi pi-search text-slate-400"></i>
+          <input pInputText type="text" [(ngModel)]="searchTerm" (input)="onFilterChange()"
+            placeholder="Search G.O., Premises, Place..." class="p-inputtext-md w-full select2-input">
+        </span>
+      </div>
+
+      <!-- Financial Year MultiSelect -->
+      <div class="col-12 sm:col-6 md:col-3 lg:col-2">
+        <label class="filter-label">Financial Year</label>
+        <p-multiSelect [options]="financialYears" [(ngModel)]="selectedFinancialYears" (onChange)="onFilterChange()"
+          [filter]="true" filterBy="label" filterPlaceholder="Search financial year..."
+          defaultLabel="All Fin. Years" [showClear]="true" selectedItemsLabel="{0} Fin. Years" [maxSelectedLabels]="1"
+          styleClass="w-full select2-multiselect" panelStyleClass="select2-panel"></p-multiSelect>
+      </div>
+
+      <!-- Division MultiSelect (Cascades Districts) -->
+      <div class="col-12 sm:col-6 md:col-3 lg:col-2">
+        <label class="filter-label">Division</label>
+        <p-multiSelect [options]="divisions" [(ngModel)]="selectedDivisions" (onChange)="onDivisionChange()"
+          [filter]="true" filterBy="label" filterPlaceholder="Search divisions..."
+          defaultLabel="All Divisions" [showClear]="true" selectedItemsLabel="{0} Divisions" [maxSelectedLabels]="1"
+          styleClass="w-full select2-multiselect" panelStyleClass="select2-panel"></p-multiSelect>
+      </div>
+
+      <!-- Department MultiSelect -->
+      <div class="col-12 sm:col-6 md:col-4 lg:col-2">
+        <label class="filter-label">Department</label>
+        <p-multiSelect [options]="departments" [(ngModel)]="selectedDepartments" (onChange)="onFilterChange()"
+          [filter]="true" filterBy="label" filterPlaceholder="Search departments..."
+          defaultLabel="All Departments" [showClear]="true" selectedItemsLabel="{0} Depts" [maxSelectedLabels]="1"
+          styleClass="w-full select2-multiselect" panelStyleClass="select2-panel"></p-multiSelect>
+      </div>
+
+      <!-- District MultiSelect (Cascading from selected Divisions) -->
+      <div class="col-12 sm:col-6 md:col-4 lg:col-2">
+        <label class="filter-label">
+          District
+          <span *ngIf="selectedDivisions.length > 0" class="text-2xs font-normal text-blue-600">({{ availableDistricts.length }} in Division)</span>
+        </label>
+        <p-multiSelect [options]="availableDistricts" [(ngModel)]="selectedDistricts" (onChange)="onFilterChange()"
+          [filter]="true" filterBy="label" filterPlaceholder="Search districts..."
+          defaultLabel="All Districts" [showClear]="true" selectedItemsLabel="{0} Districts" [maxSelectedLabels]="1"
+          styleClass="w-full select2-multiselect" panelStyleClass="select2-panel"></p-multiSelect>
+      </div>
+
+      <!-- Category MultiSelect -->
+      <div class="col-12 sm:col-6 md:col-4 lg:col-2">
+        <label class="filter-label">Category</label>
+        <p-multiSelect [options]="categories" [(ngModel)]="selectedCategories" (onChange)="onFilterChange()"
+          [filter]="true" filterBy="label" filterPlaceholder="Search categories..."
+          defaultLabel="All Categories" [showClear]="true" selectedItemsLabel="{0} Categories" [maxSelectedLabels]="1"
+          styleClass="w-full select2-multiselect" panelStyleClass="select2-panel"></p-multiSelect>
+      </div>
+
+      <!-- Status MultiSelect -->
+      <div class="col-12 sm:col-6 md:col-4 lg:col-2">
+        <label class="filter-label">Status</label>
+        <p-multiSelect [options]="statuses" [(ngModel)]="selectedStatuses" (onChange)="onFilterChange()"
+          [filter]="true" filterBy="label" filterPlaceholder="Search status..."
+          defaultLabel="All Statuses" [showClear]="true" selectedItemsLabel="{0} Status" [maxSelectedLabels]="1"
+          styleClass="w-full select2-multiselect" panelStyleClass="select2-panel"></p-multiSelect>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <!-- 1. KPI SUMMARY CARDS: STATUS & FINANCIAL OVERVIEW                 -->
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <div class="grid mb-4">
+    <!-- Total Works -->
+    <div class="col-12 sm:col-6 lg:col-3">
+      <div class="kpi-card bg-white border-left-4 border-blue-600 p-4 rounded-2xl shadow-sm">
+        <div class="flex justify-content-between align-items-center mb-2">
+          <span class="text-sm font-bold text-slate-600 uppercase tracking-wide">Total Works</span>
+          <span class="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 flex align-items-center justify-content-center text-lg">
+            <i class="pi pi-building"></i>
+          </span>
+        </div>
+        <div class="text-3xl font-extrabold text-slate-900 mb-1">{{ dashboard?.totalWorks || 0 }}</div>
+        <div class="text-xs font-semibold text-slate-500">
+          <span class="text-blue-700 font-bold">{{ dashboard?.ongoingWorks || 0 }} Active</span> · Across Filtered Scope
+        </div>
+      </div>
+    </div>
+
+    <!-- Ongoing Works -->
+    <div class="col-12 sm:col-6 lg:col-3">
+      <div class="kpi-card bg-white border-left-4 border-cyan-600 p-4 rounded-2xl shadow-sm">
+        <div class="flex justify-content-between align-items-center mb-2">
+          <span class="text-sm font-bold text-cyan-800 uppercase tracking-wide">Ongoing Works</span>
+          <span class="w-10 h-10 rounded-xl bg-cyan-50 text-cyan-700 flex align-items-center justify-content-center text-lg">
+            <i class="pi pi-spin pi-cog"></i>
+          </span>
+        </div>
+        <div class="text-3xl font-extrabold text-cyan-800 mb-1">{{ dashboard?.ongoingWorks || 0 }}</div>
+        <div class="text-xs font-semibold text-slate-500">Milestone execution in progress</div>
+      </div>
+    </div>
+
+    <!-- Completed Works -->
+    <div class="col-12 sm:col-6 lg:col-3">
+      <div class="kpi-card bg-white border-left-4 border-emerald-600 p-4 rounded-2xl shadow-sm">
+        <div class="flex justify-content-between align-items-center mb-2">
+          <span class="text-sm font-bold text-emerald-800 uppercase tracking-wide">Completed Works</span>
+          <span class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex align-items-center justify-content-center text-lg">
+            <i class="pi pi-check-circle"></i>
+          </span>
+        </div>
+        <div class="text-3xl font-extrabold text-emerald-800 mb-1">{{ dashboard?.completedWorks || 0 }}</div>
+        <div class="text-xs font-semibold text-emerald-700">100% Civil Handover to Dept</div>
+      </div>
+    </div>
+
+    <!-- Delayed Works -->
+    <div class="col-12 sm:col-6 lg:col-3">
+      <div class="kpi-card bg-white border-left-4 border-rose-600 p-4 rounded-2xl shadow-sm">
+        <div class="flex justify-content-between align-items-center mb-2">
+          <span class="text-sm font-bold text-rose-800 uppercase tracking-wide">Delayed / Overdue</span>
+          <span class="w-10 h-10 rounded-xl bg-rose-50 text-rose-700 flex align-items-center justify-content-center text-lg">
+            <i class="pi pi-exclamation-triangle"></i>
+          </span>
+        </div>
+        <div class="text-3xl font-extrabold text-rose-800 mb-1">{{ dashboard?.delayedWorks || 0 }}</div>
+        <div class="text-xs font-semibold text-rose-700">Immediate EE intervention required</div>
+      </div>
+    </div>
+
+    <!-- Financial Card: Total Estimated Cost -->
+    <div class="col-12 md:col-4">
+      <div class="financial-card finance-indigo p-4 rounded-2xl shadow-sm">
+        <span class="finance-title">Total Estimated Cost</span>
+        <div class="finance-amount">₹ {{ (dashboard?.totalEstimatedAmount || 0).toFixed(2) }} <span class="finance-unit">Lakh</span></div>
+        <div class="finance-desc">Sanctioned under Government Orders (G.O.)</div>
+      </div>
+    </div>
+
+    <!-- Financial Card: Total Expenditure -->
+    <div class="col-12 md:col-4">
+      <div class="financial-card finance-blue p-4 rounded-2xl shadow-sm">
+        <span class="finance-title">Total Expenditure</span>
+        <div class="finance-amount">₹ {{ (dashboard?.totalExpenditure || 0).toFixed(2) }} <span class="finance-unit">Lakh</span></div>
+        <div class="finance-desc">
+          Prev: ₹{{ (dashboard?.totalExpUptoPrevYear || 0).toFixed(2) }}L · Curr: ₹{{ (dashboard?.totalExpDuringCurrYear || 0).toFixed(2) }}L
+        </div>
+      </div>
+    </div>
+
+    <!-- Financial Card: Balance Sanction Funds -->
+    <div class="col-12 md:col-4">
+      <div class="financial-card finance-emerald p-4 rounded-2xl shadow-sm">
+        <span class="finance-title">Balance Sanction Funds</span>
+        <div class="finance-amount">₹ {{ (dashboard?.balanceAmount || 0).toFixed(2) }} <span class="finance-unit">Lakh</span></div>
+        <div class="finance-desc">Disbursement aligned with milestone progress</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <!-- 2. CATEGORY & DEPARTMENT MATRIX TABLE (WITH SORTING & EDITING)    -->
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <div *ngIf="showMatrixSection" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-5 mb-4">
+    <div class="flex flex-column sm:flex-row align-items-start sm:align-items-center justify-content-between gap-2 mb-4 pb-3 border-bottom-1 border-slate-100">
+      <div>
+        <h2 class="text-lg font-extrabold text-slate-900 m-0">Department & Category-wise Construction Work Status</h2>
+        <p class="text-xs font-semibold text-slate-500 mt-1 mb-0">Adidravidar Welfare Department · Tribal Welfare Department · TAHDCO</p>
+      </div>
+      <div class="flex align-items-center gap-2">
+        <span class="text-xs bg-blue-50 text-blue-800 px-3 py-1.5 rounded-full font-bold border border-blue-200 shadow-2xs">
+          <i class="pi pi-calendar mr-1"></i> As on {{ currentDateFormatted }}
+        </span>
+        <button pButton icon="pi pi-chevron-up" class="p-button-rounded p-button-text p-button-secondary p-button-sm"
+          pTooltip="Hide Matrix Table" (click)="showMatrixSection = false"></button>
+      </div>
+    </div>
+
+    <div class="overflow-x-auto">
+      <p-table [value]="matrixRows" responsiveLayout="scroll" styleClass="p-datatable-sm p-datatable-gridlines matrix-table-prime">
+        <ng-template pTemplate="header">
+          <tr class="table-head-primary">
+            <th rowspan="2" pSortableColumn="sNo" class="th-cell text-center" style="width: 50px;">
+              S.No <p-sortIcon field="sNo"></p-sortIcon>
+            </th>
+            <th rowspan="2" pSortableColumn="description" class="th-cell" style="min-width: 180px;">
+              Description <p-sortIcon field="description"></p-sortIcon>
+            </th>
+            <th rowspan="2" pSortableColumn="totalNoOfWorks" class="th-cell text-center th-highlight" style="min-width: 90px;">
+              Total Works <p-sortIcon field="totalNoOfWorks"></p-sortIcon>
+            </th>
+            <th rowspan="2" pSortableColumn="totalEstAmt" class="th-cell text-right th-highlight" style="min-width: 120px;">
+              Est. Amt (₹L) <p-sortIcon field="totalEstAmt"></p-sortIcon>
+            </th>
+            <th colspan="3" class="th-cell text-center th-adidravidar">Adidravidar Welfare Dept</th>
+            <th colspan="3" class="th-cell text-center th-tribal">Tribal Welfare Dept</th>
+            <th colspan="3" class="th-cell text-center th-tahdco">TAHDCO</th>
+            <th rowspan="2" pSortableColumn="totalExp" class="th-cell text-right th-exp" style="min-width: 120px;">
+              Total Exp (₹L) <p-sortIcon field="totalExp"></p-sortIcon>
+            </th>
+            <th rowspan="2" pSortableColumn="balance" class="th-cell text-right th-bal" style="min-width: 120px;">
+              Balance (₹L) <p-sortIcon field="balance"></p-sortIcon>
+            </th>
+            <th rowspan="2" class="th-cell text-center" style="min-width: 80px;">
+              Actions
+            </th>
+          </tr>
+          <tr class="table-head-secondary">
+            <th pSortableColumn="adidravidarWorks" class="th-sub text-center">Works <p-sortIcon field="adidravidarWorks"></p-sortIcon></th>
+            <th pSortableColumn="adidravidarEstAmt" class="th-sub text-right">Est. Amt <p-sortIcon field="adidravidarEstAmt"></p-sortIcon></th>
+            <th pSortableColumn="adidravidarTotalExp" class="th-sub text-right border-right">Exp <p-sortIcon field="adidravidarTotalExp"></p-sortIcon></th>
+
+            <th pSortableColumn="tribalWorks" class="th-sub text-center">Works <p-sortIcon field="tribalWorks"></p-sortIcon></th>
+            <th pSortableColumn="tribalEstAmt" class="th-sub text-right">Est. Amt <p-sortIcon field="tribalEstAmt"></p-sortIcon></th>
+            <th pSortableColumn="tribalTotalExp" class="th-sub text-right border-right">Exp <p-sortIcon field="tribalTotalExp"></p-sortIcon></th>
+
+            <th pSortableColumn="tahdcoWorks" class="th-sub text-center">Works <p-sortIcon field="tahdcoWorks"></p-sortIcon></th>
+            <th pSortableColumn="tahdcoEstAmt" class="th-sub text-right">Est. Amt <p-sortIcon field="tahdcoEstAmt"></p-sortIcon></th>
+            <th pSortableColumn="tahdcoTotalExp" class="th-sub text-right border-right">Exp <p-sortIcon field="tahdcoTotalExp"></p-sortIcon></th>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-row>
+          <tr class="matrix-row">
+            <td class="td-cell text-center font-bold text-slate-500">{{ row.sNo }}</td>
+            <td class="td-cell font-bold text-slate-900">{{ row.description }}</td>
+            <td class="td-cell text-center font-extrabold text-blue-700 bg-blue-50/40">{{ row.totalNoOfWorks }}</td>
+            <td class="td-cell text-right font-bold text-slate-800">{{ row.totalEstAmt ? row.totalEstAmt.toFixed(2) : '-' }}</td>
+
+            <!-- Adidravidar Welfare -->
+            <td class="td-cell text-center font-semibold text-blue-800">{{ row.adidravidarWorks || '-' }}</td>
+            <td class="td-cell text-right text-slate-700">{{ row.adidravidarEstAmt ? row.adidravidarEstAmt.toFixed(2) : '-' }}</td>
+            <td class="td-cell text-right font-bold text-blue-900 border-right">{{ row.adidravidarTotalExp ? row.adidravidarTotalExp.toFixed(2) : '-' }}</td>
+
+            <!-- Tribal Welfare -->
+            <td class="td-cell text-center font-semibold text-emerald-800">{{ row.tribalWorks || '-' }}</td>
+            <td class="td-cell text-right text-slate-700">{{ row.tribalEstAmt ? row.tribalEstAmt.toFixed(2) : '-' }}</td>
+            <td class="td-cell text-right font-bold text-emerald-900 border-right">{{ row.tribalTotalExp ? row.tribalTotalExp.toFixed(2) : '-' }}</td>
+
+            <!-- TAHDCO -->
+            <td class="td-cell text-center font-semibold text-purple-800">{{ row.tahdcoWorks || '-' }}</td>
+            <td class="td-cell text-right text-slate-700">{{ row.tahdcoEstAmt ? row.tahdcoEstAmt.toFixed(2) : '-' }}</td>
+            <td class="td-cell text-right font-bold text-purple-900 border-right">{{ row.tahdcoTotalExp ? row.tahdcoTotalExp.toFixed(2) : '-' }}</td>
+
+            <td class="td-cell text-right font-extrabold text-amber-900 bg-amber-50/50">{{ row.totalExp ? row.totalExp.toFixed(2) : '-' }}</td>
+            <td class="td-cell text-right font-extrabold text-emerald-900 bg-emerald-50/50">{{ row.balance ? row.balance.toFixed(2) : '-' }}</td>
+
+            <td class="td-cell text-center">
+              <button *ngIf="canEdit" pButton icon="pi pi-pencil" class="p-button-rounded p-button-text p-button-primary p-button-sm"
+                pTooltip="Edit Category Metrics" tooltipPosition="bottom" (click)="openEditMatrixRow(row)"></button>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <!-- 3. PROGRESS DISTRIBUTION & DISTRICT WORK ACTIVITY (REDESIGNED)    -->
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <div *ngIf="showAnalyticsSection" class="grid mb-4">
+    <!-- Work Status Breakdown -->
+    <div class="col-12 md:col-6">
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-5 h-full">
+        <div class="flex align-items-center justify-content-between mb-4 pb-2 border-bottom-1 border-slate-100">
+          <h3 class="text-base font-extrabold text-slate-900 m-0 flex align-items-center gap-2">
+            <i class="pi pi-chart-pie text-blue-600 text-lg"></i> Work Status Breakdown
+          </h3>
+          <span class="text-xs font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full">{{ dashboard?.totalWorks || 0 }} Works Total</span>
+        </div>
+
+        <div class="space-y-4">
+          <div *ngFor="let item of dashboard?.statusDistribution" class="p-3 bg-slate-50 border border-slate-100 rounded-xl hover:bg-white hover:shadow-sm transition-all mb-2.5">
+            <div class="flex justify-content-between align-items-center text-sm mb-2">
+              <div class="flex align-items-center gap-2">
+                <span class="w-3 h-3 rounded-full" [style.backgroundColor]="item.color"></span>
+                <span class="font-extrabold text-slate-900">{{ item.status }}</span>
+              </div>
+              <div class="flex align-items-center gap-2">
+                <span class="text-xs font-bold px-2 py-0.5 rounded-full" [style.backgroundColor]="item.color + '15'" [style.color]="item.color">
+                  {{ item.percentage }}%
+                </span>
+                <span class="font-black text-slate-900 text-sm">{{ item.count }} Works</span>
+              </div>
+            </div>
+            <div class="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden shadow-inner">
+              <div class="h-2.5 rounded-full transition-all duration-500" [style.width.%]="item.percentage" [style.backgroundColor]="item.color"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- District Work Activity -->
+    <div class="col-12 md:col-6">
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-5 h-full">
+        <div class="flex align-items-center justify-content-between mb-4 pb-2 border-bottom-1 border-slate-100">
+          <h3 class="text-base font-extrabold text-slate-900 m-0 flex align-items-center gap-2">
+            <i class="pi pi-map-marker text-emerald-600 text-lg"></i> District Work Activity
+          </h3>
+          <span class="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">
+            {{ dashboard?.districtBreakdown?.length || 0 }} Active Districts
+          </span>
+        </div>
+
+        <div class="overflow-y-auto max-h-24rem pr-1">
+          <div *ngFor="let dist of dashboard?.districtBreakdown"
+            class="flex align-items-center justify-content-between p-3.5 hover:bg-slate-50 border border-slate-100 hover:border-blue-200 rounded-xl transition-all mb-2">
+            <div class="flex-1">
+              <div class="font-extrabold text-sm text-slate-900 flex align-items-center gap-2">
+                <i class="pi pi-map text-slate-400 text-xs"></i> {{ dist.district }}
+              </div>
+              <div class="flex flex-wrap gap-1.5 mt-1.5">
+                <span class="text-2xs font-extrabold bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded border border-emerald-200">
+                  {{ dist.completedWorks }} Completed
+                </span>
+                <span class="text-2xs font-extrabold bg-blue-50 text-blue-800 px-2 py-0.5 rounded border border-blue-200">
+                  {{ dist.ongoingWorks }} Ongoing
+                </span>
+                <span *ngIf="dist.delayedWorks > 0" class="text-2xs font-extrabold bg-rose-50 text-rose-800 px-2 py-0.5 rounded border border-rose-200">
+                  {{ dist.delayedWorks }} Delayed
+                </span>
+              </div>
+            </div>
+            <div class="text-right pl-3 border-left-1 border-slate-100">
+              <div class="text-sm font-black text-slate-900">₹ {{ dist.totalEstAmt.toFixed(2) }} L</div>
+              <div class="text-xs font-bold text-amber-800">Exp: ₹ {{ dist.totalExp.toFixed(2) }} L</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <!-- 4. FILTERED CONSTRUCTION WORKS DETAILED TABLE (WITH ALL SORTING)  -->
+  <!-- ══════════════════════════════════════════════════════════════════ -->
+  <div *ngIf="showWorksSection" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-5">
+    <div class="flex flex-column sm:flex-row justify-content-between align-items-start sm:align-items-center gap-2 mb-4">
+      <div>
+        <h3 class="text-base font-extrabold text-slate-900 m-0">Filtered Construction Works ({{ worksList.length }})</h3>
+        <p class="text-xs font-semibold text-slate-500 mt-1 mb-0">Click any work title to inspect full milestone schedule and financial records</p>
+      </div>
+      <div class="flex align-items-center gap-2">
+        <button pButton icon="pi pi-chevron-up" class="p-button-rounded p-button-text p-button-secondary p-button-sm"
+          pTooltip="Hide Works List" (click)="showWorksSection = false"></button>
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <p-table [value]="worksList" [loading]="loading" responsiveLayout="scroll" styleClass="p-datatable-sm p-datatable-gridlines modern-table">
+        <ng-template pTemplate="header">
+          <tr class="bg-slate-900 text-white text-xs">
+            <th style="width: 50px" class="text-center">S.No</th>
+            <th pSortableColumn="goReference" style="min-width: 140px">
+              G.O. Reference <p-sortIcon field="goReference"></p-sortIcon>
+            </th>
+            <th pSortableColumn="district" style="min-width: 110px">
+              District / Place <p-sortIcon field="district"></p-sortIcon>
+            </th>
+            <th pSortableColumn="nameOfPremises" style="min-width: 240px">
+              Premises & Components <p-sortIcon field="nameOfPremises"></p-sortIcon>
+            </th>
+            <th pSortableColumn="estimatedAmount" style="min-width: 110px" class="text-right">
+              Est. Amt (₹L) <p-sortIcon field="estimatedAmount"></p-sortIcon>
+            </th>
+            <th pSortableColumn="totalExpenditure" style="min-width: 110px" class="text-right">
+              Total Exp (₹L) <p-sortIcon field="totalExpenditure"></p-sortIcon>
+            </th>
+            <th pSortableColumn="balanceAmount" style="min-width: 110px" class="text-right">
+              Balance (₹L) <p-sortIcon field="balanceAmount"></p-sortIcon>
+            </th>
+            <th pSortableColumn="progressPercentage" style="min-width: 130px" class="text-center">
+              Progress % <p-sortIcon field="progressPercentage"></p-sortIcon>
+            </th>
+            <th pSortableColumn="workStatus" style="min-width: 110px" class="text-center">
+              Status <p-sortIcon field="workStatus"></p-sortIcon>
+            </th>
+            <th style="min-width: 110px" class="text-center">Actions</th>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-work let-rowIndex="rowIndex">
+          <tr class="text-sm hover:bg-slate-50">
+            <td class="text-center font-bold text-slate-500">{{ rowIndex + 1 }}</td>
+            <td>
+              <div class="font-extrabold text-slate-900">{{ work.goReference }}</div>
+              <small class="text-xs font-medium text-slate-500">{{ work.department }}</small>
+            </td>
+            <td>
+              <div class="font-bold text-slate-800">{{ work.district }}</div>
+              <div class="text-xs text-slate-600">{{ work.place }}</div>
+            </td>
+            <td>
+              <div class="font-extrabold text-blue-700 hover:text-blue-900 cursor-pointer" (click)="viewDetails(work)">
+                {{ work.nameOfPremises }}
+              </div>
+              <div class="text-xs text-slate-600 mt-0.5">{{ work.components }}</div>
+            </td>
+            <td class="text-right font-bold text-slate-900">₹ {{ work.estimatedAmount.toFixed(2) }}</td>
+            <td class="text-right font-extrabold text-amber-800">₹ {{ work.totalExpenditure.toFixed(2) }}</td>
+            <td class="text-right font-extrabold text-emerald-800">₹ {{ work.balanceAmount.toFixed(2) }}</td>
+            <td>
+              <div class="flex align-items-center justify-content-between mb-1 text-xs">
+                <span class="font-bold text-slate-800">{{ work.progressPercentage }}%</span>
+              </div>
+              <div class="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+                <div class="h-2 rounded-full" [style.width.%]="work.progressPercentage"
+                  [ngClass]="work.progressPercentage >= 100 ? 'bg-emerald-500' : (work.progressPercentage < 50 ? 'bg-rose-500' : 'bg-blue-600')"></div>
+              </div>
+            </td>
+            <td class="text-center">
+              <span class="status-badge" [ngClass]="getStatusClass(work.workStatus)">
+                {{ work.workStatus }}
+              </span>
+            </td>
+            <td class="text-center">
+              <div class="flex align-items-center justify-content-center gap-1">
+                <button pButton icon="pi pi-eye" class="p-button-rounded p-button-text p-button-sm"
+                  pTooltip="View Details" tooltipPosition="bottom" (click)="viewDetails(work)"></button>
+                <button *ngIf="canUpdateProgress" pButton icon="pi pi-chart-line" class="p-button-rounded p-button-text p-button-info p-button-sm"
+                  pTooltip="Update Progress" tooltipPosition="bottom" (click)="openProgressDialog(work)"></button>
+                <button *ngIf="canEdit" pButton icon="pi pi-pencil" class="p-button-rounded p-button-text p-button-secondary p-button-sm"
+                  pTooltip="Edit Work" tooltipPosition="bottom" (click)="openEditWork(work)"></button>
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="10" class="text-center py-6 text-slate-500 font-semibold text-sm">
+              <i class="pi pi-folder-open text-4xl text-slate-400 mb-2 block"></i>
+              No construction works found matching the selected MultiSelect filters.
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<!-- EDIT CATEGORY MATRIX ROW MODAL                                    -->
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<p-dialog [(visible)]="editMatrixDialogVisible" [modal]="true" [draggable]="false" [resizable]="false"
+  header="Edit Category Work Status & Metrics" [style]="{ width: '650px', maxWidth: '95vw' }">
+
+  <div class="space-y-4 pt-2">
+    <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 mb-3">
+      <span class="text-xs font-bold text-slate-500 uppercase">Category Description</span>
+      <h3 class="text-base font-extrabold text-slate-900 m-0 mt-0.5">{{ matrixForm.description }}</h3>
+    </div>
+
+    <!-- Adidravidar Section -->
+    <div class="p-3 bg-blue-50/50 rounded-xl border border-blue-100 mb-3">
+      <div class="text-xs font-bold text-blue-800 uppercase tracking-wide mb-2 flex align-items-center gap-1.5">
+        <i class="pi pi-shield text-blue-600"></i> Adidravidar Welfare Department
+      </div>
+      <div class="grid grid-nogutter gap-2">
+        <div class="col-4">
+          <label class="text-xs font-bold text-slate-700 block mb-1">Works Count</label>
+          <input pInputText type="number" [(ngModel)]="matrixForm.adidravidarWorks" class="w-full p-inputtext-sm">
+        </div>
+        <div class="col-4">
+          <label class="text-xs font-bold text-slate-700 block mb-1">Est. Amt (₹L)</label>
+          <input pInputText type="number" step="0.01" [(ngModel)]="matrixForm.adidravidarEstAmt" class="w-full p-inputtext-sm">
+        </div>
+        <div class="col-4">
+          <label class="text-xs font-bold text-slate-700 block mb-1">Total Exp (₹L)</label>
+          <input pInputText type="number" step="0.01" [(ngModel)]="matrixForm.adidravidarTotalExp" class="w-full p-inputtext-sm">
+        </div>
+      </div>
+    </div>
+
+    <!-- Tribal Section -->
+    <div class="p-3 bg-emerald-50/50 rounded-xl border border-emerald-100 mb-3">
+      <div class="text-xs font-bold text-emerald-800 uppercase tracking-wide mb-2 flex align-items-center gap-1.5">
+        <i class="pi pi-compass text-emerald-600"></i> Tribal Welfare Department
+      </div>
+      <div class="grid grid-nogutter gap-2">
+        <div class="col-4">
+          <label class="text-xs font-bold text-slate-700 block mb-1">Works Count</label>
+          <input pInputText type="number" [(ngModel)]="matrixForm.tribalWorks" class="w-full p-inputtext-sm">
+        </div>
+        <div class="col-4">
+          <label class="text-xs font-bold text-slate-700 block mb-1">Est. Amt (₹L)</label>
+          <input pInputText type="number" step="0.01" [(ngModel)]="matrixForm.tribalEstAmt" class="w-full p-inputtext-sm">
+        </div>
+        <div class="col-4">
+          <label class="text-xs font-bold text-slate-700 block mb-1">Total Exp (₹L)</label>
+          <input pInputText type="number" step="0.01" [(ngModel)]="matrixForm.tribalTotalExp" class="w-full p-inputtext-sm">
+        </div>
+      </div>
+    </div>
+
+    <!-- TAHDCO Section -->
+    <div class="p-3 bg-purple-50/50 rounded-xl border border-purple-100 mb-3">
+      <div class="text-xs font-bold text-purple-800 uppercase tracking-wide mb-2 flex align-items-center gap-1.5">
+        <i class="pi pi-building text-purple-600"></i> TAHDCO
+      </div>
+      <div class="grid grid-nogutter gap-2">
+        <div class="col-4">
+          <label class="text-xs font-bold text-slate-700 block mb-1">Works Count</label>
+          <input pInputText type="number" [(ngModel)]="matrixForm.tahdcoWorks" class="w-full p-inputtext-sm">
+        </div>
+        <div class="col-4">
+          <label class="text-xs font-bold text-slate-700 block mb-1">Est. Amt (₹L)</label>
+          <input pInputText type="number" step="0.01" [(ngModel)]="matrixForm.tahdcoEstAmt" class="w-full p-inputtext-sm">
+        </div>
+        <div class="col-4">
+          <label class="text-xs font-bold text-slate-700 block mb-1">Total Exp (₹L)</label>
+          <input pInputText type="number" step="0.01" [(ngModel)]="matrixForm.tahdcoTotalExp" class="w-full p-inputtext-sm">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <div class="flex justify-content-end gap-2">
+      <button pButton label="Cancel" class="p-button-text p-button-secondary p-button-sm" (click)="editMatrixDialogVisible = false"></button>
+      <button pButton label="Save Changes" icon="pi pi-check" class="p-button-primary p-button-sm font-bold"
+        [loading]="savingMatrix" (click)="saveMatrixRow()"></button>
+    </div>
+  </ng-template>
+</p-dialog>
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<!-- WORK DETAILS DRAWER / MODAL                                       -->
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<p-dialog [(visible)]="detailDrawerVisible" [modal]="true" [draggable]="false" [resizable]="false"
+  header="Construction Work Details" [style]="{ width: '780px', maxWidth: '95vw' }" styleClass="custom-details-dialog">
+
+  <div *ngIf="selectedWork" class="space-y-4 pt-2">
+    <!-- Header banner -->
+    <div class="bg-blue-50 border border-blue-200 rounded-2xl p-4 flex justify-content-between align-items-center">
+      <div>
+        <span class="text-xs font-extrabold text-blue-700 uppercase tracking-wide">G.O. {{ selectedWork.goReference }}</span>
+        <h3 class="text-lg font-extrabold text-slate-900 m-0 mt-0.5">{{ selectedWork.nameOfPremises }}</h3>
+        <p class="text-xs font-semibold text-slate-600 m-0 mt-0.5">{{ selectedWork.district }} · {{ selectedWork.place }} · {{ selectedWork.department }}</p>
+      </div>
+      <span class="status-badge" [ngClass]="getStatusClass(selectedWork.workStatus)">
+        {{ selectedWork.workStatus }}
+      </span>
+    </div>
+
+    <!-- Milestone Timeline -->
+    <div class="bg-white border border-slate-200 rounded-2xl p-4">
+      <h4 class="text-sm font-extrabold text-slate-900 mb-3 flex align-items-center gap-2">
+        <i class="pi pi-calendar-plus text-blue-600"></i> Milestone Timeline & Scheduled Handover
+      </h4>
+      <div class="grid grid-nogutter text-center text-xs font-medium">
+        <div class="col-2.4 p-2 border-right-1 border-slate-100">
+          <span class="text-xs text-slate-500 block mb-1">1. Work Order</span>
+          <strong class="text-sm font-bold text-slate-900">{{ selectedWork.workOrderDate || '-' }}</strong>
+        </div>
+        <div class="col-2.4 p-2 border-right-1 border-slate-100">
+          <span class="text-xs text-slate-500 block mb-1">2. Agreement</span>
+          <strong class="text-sm font-bold text-slate-900">{{ selectedWork.agreementDate || '-' }}</strong>
+        </div>
+        <div class="col-2.4 p-2 border-right-1 border-slate-100">
+          <span class="text-xs text-slate-500 block mb-1">3. Commencement</span>
+          <strong class="text-sm font-bold text-slate-900">{{ selectedWork.actualCommencementDate || '-' }}</strong>
+        </div>
+        <div class="col-2.4 p-2 border-right-1 border-slate-100">
+          <span class="text-xs text-slate-500 block mb-1">4. Agt Comp.</span>
+          <strong class="text-sm font-bold text-slate-900">{{ selectedWork.completionDateAsPerAgt || '-' }}</strong>
+        </div>
+        <div class="col-2.4 p-2 bg-blue-50/50 rounded-lg">
+          <span class="text-xs text-blue-700 font-bold block mb-1">5. Probable Comp.</span>
+          <strong class="text-sm font-black text-blue-900">{{ selectedWork.probableDateOfCompletion || '-' }}</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- Financial Breakdown -->
+    <div class="grid">
+      <div class="col-4">
+        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-center">
+          <span class="text-xs text-slate-500 block">Estimated Amount</span>
+          <strong class="text-lg font-extrabold text-slate-900">₹ {{ selectedWork.estimatedAmount.toFixed(2) }} L</strong>
+        </div>
+      </div>
+      <div class="col-4">
+        <div class="bg-amber-50 p-3 rounded-xl border border-amber-200 text-center">
+          <span class="text-xs text-amber-700 block">Total Expenditure</span>
+          <strong class="text-lg font-extrabold text-amber-900">₹ {{ selectedWork.totalExpenditure.toFixed(2) }} L</strong>
+        </div>
+      </div>
+      <div class="col-4">
+        <div class="bg-emerald-50 p-3 rounded-xl border border-emerald-200 text-center">
+          <span class="text-xs text-emerald-700 block">Balance Sanction</span>
+          <strong class="text-lg font-extrabold text-emerald-900">₹ {{ selectedWork.balanceAmount.toFixed(2) }} L</strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- Weekly Progress Notes -->
+    <div class="bg-white border border-slate-200 rounded-2xl p-4">
+      <h4 class="text-sm font-extrabold text-slate-900 mb-2">Weekly Physical Progress</h4>
+      <div class="p-3 bg-slate-50 rounded-xl mb-2">
+        <span class="text-2xs font-bold text-slate-500 uppercase tracking-wide block mb-1">Last Week Progress:</span>
+        <p class="text-xs text-slate-800 font-medium m-0">{{ selectedWork.lastWeekProgress || 'No previous update logged.' }}</p>
+      </div>
+      <div class="p-3 bg-blue-50/50 rounded-xl border border-blue-100">
+        <span class="text-2xs font-bold text-blue-700 uppercase tracking-wide block mb-1">This Week Progress:</span>
+        <p class="text-xs text-slate-900 font-bold m-0">{{ selectedWork.thisWeekProgress || 'Current week inspection pending.' }}</p>
+      </div>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <div class="flex justify-content-between align-items-center w-full">
+      <div class="text-xs text-slate-500 font-semibold">
+        Responsible Officer: <span class="text-slate-900 font-bold">{{ selectedWork?.responsibleOfficer }}</span>
+      </div>
+      <button pButton label="Close" class="p-button-secondary p-button-sm" (click)="detailDrawerVisible = false"></button>
+    </div>
+  </ng-template>
+</p-dialog>
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<!-- ADD / EDIT WORK MODAL                                             -->
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<p-dialog [(visible)]="workDialogVisible" [modal]="true" [draggable]="false" [resizable]="false"
+  [header]="isEditMode ? 'Edit Construction Work' : 'Add New Construction Work'"
+  [style]="{ width: '700px', maxWidth: '95vw' }">
+
+  <div class="grid p-fluid pt-2">
+    <div class="col-12 md:col-6">
+      <label class="text-xs font-bold text-slate-700 block mb-1">G.O. Reference *</label>
+      <input pInputText type="text" [(ngModel)]="workForm.goReference" placeholder="e.g. 82 / 03.10.24" class="p-inputtext-sm">
+    </div>
+
+    <div class="col-12 md:col-6">
+      <label class="text-xs font-bold text-slate-700 block mb-1">Department *</label>
+      <p-dropdown [options]="departments" [(ngModel)]="workForm.department" optionLabel="label" optionValue="value" styleClass="w-full"></p-dropdown>
+    </div>
+
+    <div class="col-12 md:col-6">
+      <label class="text-xs font-bold text-slate-700 block mb-1">Division *</label>
+      <p-dropdown [options]="divisions" [(ngModel)]="workForm.division" optionLabel="label" optionValue="value" styleClass="w-full"></p-dropdown>
+    </div>
+
+    <div class="col-12 md:col-6">
+      <label class="text-xs font-bold text-slate-700 block mb-1">District *</label>
+      <p-dropdown [options]="allDistricts" [(ngModel)]="workForm.district" optionLabel="label" optionValue="value" styleClass="w-full"></p-dropdown>
+    </div>
+
+    <div class="col-12 md:col-6">
+      <label class="text-xs font-bold text-slate-700 block mb-1">Place / Block</label>
+      <input pInputText type="text" [(ngModel)]="workForm.place" placeholder="e.g. Poigaipatty" class="p-inputtext-sm">
+    </div>
+
+    <div class="col-12 md:col-6">
+      <label class="text-xs font-bold text-slate-700 block mb-1">Category *</label>
+      <p-dropdown [options]="categories" [(ngModel)]="workForm.category" optionLabel="label" optionValue="value" styleClass="w-full"></p-dropdown>
+    </div>
+
+    <div class="col-12">
+      <label class="text-xs font-bold text-slate-700 block mb-1">Name of Premises / Institution *</label>
+      <input pInputText type="text" [(ngModel)]="workForm.nameOfPremises" placeholder="e.g. Government Higher Secondary School" class="p-inputtext-sm">
+    </div>
+
+    <div class="col-12">
+      <label class="text-xs font-bold text-slate-700 block mb-1">Components Description</label>
+      <textarea pInputTextarea [(ngModel)]="workForm.components" rows="2" placeholder="e.g. 10 Classrooms, Science Lab, Toilet Block"></textarea>
+    </div>
+
+    <div class="col-12 md:col-4">
+      <label class="text-xs font-bold text-slate-700 block mb-1">Estimated Amt (₹ Lakh) *</label>
+      <input pInputText type="number" step="0.01" [(ngModel)]="workForm.estimatedAmount" class="p-inputtext-sm">
+    </div>
+
+    <div class="col-12 md:col-4">
+      <label class="text-xs font-bold text-slate-700 block mb-1">Exp Upto Prev Year (₹ Lakh)</label>
+      <input pInputText type="number" step="0.01" [(ngModel)]="workForm.expUptoPrevYear" class="p-inputtext-sm">
+    </div>
+
+    <div class="col-12 md:col-4">
+      <label class="text-xs font-bold text-slate-700 block mb-1">Exp During Curr Year (₹ Lakh)</label>
+      <input pInputText type="number" step="0.01" [(ngModel)]="workForm.expDuringCurrYear" class="p-inputtext-sm">
+    </div>
+
+    <div class="col-12 md:col-6">
+      <label class="text-xs font-bold text-slate-700 block mb-1">Work Status</label>
+      <p-dropdown [options]="statuses" [(ngModel)]="workForm.workStatus" optionLabel="label" optionValue="value" styleClass="w-full"></p-dropdown>
+    </div>
+
+    <div class="col-12 md:col-6">
+      <label class="text-xs font-bold text-slate-700 block mb-1">Progress Percentage (%)</label>
+      <input pInputText type="number" min="0" max="100" [(ngModel)]="workForm.progressPercentage" class="p-inputtext-sm">
+    </div>
+
+    <div class="col-12 md:col-6">
+      <label class="text-xs font-bold text-slate-700 block mb-1">Probable Completion Date</label>
+      <input pInputText type="text" [(ngModel)]="workForm.probableDateOfCompletion" placeholder="DD.MM.YYYY" class="p-inputtext-sm">
+    </div>
+
+    <div class="col-12 md:col-6">
+      <label class="text-xs font-bold text-slate-700 block mb-1">Responsible Officer</label>
+      <input pInputText type="text" [(ngModel)]="workForm.responsibleOfficer" placeholder="e.g. Er. S. Murugesan (EE)" class="p-inputtext-sm">
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <div class="flex justify-content-end gap-2">
+      <button pButton label="Cancel" class="p-button-text p-button-secondary p-button-sm" (click)="workDialogVisible = false"></button>
+      <button pButton [label]="isEditMode ? 'Update Work' : 'Create Work'" icon="pi pi-check"
+        class="p-button-primary p-button-sm font-bold" [loading]="savingWork" (click)="saveWork()"></button>
+    </div>
+  </ng-template>
+</p-dialog>
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<!-- LOG PROGRESS UPDATE MODAL                                         -->
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<p-dialog [(visible)]="progressDialogVisible" [modal]="true" [draggable]="false" [resizable]="false"
+  header="Log Weekly Physical Progress" [style]="{ width: '600px', maxWidth: '95vw' }">
+
+  <div *ngIf="selectedWork" class="space-y-3 pt-2">
+    <div class="p-3 bg-blue-50 rounded-xl border border-blue-100 mb-3">
+      <strong class="text-sm text-slate-900 block">{{ selectedWork.nameOfPremises }}</strong>
+      <span class="text-xs text-slate-600">{{ selectedWork.district }} · Current Progress: <strong>{{ selectedWork.progressPercentage }}%</strong></span>
+    </div>
+
+    <div class="grid p-fluid">
+      <div class="col-12 md:col-6">
+        <label class="text-xs font-bold text-slate-700 block mb-1">New Progress Percentage (%) *</label>
+        <input pInputText type="number" min="0" max="100" [(ngModel)]="progressForm.progressPercentage" class="p-inputtext-sm">
+      </div>
+
+      <div class="col-12 md:col-6">
+        <label class="text-xs font-bold text-slate-700 block mb-1">Work Status</label>
+        <p-dropdown [options]="statuses" [(ngModel)]="progressForm.workStatus" optionLabel="label" optionValue="value" styleClass="w-full"></p-dropdown>
+      </div>
+
+      <div class="col-12">
+        <label class="text-xs font-bold text-slate-700 block mb-1">This Week Progress Description *</label>
+        <textarea pInputTextarea [(ngModel)]="progressForm.thisWeekProgress" rows="3"
+          placeholder="Detailed milestone updates e.g. Ground floor roof slab concrete casting completed."></textarea>
+      </div>
+
+      <div class="col-12">
+        <label class="text-xs font-bold text-slate-700 block mb-1">Site Engineer Remarks / Constraints</label>
+        <input pInputText type="text" [(ngModel)]="progressForm.remarks" placeholder="Optional constraints or notes" class="p-inputtext-sm">
+      </div>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <div class="flex justify-content-end gap-2">
+      <button pButton label="Cancel" class="p-button-text p-button-secondary p-button-sm" (click)="progressDialogVisible = false"></button>
+      <button pButton label="Submit Weekly Update" icon="pi pi-send" class="p-button-primary p-button-sm font-bold"
+        [loading]="updatingProgress" (click)="submitProgress()"></button>
+    </div>
+  </ng-template>
+</p-dialog>

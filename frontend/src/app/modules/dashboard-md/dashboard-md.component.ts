@@ -301,7 +301,7 @@ export class DashboardMdComponent implements OnInit, OnDestroy {
   }
 
   constructor(
-    private ds:     DataService,
+    public  ds:     DataService,
     public  auth:   AuthService,
     private cdr:    ChangeDetectorRef,
     private msg:    MessageService,
@@ -1228,7 +1228,7 @@ export class DashboardMdComponent implements OnInit, OnDestroy {
     // ── Engineering Cards ──────────────────────────────────────────────────
     this.engCards = [
       {
-        id: 'tips-time', title: 'Tenders & M-Books', code: 'TIPS / TIME',
+        id: 'tips-time', title: `${this.ds.getProjectDisplayName('TIPS', 'Tenders')} & ${this.ds.getProjectDisplayName('TIME', 'M-Books')}`, code: 'TIPS / TIME',
         icon: 'pi-file-edit', accent: '#0a1628', accentSoft: '#e8edf5',
         totalCount:  (t.totalWorks ?? 0) + (t.mBookTotal ?? (t.mBookUploaded ?? 0) + (t.mBookPending ?? 0)),
         totalAmount: ((t.totalWorks ?? 0) * 45) + ((t.mBookTotal ?? (t.mBookUploaded ?? 0) + (t.mBookPending ?? 0)) * 28),
@@ -1250,7 +1250,7 @@ export class DashboardMdComponent implements OnInit, OnDestroy {
         }))
       },
       {
-        id: 'thms', title: 'Housing Construction', code: 'THMS',
+        id: 'thms', title: this.ds.getProjectDisplayName('THMS', 'Housing Construction (THMS)'), code: 'THMS',
         icon: 'pi-building', accent: '#1e7c4c', accentSoft: '#edf7f2',
         totalCount:  h.totalHouses ?? 0,
         totalAmount: (h.totalHouses ?? 0) * 8.5,
@@ -1269,7 +1269,7 @@ export class DashboardMdComponent implements OnInit, OnDestroy {
         }))
       },
       {
-        id: 'patrol', title: 'CCTV Surveillance', code: 'Patrol360',
+        id: 'patrol', title: this.ds.getProjectDisplayName('PATROL360', 'CCTV Surveillance (Patrol 360)'), code: 'Patrol360',
         icon: 'pi-video', accent: '#a32d2d', accentSoft: '#fcebeb',
         totalCount:  p.cameraInstalled ?? p.totalWorks ?? 0,
         totalAmount: (p.cameraInstalled ?? p.totalWorks ?? 0) * 2.2,
@@ -1300,7 +1300,7 @@ export class DashboardMdComponent implements OnInit, OnDestroy {
 
     this.schemeCards = [
       {
-        id: 'tahdco-scheme', title: 'TAHDCO Scheme', code: 'Scheme',
+        id: 'tahdco-scheme', title: this.ds.getProjectDisplayName('SCHEME', 'TAHDCO Scheme'), code: 'Scheme',
         icon: 'pi-wallet', accent: '#c9a227', accentSoft: '#fdf8e8',
         totalCount:  tahdcoTotal,
         totalAmount: tahdcoTotal * 0.5,
@@ -1317,7 +1317,7 @@ export class DashboardMdComponent implements OnInit, OnDestroy {
         }))
       },
       {
-        id: 'telp', title: 'Educational Loan (TELP)', code: 'TELP',
+        id: 'telp', title: this.ds.getProjectDisplayName('TELP', 'Educational Loan (TELP)'), code: 'TELP',
         icon: 'pi-book', accent: '#534ab7', accentSoft: '#eeedfe',
         totalCount:  telpTotal,
         totalAmount: telpTotal * 1.2,
@@ -1334,7 +1334,7 @@ export class DashboardMdComponent implements OnInit, OnDestroy {
         }))
       },
       {
-        id: 'tams', title: 'Citizens Training (TAMS)', code: 'TAMS',
+        id: 'tams', title: this.ds.getProjectDisplayName('TAMS', 'Citizens Training (TAMS)'), code: 'TAMS',
         icon: 'pi-graduation-cap', accent: '#1a5fa5', accentSoft: '#eaf2fb',
         totalCount:  tamsTotal,
         totalAmount: tamsTotal * 0.35,
@@ -1357,7 +1357,7 @@ export class DashboardMdComponent implements OnInit, OnDestroy {
         }))
       },
       {
-        id: 'tod', title: 'Officer Diary (TOD)', code: 'TOD',
+        id: 'tod', title: this.ds.getProjectDisplayName('TOD', 'Officer Diary (TOD)'), code: 'TOD',
         icon: 'pi-calendar', accent: '#059669', accentSoft: '#ecfdf5',
         totalCount:  todTotal,
         totalAmount: 0,
@@ -1436,7 +1436,7 @@ export class DashboardMdComponent implements OnInit, OnDestroy {
 
     this.tncwwbCards = [
       {
-        id: 'tncwwb-member', title: 'Member Registration', code: 'TNCWWB Member',
+        id: 'tncwwb-member', title: this.ds.getProjectDisplayName('TNCWWB', 'Member Registration (TNCWWB)'), code: 'TNCWWB Member',
         icon: 'pi-user-plus', accent: '#0f5b9b', accentSoft: '#eef6fc',
         totalCount: totalMemberApps,
         totalAmount: 0,
@@ -1453,7 +1453,7 @@ export class DashboardMdComponent implements OnInit, OnDestroy {
         }))
       },
       {
-        id: 'tncwwb-scheme', title: 'Scheme Assistance', code: 'TNCWWB Scheme',
+        id: 'tncwwb-scheme', title: this.ds.getProjectDisplayName('ONEPORTAL', 'Scheme Assistance (TNCWWB)'), code: 'TNCWWB Scheme',
         icon: 'pi-wallet', accent: '#d97706', accentSoft: '#fefcf3',
         totalCount: 2798,
         totalAmount: 2798 * 0.4,
@@ -3468,24 +3468,24 @@ export class DashboardMdComponent implements OnInit, OnDestroy {
         let infoContentHtml = '';
         if (this.activeTab === 'tncwwb') {
           infoContentHtml = `
-            <div><strong>Total Members:</strong> ${this.fmt(stats?.totalMembers || 0)}</div>
-            <div><strong>Cards Issued:</strong> ${this.fmt(stats?.cardIssued || 0)}</div>
-            <div><strong>Scheme Applications:</strong> ${this.fmt(stats?.schemeApps || 0)}</div>
-            <div><strong>Card In Progress:</strong> ${this.fmt(stats?.cardInProgress || 0)}</div>
+            <div><strong>Registered Members:</strong> ${this.fmt(stats?.totalMembers || 0)}</div>
+            <div><strong>Welfare Cards Issued:</strong> ${this.fmt(stats?.cardIssued || 0)}</div>
+            <div><strong>Assistance Applications:</strong> ${this.fmt(stats?.schemeApps || 0)}</div>
+            <div><strong>Enrollments In Progress:</strong> ${this.fmt(stats?.cardInProgress || 0)}</div>
           `;
         } else if (this.activeTab === 'welfare') {
           infoContentHtml = `
-            <div><strong>TAHDCO Schemes:</strong> ${this.fmt(stats?.tahdcoCount || 0)}</div>
-            <div><strong>TELP Loans:</strong> ${this.fmt(stats?.telpCount || 0)}</div>
-            <div><strong>TAMS Students:</strong> ${this.fmt(stats?.tamsStudents || 0)}</div>
-            <div><strong>Disbursed (₹ L):</strong> ${this.fmt(stats?.disbursedAmount || 0)}</div>
+            <div><strong>Welfare Beneficiary Assistance:</strong> ${this.fmt(stats?.tahdcoCount || 0)}</div>
+            <div><strong>Higher Education & Loans:</strong> ${this.fmt(stats?.telpCount || 0)}</div>
+            <div><strong>Scholarships Awarded:</strong> ${this.fmt(stats?.tamsStudents || 0)}</div>
+            <div><strong>Disbursed Amount (₹ L):</strong> ${this.fmt(stats?.disbursedAmount || 0)}</div>
           `;
         } else {
           infoContentHtml = `
-            <div><strong>TIPS Works:</strong> ${this.fmt(stats?.tipsCount || 0)}</div>
-            <div><strong>THMS Houses:</strong> ${this.fmt(stats?.thmsCount || 0)}</div>
-            <div><strong>CCTV Cameras:</strong> ${this.fmt(stats?.patrolCount || 0)}</div>
-            <div><strong>Pending M-Books:</strong> ${this.fmt(stats?.mbookPending || 0)}</div>
+            <div><strong>Civil Infrastructure Works:</strong> ${this.fmt(stats?.tipsCount || 0)}</div>
+            <div><strong>Housing & Habitations:</strong> ${this.fmt(stats?.thmsCount || 0)}</div>
+            <div><strong>Live Site Surveillance:</strong> ${this.fmt(stats?.patrolCount || 0)}</div>
+            <div><strong>Measurement & M-Books:</strong> ${this.fmt(stats?.mbookPending || 0)}</div>
           `;
         }
 
